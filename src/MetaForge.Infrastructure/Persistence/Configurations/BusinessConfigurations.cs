@@ -111,3 +111,21 @@ public class SupplierConfiguration : IEntityTypeConfiguration<Supplier>
         builder.Property(x => x.Name).HasMaxLength(200).IsRequired();
     }
 }
+
+public class StudentConfiguration : IEntityTypeConfiguration<Student>
+{
+    public void Configure(EntityTypeBuilder<Student> builder)
+    {
+        builder.ToTable("Students");
+        builder.HasKey(x => x.Id);
+        builder.Property(x => x.StudentCode).HasMaxLength(50).IsRequired();
+        builder.Property(x => x.FirstName).HasMaxLength(100).IsRequired();
+        builder.Property(x => x.LastName).HasMaxLength(100).IsRequired();
+        builder.Property(x => x.Email).HasMaxLength(200);
+        builder.Property(x => x.PhoneNumber).HasMaxLength(20);
+        builder.Property(x => x.DateOfBirth).IsRequired();
+        builder.Property(x => x.Address).HasMaxLength(500);
+        builder.Property(x => x.AdmissionDate).IsRequired();
+        builder.Property(x => x.IsActive).HasDefaultValue(true);
+    }
+}

@@ -27,7 +27,7 @@ const MenuManagement = (function () {
             name: $('#menuName').val()?.trim(),
             icon: $('#menuIcon').val()?.trim() || null,
             itemType: $('#itemType').val(),
-            moduleId: $('#moduleId').val() ? parseInt($('#moduleId').val(), 10) : null,
+            formId: $('#moduleId').val() ? parseInt($('#moduleId').val(), 10) : null,
             action: $('#menuAction').val(),
             url: $('#menuUrl').val()?.trim() || null,
             displayOrder: parseInt($('#displayOrder').val(), 10) || 0,

@@ -33,6 +33,7 @@ public class MetaForgeDbContext : DbContext
     public DbSet<Address> Addresses => Set<Address>();
     public DbSet<Product> Products => Set<Product>();
     public DbSet<Supplier> Suppliers => Set<Supplier>();
+    public DbSet<Student> Students => Set<Student>();
     public DbSet<SalesOrder> SalesOrders => Set<SalesOrder>();
     public DbSet<SalesOrderItem> SalesOrderItems => Set<SalesOrderItem>();
     public DbSet<SalesOrderCharge> SalesOrderCharges => Set<SalesOrderCharge>();

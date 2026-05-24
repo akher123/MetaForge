@@ -142,6 +142,8 @@ public static class DatabaseSeeder
 
     private static async Task EnsureBusinessSchemaAsync(MetaForgeDbContext context, ILogger logger)
     {
+        await BusinessTableEnsurer.EnsureMissingTablesAsync(context, logger);
+
         const string sql = """
             IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'SalesOrderCharges')
             BEGIN
