@@ -3,7 +3,7 @@
 public class Student : BaseEntity
 {
     public string StudentCode { get; set; } = string.Empty;
-
+    public int DepartmentId { get; set; }
     public string FirstName { get; set; } = string.Empty;
 
     public string LastName { get; set; } = string.Empty;
@@ -19,4 +19,5 @@ public class Student : BaseEntity
     public DateTime AdmissionDate { get; set; }
 
     public bool IsActive { get; set; } = true;
+    public Department? Department { get; set; }
 }
