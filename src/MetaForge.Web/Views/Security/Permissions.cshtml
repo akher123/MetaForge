@@ -1,0 +1,65 @@
+@{
+    ViewData["Title"] = "Permissions";
+    var groups = ViewBag.PermissionGroups as IReadOnlyList<MetaForge.Application.DTOs.PermissionGroupDto>;
+    var canSyncPermissions = ViewBag.CanSyncPermissions == true;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-0">Permissions</h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="/Security">Security</a></li>
+                <li class="breadcrumb-item active">Permissions</li>
+            </ol>
+        </nav>
+    </div>
+    @if (canSyncPermissions)
+    {
+        <button type="button" id="btnSyncPermissions" class="btn btn-outline-primary btn-icon" title="Sync Module Permissions" aria-label="Sync Module Permissions"><i class="fa-solid fa-rotate"></i></button>
+    }
+</div>
+
+@foreach (var group in groups ?? [])
+{
+    <div class="card admin-card shadow-sm mb-3">
+        <div class="card-header fw-semibold">
+            @group.GroupName
+            <span class="badge bg-secondary ms-2">@group.Permissions.Count</span>
+        </div>
+        <div class="card-body p-0">
+            <table class="table table-sm mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Code</th>
+                        <th>Name</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var p in group.Permissions)
+                    {
+                        <tr>
+                            <td><code>@p.Code</code></td>
+                            <td>@p.Name</td>
+                            <td><span class="badge bg-light text-dark border">@p.Action</span></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    @if (canSyncPermissions)
+    {
+        <script>
+            $('#btnSyncPermissions').on('click', function () {
+                $.post('/api/metaforge/security/permissions/sync')
+                    .done(r => { alert(r.message); location.reload(); })
+                    .fail(xhr => alert(xhr.responseJSON?.error ?? 'Sync failed'));
+            });
+        </script>
+    }
+}

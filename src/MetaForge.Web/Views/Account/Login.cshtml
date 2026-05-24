@@ -1,0 +1,75 @@
+@model MetaForge.Web.Models.LoginViewModel
+@{
+    Layout = "_LandingLayout";
+    ViewData["Title"] = "Sign In";
+}
+
+<section class="auth-section">
+    <div class="container position-relative">
+        <div class="row justify-content-center">
+            <div class="col-md-5 col-lg-4">
+                <div class="auth-card">
+                    <div class="text-center mb-4">
+                        <div class="auth-logo"><i class="fa-solid fa-bolt"></i></div>
+                        <h2 class="auth-title">Welcome back</h2>
+                        <p class="text-muted mb-0">Sign in to your MetaForge dashboard</p>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+                    {
+                        <div class="alert alert-danger" role="alert">
+                            <i class="fa-solid fa-circle-exclamation me-2"></i>@Model.ErrorMessage
+                        </div>
+                    }
+
+                    <form asp-action="Login" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" asp-for="ReturnUrl" />
+
+                        <div class="mb-3">
+                            <label asp-for="UserName" class="form-label">Username</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-white"><i class="fa-solid fa-user text-muted"></i></span>
+                                <input asp-for="UserName" class="form-control form-control-lg border-start-0" placeholder="Enter username" autofocus />
+                            </div>
+                            <span asp-validation-for="UserName" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Password" class="form-label">Password</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-white"><i class="fa-solid fa-lock text-muted"></i></span>
+                                <input asp-for="Password" type="password" class="form-control form-control-lg border-start-0" placeholder="Enter password" />
+                            </div>
+                            <span asp-validation-for="Password" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-4 form-check">
+                            <input asp-for="RememberMe" class="form-check-input" />
+                            <label asp-for="RememberMe" class="form-check-label">Remember me</label>
+                        </div>
+
+                        <button type="submit" class="btn btn-hero-primary btn-lg w-100">
+                            <i class="fa-solid fa-right-to-bracket me-2"></i>Sign In
+                        </button>
+                    </form>
+
+                    <div class="text-center mt-4">
+                        <a asp-controller="Home" asp-action="Landing" class="text-muted small text-decoration-none">
+                            <i class="fa-solid fa-arrow-left me-1"></i>Back to home
+                        </a>
+                    </div>
+
+                    <div class="demo-box mt-4">
+                        <small class="text-muted d-block mb-2"><i class="fa-solid fa-key me-1"></i>Demo credentials</small>
+                        <code>admin</code> / <code>admin</code>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

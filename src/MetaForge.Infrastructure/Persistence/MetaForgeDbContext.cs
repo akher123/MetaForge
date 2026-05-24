@@ -1,0 +1,45 @@
+using MetaForge.Domain.Audit;
+using MetaForge.Domain.Business;
+using MetaForge.Domain.Metadata;
+using MetaForge.Domain.Security;
+
+namespace MetaForge.Infrastructure.Persistence;
+
+/// <summary>
+/// Primary EF Core database context.
+/// </summary>
+public class MetaForgeDbContext : DbContext
+{
+    public MetaForgeDbContext(DbContextOptions<MetaForgeDbContext> options) : base(options) { }
+
+    public DbSet<ForgeForm> ForgeForms => Set<ForgeForm>();
+    public DbSet<ForgeField> ForgeFields => Set<ForgeField>();
+    public DbSet<ForgeRelation> ForgeRelations => Set<ForgeRelation>();
+    public DbSet<ForgeGridColumn> ForgeGridColumns => Set<ForgeGridColumn>();
+    public DbSet<ForgeMenu> ForgeMenus => Set<ForgeMenu>();
+    public DbSet<LookupConfiguration> LookupConfigurations => Set<LookupConfiguration>();
+
+    public DbSet<User> Users => Set<User>();
+    public DbSet<Role> Roles => Set<Role>();
+    public DbSet<Permission> Permissions => Set<Permission>();
+    public DbSet<UserRole> UserRoles => Set<UserRole>();
+    public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
+
+    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+
+    public DbSet<Country> Countries => Set<Country>();
+    public DbSet<Region> Regions => Set<Region>();
+    public DbSet<Customer> Customers => Set<Customer>();
+    public DbSet<Address> Addresses => Set<Address>();
+    public DbSet<Product> Products => Set<Product>();
+    public DbSet<Supplier> Suppliers => Set<Supplier>();
+    public DbSet<SalesOrder> SalesOrders => Set<SalesOrder>();
+    public DbSet<SalesOrderItem> SalesOrderItems => Set<SalesOrderItem>();
+    public DbSet<SalesOrderCharge> SalesOrderCharges => Set<SalesOrderCharge>();
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(MetaForgeDbContext).Assembly);
+        base.OnModelCreating(modelBuilder);
+    }
+}

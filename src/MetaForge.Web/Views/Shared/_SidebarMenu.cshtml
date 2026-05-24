@@ -1,0 +1,12 @@
+@model IReadOnlyList<MetaForge.Application.DTOs.MenuTreeNodeDto>
+
+<nav class="app-sidebar" aria-label="Main navigation">
+    <ul class="sidebar-tree list-unstyled mb-0">
+        @foreach (var node in Model)
+        {
+            <li class="sidebar-tree-item">
+                @await Html.PartialAsync("_SidebarMenuNode", node)
+            </li>
+        }
+    </ul>
+</nav>

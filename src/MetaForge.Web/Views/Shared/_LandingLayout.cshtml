@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="MetaForge — metadata-driven ASP.NET Core admin platform for .NET 10. Build CRUD, grids, and master-detail screens from your domain model." />
+    <title>@ViewData["Title"] - MetaForge</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" />
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="~/css/landing.css" asp-append-version="true" />
+</head>
+<body class="landing-body">
+    <a href="#main-content" class="landing-skip">Skip to content</a>
+
+    <header class="landing-header">
+        <nav class="navbar navbar-expand-lg landing-nav">
+            <div class="container">
+                <a class="navbar-brand landing-brand" asp-controller="Home" asp-action="Landing">
+                    <span class="landing-brand-mark"><i class="fa-solid fa-bolt"></i></span>
+                    <span class="landing-brand-text">Meta<span class="landing-brand-accent">Forge</span></span>
+                </a>
+                <button class="navbar-toggler landing-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#landingNav" aria-controls="landingNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="landingNav">
+                    <ul class="navbar-nav ms-auto align-items-lg-center">
+                        <li class="nav-item"><a class="nav-link" href="#features">Features</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#architecture">Architecture</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#how-it-works">How It Works</a></li>
+                        <li class="nav-item ms-lg-2">
+                            <a class="btn btn-signin" asp-controller="Account" asp-action="Login">
+                                <i class="fa-solid fa-right-to-bracket me-2"></i>Sign In
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main id="main-content">
+        @RenderBody()
+    </main>
+
+    <footer class="landing-footer">
+        <div class="container">
+            <div class="landing-footer-inner">
+                <div class="landing-footer-brand">
+                    <span class="landing-brand-mark landing-brand-mark-sm"><i class="fa-solid fa-bolt"></i></span>
+                    <span>MetaForge</span>
+                </div>
+                <p class="landing-footer-tagline">Metadata-driven admin platform for .NET 10</p>
+                <p class="landing-footer-copy mb-0">&copy; @DateTime.UtcNow.Year MetaForge. Built with ASP.NET Core &amp; EF Core.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

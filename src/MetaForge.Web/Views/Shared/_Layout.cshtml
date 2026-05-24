@@ -1,0 +1,116 @@
+@inject MetaForge.Application.Interfaces.INavigationService NavigationService
+@{
+    var sidebarMenu = await NavigationService.GetSidebarMenuAsync();
+    var isAuthenticated = User.Identity?.IsAuthenticated == true;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - MetaForge</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    @if (isAuthenticated && sidebarMenu.Count > 0)
+    {
+        <script>
+            try {
+                if (localStorage.getItem('metaforge.sidebar.collapsed') === '1') {
+                    document.documentElement.classList.add('sidebar-collapsed');
+                }
+            } catch (_) { /* ignore */ }
+        </script>
+    }
+</head>
+<body class="metaforge-app">
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-dark app-navbar">
+            <div class="container-fluid app-navbar-inner">
+                @if (isAuthenticated && sidebarMenu.Count > 0)
+                {
+                    <button type="button"
+                            class="sidebar-collapse-toggle d-none d-lg-inline-flex"
+                            id="sidebarCollapseToggle"
+                            aria-controls="sidebarNav"
+                            aria-expanded="true"
+                            aria-label="Collapse sidebar menu"
+                            title="Toggle sidebar menu">
+                        <span class="sidebar-hamburger" aria-hidden="true">
+                            <span class="sidebar-hamburger-line"></span>
+                            <span class="sidebar-hamburger-line"></span>
+                            <span class="sidebar-hamburger-line"></span>
+                        </span>
+                    </button>
+                }
+                <a class="navbar-brand me-auto" asp-controller="Home" asp-action="Dashboard">Meta<span>Forge</span></a>
+                <button class="navbar-toggler d-lg-none" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarNav" aria-controls="sidebarNav" aria-expanded="false" aria-label="Toggle navigation menu">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                @if (isAuthenticated)
+                {
+                    <ul class="navbar-nav ms-2">
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle app-user-badge" href="#" role="button" data-bs-toggle="dropdown">
+                                <i class="fa-solid fa-user me-1"></i>@User.Identity!.Name
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li>
+                                    <form asp-controller="Account" asp-action="Logout" method="post" class="px-3 py-2">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-sm btn-outline-danger btn-icon" title="Sign Out" aria-label="Sign Out"><i class="fa-solid fa-right-from-bracket"></i></button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </li>
+                    </ul>
+                }
+            </div>
+        </nav>
+    </header>
+
+    <div class="app-layout">
+        @if (isAuthenticated && sidebarMenu.Count > 0)
+        {
+            <div class="app-sidebar-backdrop" id="sidebarBackdrop" aria-hidden="true"></div>
+            <aside class="app-sidebar-wrapper collapse d-lg-block" id="sidebarNav">
+                @await Html.PartialAsync("_SidebarMenu", sidebarMenu)
+            </aside>
+        }
+        <div class="app-content">
+            @await Html.PartialAsync("_AppAlerts")
+            <main id="main-content" role="main" class="app-main">
+                @RenderBody()
+            </main>
+            <footer class="app-footer py-3">
+                <div class="text-center">
+                    &copy; 2026 MetaForge &mdash; MetaForge Admin Platform (.NET 10)
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="~/js/metaforge/icons.js" asp-append-version="true"></script>
+    <script src="~/js/metaforge/lookup-cascade.js" asp-append-version="true"></script>
+    <script src="~/js/metaforge/dynamic-form.js" asp-append-version="true"></script>
+    <script src="~/js/metaforge/dynamic-grid.js" asp-append-version="true"></script>
+    <script src="~/js/metaforge/detail-grid-rows.js" asp-append-version="true"></script>
+    <script src="~/js/metaforge/master-detail.js" asp-append-version="true"></script>
+    <script src="~/js/metaforge/master-detail-tabular.js" asp-append-version="true"></script>
+    <script src="~/js/metaforge/sidebar-menu.js" asp-append-version="true"></script>
+    <script src="~/js/metaforge/ui-feedback.js" asp-append-version="true"></script>
+    @await Html.PartialAsync("_ConfirmDeleteModal")
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

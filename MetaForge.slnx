@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/MetaForge.Application/MetaForge.Application.csproj" />
+    <Project Path="src/MetaForge.Domain/MetaForge.Domain.csproj" />
+    <Project Path="src/MetaForge.Infrastructure/MetaForge.Infrastructure.csproj" />
+    <Project Path="src/MetaForge.Shared/MetaForge.Shared.csproj" />
+    <Project Path="src/MetaForge.Web/MetaForge.Web.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/MetaForge.UnitTests/MetaForge.UnitTests.csproj" />
+  </Folder>
+</Solution>

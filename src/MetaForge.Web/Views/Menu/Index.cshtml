@@ -1,0 +1,82 @@
+@{
+    ViewData["Title"] = "Menu Management";
+    var menus = ViewBag.Menus as IReadOnlyList<MetaForge.Application.DTOs.MenuListItemDto>;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-0">Menu Management</h1>
+        <p class="text-muted mb-0">Configure sidebar navigation with parent and child menu items.</p>
+    </div>
+    <a class="btn btn-primary btn-icon" href="/Menu/Create" title="New Menu Item" aria-label="New Menu Item"><i class="fa-solid fa-plus"></i></a>
+</div>
+
+<div class="card admin-card">
+    <div class="card-header">Navigation Tree</div>
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>Target</th>
+                    <th>Order</th>
+                    <th>Status</th>
+                    <th style="width:120px">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (menus != null && menus.Count > 0)
+                {
+                    @foreach (var m in menus)
+                    {
+                        var indent = new string('\u00a0', m.Depth * 4);
+                        <tr>
+                            <td>@Html.Raw(indent)<i class="fa-solid @(m.ItemType == "Folder" ? "fa-folder" : m.ItemType == "Form" || m.ItemType == "Module" ? "fa-table" : "fa-link") me-2 text-muted"></i>@m.Name</td>
+                            <td><span class="badge bg-secondary">@(m.ItemType == "Form" || m.ItemType == "Module" ? "Module" : m.ItemType)</span></td>
+                            <td>
+                                @if (m.ItemType == "Form" || m.ItemType == "Module")
+                                {
+                                    <span>@m.FormName</span>
+                                }
+                                else if (!string.IsNullOrEmpty(m.Url))
+                                {
+                                    <code>@m.Url</code>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">—</span>
+                                }
+                            </td>
+                            <td>@m.DisplayOrder</td>
+                            <td>
+                                @if (m.IsActive)
+                                {
+                                    <span class="badge bg-success">Active</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-warning text-dark">Inactive</span>
+                                }
+                            </td>
+                            <td>
+                                <a class="btn btn-sm btn-outline-primary btn-icon" href="/Menu/Edit/@m.Id" title="Edit" aria-label="Edit"><i class="fa-solid fa-pen-to-square"></i></a>
+                                <button type="button" class="btn btn-sm btn-outline-danger btn-icon btn-delete-menu" data-id="@m.Id" data-name="@m.Name" title="Delete" aria-label="Delete"><i class="fa-solid fa-trash"></i></button>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-4">No menu items configured yet.</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/metaforge/menu-management.js" asp-append-version="true"></script>
+}

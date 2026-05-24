@@ -1,0 +1,31 @@
+@model MetaForge.Application.DTOs.MenuTreeNodeDto
+
+@if (Model.ItemType == "Folder")
+{
+    <details class="sidebar-folder" open>
+        <summary class="sidebar-folder-toggle" title="@Model.Name">
+            <i class="fa-solid @Model.Icon sidebar-icon" aria-hidden="true"></i>
+            <span class="sidebar-label">@Model.Name</span>
+            <i class="fa-solid fa-chevron-down sidebar-chevron ms-auto" aria-hidden="true"></i>
+        </summary>
+        <ul class="sidebar-tree-children list-unstyled mb-0" data-flyout-title="@Model.Name">
+            @foreach (var child in Model.Children)
+            {
+                <li>
+                    @await Html.PartialAsync("_SidebarMenuNode", child)
+                </li>
+            }
+        </ul>
+    </details>
+}
+else
+{
+    var currentPath = Context.Request.Path.Value ?? "";
+    var isActive = !string.IsNullOrEmpty(Model.Url)
+        && (currentPath.Equals(Model.Url, StringComparison.OrdinalIgnoreCase)
+            || currentPath.StartsWith(Model.Url.TrimEnd('/') + "/", StringComparison.OrdinalIgnoreCase));
+    <a class="sidebar-link @(isActive ? "active" : "")" href="@Model.Url" title="@Model.Name">
+        <i class="fa-solid @Model.Icon sidebar-icon" aria-hidden="true"></i>
+        <span class="sidebar-label">@Model.Name</span>
+    </a>
+}

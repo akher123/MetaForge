@@ -1,0 +1,31 @@
+@{
+    ViewData["Title"] = ViewBag.Form?.FormName ?? "Form";
+    var form = ViewBag.Form as MetaForge.Application.DTOs.FormDefinition;
+    var formCode = ViewBag.FormCode as string;
+    var recordId = ViewBag.RecordId as int?;
+}
+
+<div class="card">
+    <div class="card-header">@form?.FormName — @(recordId.HasValue ? "Edit" : "Create")</div>
+    <div class="card-body">
+        <form id="dynamicForm" data-module="@formCode" data-entity="@form?.EntityName" data-id="@recordId"></form>
+        <div class="mt-3">
+            <button type="button" class="btn btn-primary btn-icon" id="btnSave" title="Save" aria-label="Save"><i class="fa-solid fa-floppy-disk"></i></button>
+            <a class="btn btn-secondary btn-icon" href="/Modules/@formCode" title="Cancel" aria-label="Cancel"><i class="fa-solid fa-xmark"></i></a>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(function () {
+            const formDef = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(form));
+            const recordId = @(recordId.HasValue ? recordId.Value.ToString() : "null");
+            DynamicForm.init('#dynamicForm', formDef);
+            if (recordId) {
+                DynamicForm.load(recordId);
+            }
+            $('#btnSave').on('click', () => DynamicForm.save().then(() => window.location = '/Modules/@formCode'));
+        });
+    </script>
+}

@@ -1,0 +1,93 @@
+@{
+    ViewData["Title"] = "Form Builder";
+    var modules = ViewBag.Forms as IReadOnlyList<MetaForge.Application.DTOs.FormConfigListItemDto>;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-0">Form Builder</h1>
+        <p class="text-muted mb-0">Design master and detail forms for Master Data and Transaction screens.</p>
+    </div>
+    <a class="btn btn-primary btn-icon" href="/FormBuilder/Create" title="New Form" aria-label="New Form"><i class="fa-solid fa-plus"></i></a>
+</div>
+
+<div class="card admin-card">
+    <div class="card-header">Configured Screens</div>
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Group</th>
+                    <th>Type</th>
+                    <th>Name</th>
+                    <th>Code</th>
+                    <th>Entity</th>
+                    <th>Fields</th>
+                    <th>Status</th>
+                    <th style="width:200px">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (modules != null && modules.Count > 0)
+                {
+                    @foreach (var m in modules)
+                    {
+                        <tr>
+                            <td><span class="badge bg-secondary">@m.GroupName</span></td>
+                            <td><span class="badge @(m.FormType == "MasterDetail" ? "bg-info" : m.FormType == "Detail" ? "bg-light text-dark" : "bg-primary")">@m.FormType</span></td>
+                            <td>@m.Name</td>
+                            <td><code>@m.Code</code></td>
+                            <td>@m.EntityName</td>
+                            <td>@m.FieldCount</td>
+                            <td>
+                                @if (m.IsActive)
+                                {
+                                    <span class="badge bg-success">Active</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-warning text-dark">Inactive</span>
+                                }
+                            </td>
+                            <td>
+                                <a class="btn btn-sm btn-outline-primary btn-icon" href="/FormBuilder/Edit/@m.Id" title="Edit Form" aria-label="Edit Form"><i class="fa-solid fa-pen-to-square"></i></a>
+                                <a class="btn btn-sm btn-outline-secondary btn-icon" href="@m.Url" title="Open" aria-label="Open"><i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="8" class="text-center text-muted py-4">No forms configured yet. Create your first screen to get started.</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card admin-card card-group-master">
+            <div class="card-header"><i class="fa-solid fa-database me-2"></i>Master Data Form</div>
+            <div class="card-body">
+                <p class="mb-2">Single-form screens for reference data: Country, Customer, Product, Supplier.</p>
+                <a href="/FormBuilder/Create?group=Master%20Data" class="btn btn-sm btn-outline-primary">
+                    <i class="fa-solid fa-wand-magic-sparkles me-1"></i> New Master Form
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card admin-card card-group-transaction">
+            <div class="card-header"><i class="fa-solid fa-file-invoice me-2"></i>Transaction Form</div>
+            <div class="card-body">
+                <p class="mb-2">Master + detail screens: header form with editable line items (e.g. Sales Order).</p>
+                <a href="/FormBuilder/Create?group=Transaction" class="btn btn-sm btn-outline-success">
+                    <i class="fa-solid fa-diagram-project me-1"></i> New Master + Detail
+                </a>
+            </div>
+        </div>
+    </div>
+</div>

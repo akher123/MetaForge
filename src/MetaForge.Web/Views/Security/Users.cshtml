@@ -1,0 +1,90 @@
+@{
+    ViewData["Title"] = "Users";
+    var users = ViewBag.Users as IReadOnlyList<MetaForge.Application.DTOs.UserManagementDto>;
+    var canManageUsers = ViewBag.CanManageUsers == true;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-0">Users</h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="/Security">Security</a></li>
+                <li class="breadcrumb-item active">Users</li>
+            </ol>
+        </nav>
+    </div>
+    @if (canManageUsers)
+    {
+        <a href="/Security/Users/Create" class="btn btn-primary btn-icon" title="New User" aria-label="New User"><i class="fa-solid fa-user-plus"></i></a>
+    }
+</div>
+
+<div class="card admin-card shadow-sm">
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0" id="usersTable">
+            <thead class="table-light">
+                <tr>
+                    <th>Username</th>
+                    <th>Email</th>
+                    <th>Roles</th>
+                    <th>Status</th>
+                    <th style="width:140px">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (users != null)
+                {
+                    @foreach (var u in users)
+                    {
+                        <tr>
+                            <td><strong>@u.UserName</strong></td>
+                            <td>@u.Email</td>
+                            <td>
+                                @foreach (var role in u.Roles)
+                                {
+                                    <span class="badge bg-secondary me-1">@role</span>
+                                }
+                            </td>
+                            <td>
+                                @if (u.IsActive)
+                                {
+                                    <span class="badge bg-success">Active</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-warning text-dark">Inactive</span>
+                                }
+                            </td>
+                            <td>
+                                @if (canManageUsers)
+                                {
+                                    <a class="btn btn-sm btn-outline-primary btn-icon" href="/Security/Users/Edit/@u.Id" title="Edit" aria-label="Edit"><i class="fa-solid fa-pen-to-square"></i></a>
+                                    @if (u.UserName != "admin")
+                                    {
+                                        <button type="button" class="btn btn-sm btn-outline-danger btn-icon btn-delete-user" data-id="@u.Id" title="Delete" aria-label="Delete"><i class="fa-solid fa-trash"></i></button>
+                                    }
+                                }
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(function () {
+            $('#usersTable').DataTable({ pageLength: 25, order: [[0, 'asc']] });
+            $(document).on('click', '.btn-delete-user', function () {
+                const id = $(this).data('id');
+                if (!confirm('Delete this user?')) return;
+                $.ajax({ url: `/api/metaforge/security/users/${id}`, method: 'DELETE' })
+                    .done(() => location.reload())
+                    .fail(xhr => alert(xhr.responseJSON?.error ?? 'Delete failed'));
+            });
+        });
+    </script>
+}

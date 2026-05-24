@@ -1,0 +1,267 @@
+/**
+ * Shared detail grid row view/edit mode helpers for master-detail engines.
+ */
+const MetaForgeDetailRows = (function () {
+    function createEditState() {
+        return { editing: new Set(), snapshots: {} };
+    }
+
+    function isNewRow(row) {
+        const id = row?.Id ?? row?.id;
+        return id == null || id === '' || parseInt(id, 10) <= 0;
+    }
+
+    function isEditing(state, index) {
+        return state.editing.has(index);
+    }
+
+    function isRowEmpty(row, fields) {
+        if (!row) return true;
+        const skip = new Set(['Id', 'id', '__display']);
+        return !(fields || []).some(field => {
+            const name = field.PropertyName ?? field.propertyName;
+            if (skip.has(name)) return false;
+            const val = row[name];
+            return val != null && val !== '';
+        });
+    }
+
+    function enterEdit(state, rows, index) {
+        if (index == null || !rows[index]) return;
+        state.snapshots[index] = JSON.parse(JSON.stringify(rows[index]));
+        state.editing.add(index);
+    }
+
+    function finishEdit(state, index) {
+        state.editing.delete(index);
+        delete state.snapshots[index];
+    }
+
+    function cancelEdit(state, rows, index, fields) {
+        if (index == null || !rows[index]) return 'noop';
+
+        if (isNewRow(rows[index]) && isRowEmpty(rows[index], fields)) {
+            rows.splice(index, 1);
+            clearEditState(state);
+            return 'removed';
+        }
+
+        if (state.snapshots[index]) {
+            rows[index] = state.snapshots[index];
+        }
+
+        finishEdit(state, index);
+        return 'restored';
+    }
+
+    function clearEditState(state) {
+        state.editing.clear();
+        state.snapshots = {};
+    }
+
+    function getLookupEntity(field) {
+        const name = field.PropertyName ?? field.propertyName ?? '';
+        return field.LookupEntity ?? field.lookupEntity
+            ?? (name.endsWith('Id') ? name.replace(/Id$/, '') : '');
+    }
+
+    function getDisplayValue(row, field, rawValue) {
+        const name = field.PropertyName ?? field.propertyName;
+        const controlType = field.ControlType ?? field.controlType ?? 'TextBox';
+        const val = rawValue ?? row[name];
+
+        if (val == null || val === '') return '—';
+
+        if (controlType === 'Checkbox') {
+            return val === true || val === 'true' || val === 1 || val === '1' ? 'Yes' : 'No';
+        }
+
+        if (controlType === 'Dropdown') {
+            return row.__display?.[name] ?? String(val);
+        }
+
+        if (controlType === 'Date' || controlType === 'DateTime') {
+            const dt = new Date(val);
+            if (!isNaN(dt.getTime())) {
+                return controlType === 'Date'
+                    ? dt.toLocaleDateString()
+                    : dt.toLocaleString();
+            }
+        }
+
+        if (controlType === 'Number') {
+            const num = parseFloat(val);
+            return Number.isNaN(num) ? String(val) : num.toLocaleString(undefined, { maximumFractionDigits: 4 });
+        }
+
+        return String(val);
+    }
+
+    function buildDisplayCell(field, row) {
+        const name = field.PropertyName ?? field.propertyName;
+        const text = getDisplayValue(row, field, row[name]);
+        return `<span class="detail-view-cell" data-field="${escapeAttr(name)}">${escapeHtml(text)}</span>`;
+    }
+
+    function buildInlineControl(field, index, value, options) {
+        const opts = options || {};
+        const name = field.PropertyName ?? field.propertyName;
+        const controlType = field.ControlType ?? field.controlType ?? 'TextBox';
+        const lookupEntity = getLookupEntity(field);
+        const readOnly = opts.readOnly === true;
+        const required = (field.IsRequired ?? field.isRequired) ? 'required' : '';
+        const disabled = readOnly ? 'disabled' : '';
+        const readonly = readOnly ? 'readonly' : '';
+        const val = value ?? '';
+        const dataAttrs = buildDataAttrs(opts.dataAttrs || {}, index, name);
+        const cascadeAttrs = typeof MetaForgeLookups !== 'undefined' ? MetaForgeLookups.cascadeAttrs(field) : '';
+
+        switch (controlType) {
+            case 'TextArea':
+                return `<textarea class="form-control form-control-sm detail-input admin-form-control" ${dataAttrs} rows="2" ${readonly} ${required}>${escapeHtml(val)}</textarea>`;
+            case 'Number':
+                return `<input type="number" step="any" class="form-control form-control-sm detail-input admin-form-control detail-number" ${dataAttrs} value="${escapeAttr(val)}" ${readonly} ${required} />`;
+            case 'Date':
+                return `<input type="date" class="form-control form-control-sm detail-input admin-form-control" ${dataAttrs} value="${escapeAttr(formatDateValue(val))}" ${readonly} ${required} />`;
+            case 'DateTime':
+                return `<input type="datetime-local" class="form-control form-control-sm detail-input admin-form-control" ${dataAttrs} value="${escapeAttr(formatDateTimeValue(val))}" ${readonly} ${required} />`;
+            case 'Checkbox':
+                return `<div class="form-check"><input type="checkbox" class="form-check-input detail-input" ${dataAttrs} ${val ? 'checked' : ''} ${disabled} /></div>`;
+            case 'Dropdown':
+                return `<select class="form-select form-select-sm lookup-select detail-input admin-form-control" ${dataAttrs} data-lookup="${lookupEntity}" ${cascadeAttrs} ${disabled} ${required}></select>`;
+            case 'Hidden':
+                return `<input type="hidden" class="detail-input" ${dataAttrs} value="${escapeAttr(val)}" />`;
+            default:
+                return `<input type="text" class="form-control form-control-sm detail-input admin-form-control" ${dataAttrs} value="${escapeAttr(val)}" ${readonly} ${required} />`;
+        }
+    }
+
+    function buildDataAttrs(extra, index, fieldName) {
+        const attrs = { ...extra, 'data-field': fieldName, 'data-index': index };
+        return Object.entries(attrs)
+            .filter(([, v]) => v != null && v !== '')
+            .map(([k, v]) => `${k}="${escapeAttr(v)}"`)
+            .join(' ');
+    }
+
+    function buildActionCell(row, index, options) {
+        const opts = options || {};
+        const canEdit = opts.canEdit === true;
+        const canDelete = opts.canDelete === true;
+        const editing = opts.editing === true;
+        const extraAttrs = opts.actionDataAttrs || '';
+        const btns = [];
+
+        if (canEdit) {
+            if (editing) {
+                btns.push(`<button type="button" class="btn btn-sm btn-outline-success btn-icon btn-detail-row-done" ${extraAttrs} data-index="${index}" title="Done editing" aria-label="Done editing">${MetaForgeIcons.apply}</button>`);
+                btns.push(`<button type="button" class="btn btn-sm btn-outline-secondary btn-icon btn-detail-row-cancel" ${extraAttrs} data-index="${index}" title="Cancel editing" aria-label="Cancel editing">${MetaForgeIcons.cancel}</button>`);
+            } else {
+                btns.push(`<button type="button" class="btn btn-sm btn-outline-primary btn-icon btn-detail-row-edit" ${extraAttrs} data-index="${index}" title="Edit line" aria-label="Edit line">${MetaForgeIcons.edit}</button>`);
+            }
+        }
+
+        if (canDelete) {
+            btns.push(`<button type="button" class="btn btn-sm btn-outline-danger btn-icon btn-remove-detail" ${extraAttrs} data-index="${index}" title="Remove line" aria-label="Remove line">${MetaForgeIcons.removeLine}</button>`);
+        }
+
+        if (btns.length === 0) return '';
+
+        return `<td class="text-center detail-actions-cell"><div class="btn-group btn-group-sm detail-row-actions">${btns.join('')}</div></td>`;
+    }
+
+    function syncDisplayFromInput(row, field, $input) {
+        const name = field.PropertyName ?? field.propertyName;
+        const controlType = field.ControlType ?? field.controlType ?? 'TextBox';
+
+        if (controlType === 'Dropdown') {
+            row.__display = row.__display || {};
+            const text = $input.find('option:selected').text()?.trim();
+            row.__display[name] = text && text !== '-- Select --' ? text : '';
+        }
+    }
+
+    function resolveDisplayLabels(rows, fields) {
+        const dropdownFields = (fields || []).filter(f => (f.ControlType ?? f.controlType) === 'Dropdown');
+        if (dropdownFields.length === 0 || rows.length === 0) {
+            return $.when();
+        }
+
+        const entityNames = [...new Set(dropdownFields.map(getLookupEntity).filter(Boolean))];
+        const loads = entityNames.map(entity =>
+            $.ajax({ url: `/api/metaforge/lookups/${encodeURIComponent(entity)}`, dataType: 'json', cache: false })
+                .then(items => ({ entity, items: items || [] }))
+        );
+
+        return $.when.apply($, loads).then(function () {
+            const maps = {};
+            const results = arguments.length === 1 ? [arguments[0]] : Array.from(arguments);
+            results.forEach(result => {
+                if (!result?.entity) return;
+                maps[result.entity] = {};
+                (result.items || []).forEach(item => {
+                    const val = item.Value ?? item.value;
+                    maps[result.entity][String(val)] = item.Text ?? item.text ?? String(val);
+                });
+            });
+
+            rows.forEach(row => {
+                row.__display = row.__display || {};
+                dropdownFields.forEach(field => {
+                    const name = field.PropertyName ?? field.propertyName;
+                    const entity = getLookupEntity(field);
+                    const val = row[name];
+                    if (val == null || val === '' || row.__display[name]) return;
+                    row.__display[name] = maps[entity]?.[String(val)] ?? String(val);
+                });
+            });
+        });
+    }
+
+    function escapeHtml(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    function escapeAttr(value) {
+        return escapeHtml(value).replace(/'/g, '&#39;');
+    }
+
+    function formatDateValue(value) {
+        if (!value) return '';
+        const dt = new Date(value);
+        return isNaN(dt.getTime()) ? value : dt.toISOString().slice(0, 10);
+    }
+
+    function formatDateTimeValue(value) {
+        if (!value) return '';
+        const dt = new Date(value);
+        if (isNaN(dt.getTime())) return value;
+        const pad = n => String(n).padStart(2, '0');
+        return `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}T${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
+    }
+
+    return {
+        createEditState,
+        isNewRow,
+        isEditing,
+        isRowEmpty,
+        enterEdit,
+        finishEdit,
+        cancelEdit,
+        clearEditState,
+        getDisplayValue,
+        buildDisplayCell,
+        buildInlineControl,
+        buildActionCell,
+        syncDisplayFromInput,
+        resolveDisplayLabels,
+        escapeHtml,
+        escapeAttr,
+        formatDateValue,
+        formatDateTimeValue
+    };
+})();

@@ -1,0 +1,69 @@
+@{
+    ViewData["Title"] = "Dashboard";
+    var menu = ViewBag.Menu as IReadOnlyList<MetaForge.Application.DTOs.MenuGroupDto>;
+    var canViewConfig = ViewBag.CanViewConfig == true;
+    var canManageConfig = ViewBag.CanManageConfig == true;
+    var canViewSecurity = ViewBag.CanViewSecurity == true;
+}
+
+<div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+    <div>
+        <h1 class="h3 mb-0">Dashboard</h1>
+        <p class="page-subtitle mb-0">Metadata-driven administration for your business entities</p>
+    </div>
+    @if (canViewConfig)
+    {
+        <a href="/FormBuilder" class="btn btn-primary btn-icon" title="Form Builder" aria-label="Form Builder"><i class="fa-solid fa-wand-magic-sparkles"></i></a>
+    }
+</div>
+
+<div class="row g-4">
+    @if (menu != null)
+    {
+        @foreach (var group in menu)
+        {
+            <div class="col-md-6 col-lg-4">
+                <div class="card admin-card dashboard-module-card h-100">
+                    <div class="card-header">@group.GroupName</div>
+                    <div class="list-group list-group-flush">
+                        @foreach (var item in group.Items)
+                        {
+                            <a href="@item.Url" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                                <span><i class="fa-solid fa-table me-2 text-muted"></i>@item.Name</span>
+                                <span class="badge rounded-pill">@item.EntityName</span>
+                            </a>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+@if (canViewConfig || canViewSecurity || canManageConfig)
+{
+    <div class="row mt-4">
+        <div class="col-lg-8">
+            <div class="card admin-card">
+                <div class="card-header">Quick Links</div>
+                <div class="card-body">
+                    <ul class="mb-0" style="color: var(--dv-text-secondary);">
+                        @if (canViewConfig)
+                        {
+                            <li class="mb-2"><a href="/FormBuilder">Form Builder</a> — Design Master Data &amp; Transaction forms</li>
+                        }
+                        @if (canViewSecurity)
+                        {
+                            <li class="mb-2"><a href="/Security">Security Management</a> — Users, Roles &amp; Permissions</li>
+                        }
+                        @if (canManageConfig)
+                        {
+                            <li class="mb-2"><a href="/FormBuilder/Create?group=Master%20Data">New Master Data Form</a></li>
+                            <li><a href="/FormBuilder/Create?group=Transaction">New Transaction Form</a></li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+}

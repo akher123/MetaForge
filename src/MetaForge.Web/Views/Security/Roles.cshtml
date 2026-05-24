@@ -1,0 +1,76 @@
+@{
+    ViewData["Title"] = "Roles";
+    var roles = ViewBag.Roles as IReadOnlyList<MetaForge.Application.DTOs.RoleManagementDto>;
+    var canManageRoles = ViewBag.CanManageRoles == true;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-0">Roles</h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="/Security">Security</a></li>
+                <li class="breadcrumb-item active">Roles</li>
+            </ol>
+        </nav>
+    </div>
+    @if (canManageRoles)
+    {
+        <a href="/Security/Roles/Create" class="btn btn-primary btn-icon" title="New Role" aria-label="New Role"><i class="fa-solid fa-plus"></i></a>
+    }
+</div>
+
+<div class="card admin-card shadow-sm">
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0" id="rolesTable">
+            <thead class="table-light">
+                <tr>
+                    <th>Role Name</th>
+                    <th>Description</th>
+                    <th>Users</th>
+                    <th>Permissions</th>
+                    <th style="width:140px">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (roles != null)
+                {
+                    @foreach (var r in roles)
+                    {
+                        <tr>
+                            <td><strong>@r.Name</strong></td>
+                            <td>@(r.Description ?? "—")</td>
+                            <td><span class="badge bg-info">@r.UserCount</span></td>
+                            <td><span class="badge bg-secondary">@r.PermissionCount</span></td>
+                            <td>
+                                @if (canManageRoles)
+                                {
+                                    <a class="btn btn-sm btn-outline-primary btn-icon" href="/Security/Roles/Edit/@r.Id" title="Edit" aria-label="Edit"><i class="fa-solid fa-pen-to-square"></i></a>
+                                    @if (r.Name != "Administrator")
+                                    {
+                                        <button type="button" class="btn btn-sm btn-outline-danger btn-icon btn-delete-role" data-id="@r.Id" title="Delete" aria-label="Delete"><i class="fa-solid fa-trash"></i></button>
+                                    }
+                                }
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(function () {
+            $('#rolesTable').DataTable({ pageLength: 25, order: [[0, 'asc']] });
+            $(document).on('click', '.btn-delete-role', function () {
+                const id = $(this).data('id');
+                if (!confirm('Delete this role?')) return;
+                $.ajax({ url: `/api/metaforge/security/roles/${id}`, method: 'DELETE' })
+                    .done(() => location.reload())
+                    .fail(xhr => alert(xhr.responseJSON?.error ?? 'Delete failed'));
+            });
+        });
+    </script>
+}

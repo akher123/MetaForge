@@ -1,0 +1,517 @@
+/**
+ * Form Builder — design master and detail forms for admin screens.
+ */
+const FormBuilder = (function () {
+    const CONTROL_TYPES = ['TextBox', 'TextArea', 'Number', 'Date', 'DateTime', 'Checkbox', 'Dropdown', 'Radio', 'FileUpload', 'Hidden'];
+    const RELATION_TYPES = ['OneToOne', 'OneToMany', 'ManyToOne'];
+
+    let state = {
+        masterId: 0,
+        detailId: 0,
+        isEdit: false,
+        screenType: 'Master',
+        detailEntity: null,
+        detailForeignKey: null,
+        entities: []
+    };
+
+    function init() {
+        const $app = $('#formBuilderApp');
+        state.isEdit = $app.data('is-edit') === true || $app.data('is-edit') === 'true';
+        state.entities = window.__formBuilderData?.entities || [];
+
+        $('#groupName').val($app.data('default-group') || 'Master Data');
+        $('#screenType').val($app.data('default-screen-type') || 'Master');
+
+        const screen = window.__formBuilderData?.screen;
+        const legacy = window.__formBuilderData?.module;
+
+        if (screen) {
+            loadScreen(screen);
+        } else if (legacy) {
+            loadMasterConfig(legacy);
+        }
+
+        bindEvents();
+        updateScreenTypeUi();
+        refreshPreviews();
+    }
+
+    function bindEvents() {
+        $('#btnLoadDraft').on('click', loadDraftFromEntity);
+        $('#entitySelect').on('change', onEntitySelected);
+        $('#screenType').on('change', onScreenTypeChanged);
+        $('#btnAddMasterField').on('click', () => addFieldRow('#masterFieldsTable', {}, refreshMasterPreview));
+        $('#btnAddDetailField').on('click', () => addFieldRow('#detailFieldsTable', {}, refreshDetailPreview));
+        $('#btnAddColumn').on('click', () => addColumnRow());
+        $('#btnAddRelation').on('click', () => addRelationRow());
+        $('#btnSaveScreen').on('click', saveScreen);
+
+        $(document).on('click', '.btn-remove-row', function () {
+            const $table = $(this).closest('table');
+            $(this).closest('tr').remove();
+            if ($table.is('#masterFieldsTable')) refreshMasterPreview();
+            if ($table.is('#detailFieldsTable')) refreshDetailPreview();
+        });
+
+        $(document).on('click', '.btn-move-up', function () {
+            const $row = $(this).closest('tr');
+            const $prev = $row.prev();
+            if ($prev.length) {
+                $row.insertBefore($prev);
+                onFieldTableChanged($row.closest('table'));
+            }
+        });
+
+        $(document).on('click', '.btn-move-down', function () {
+            const $row = $(this).closest('tr');
+            const $next = $row.next();
+            if ($next.length) {
+                $row.insertAfter($next);
+                onFieldTableChanged($row.closest('table'));
+            }
+        });
+
+        $(document).on('change input', '#masterFieldsTable input, #masterFieldsTable select', refreshMasterPreview);
+        $(document).on('change input', '#detailFieldsTable input, #detailFieldsTable select', refreshDetailPreview);
+        $(document).on('change', '#relationsTable select, #relationsTable input', syncDetailFromRelations);
+    }
+
+    function onFieldTableChanged($table) {
+        if ($table.is('#masterFieldsTable')) refreshMasterPreview();
+        if ($table.is('#detailFieldsTable')) refreshDetailPreview();
+    }
+
+    function onEntitySelected() {
+        const $opt = $('#entitySelect option:selected');
+        $('#entityName').val($opt.val());
+        $('#tableName').val($opt.data('table') || '');
+        if (!$('#formCode').val()) {
+            $('#formCode').val(($opt.val() || '').toLowerCase());
+        }
+        if (!$('#moduleName').val()) {
+            $('#moduleName').val(splitPascalCase($opt.val() || ''));
+        }
+    }
+
+    function onScreenTypeChanged() {
+        state.screenType = $('#screenType').val();
+        updateScreenTypeUi();
+        if (state.screenType === 'MasterDetail' || state.screenType === 'MasterDetailTabular') {
+            syncDetailFromRelations();
+        }
+    }
+
+    function updateScreenTypeUi() {
+        const screenType = $('#screenType').val();
+        const isMasterDetail = screenType === 'MasterDetail' || screenType === 'MasterDetailTabular';
+        $('#tab-detail-nav').toggleClass('d-none', !isMasterDetail);
+        $('#detailEntityInfo').toggleClass('d-none', !isMasterDetail || !state.detailEntity);
+
+        if (isMasterDetail) {
+            $('#groupName').val('Transaction');
+        }
+    }
+
+    function loadScreen(screen) {
+        state.screenType = screen.ScreenType ?? screen.screenType ?? 'Master';
+        $('#screenType').val(state.screenType);
+
+        loadMasterConfig(screen.Master ?? screen.master);
+        if (screen.Detail ?? screen.detail) {
+            loadDetailConfig(screen.Detail ?? screen.detail);
+        }
+
+        updateScreenTypeUi();
+    }
+
+    function loadMasterConfig(config) {
+        state.masterId = config.Id ?? config.id ?? 0;
+        $('#formCode').val(config.Code ?? config.code ?? '');
+        $('#moduleName').val(config.Name ?? config.name ?? '');
+        $('#entityName').val(config.EntityName ?? config.entityName ?? '');
+        $('#tableName').val(config.TableName ?? config.tableName ?? '');
+        $('#groupName').val(config.GroupName ?? config.groupName ?? 'Master Data');
+        $('#displayOrder').val(config.DisplayOrder ?? config.displayOrder ?? 0);
+        $('#isActive').prop('checked', config.IsActive ?? config.isActive ?? true);
+        $('#entitySelect').val(config.EntityName ?? config.entityName ?? '');
+
+        renderFields('#masterFieldsTable', config.Fields ?? config.fields ?? [], refreshMasterPreview);
+        renderColumns(config.GridColumns ?? config.gridColumns ?? []);
+        renderRelations(config.Relations ?? config.relations ?? []);
+        syncDetailFromRelations();
+    }
+
+    function loadDetailConfig(config) {
+        state.detailId = config.Id ?? config.id ?? 0;
+        renderFields('#detailFieldsTable', config.Fields ?? config.fields ?? [], refreshDetailPreview);
+    }
+
+    function loadDraftFromEntity() {
+        const entity = $('#entitySelect').val();
+        const group = $('#groupName').val();
+        if (!entity) {
+            alert('Please select an entity first.');
+            return;
+        }
+
+        $.getJSON(`/api/metaforge/formconfig/draft/${entity}?groupName=${encodeURIComponent(group)}`)
+            .done(async function (draft) {
+                loadMasterConfig(draft);
+
+                if ($('#screenType').val() === 'MasterDetail' || $('#screenType').val() === 'MasterDetailTabular') {
+                    await loadDetailDraftFromRelations();
+                }
+
+                refreshPreviews();
+            })
+            .fail(xhr => alert('Failed to load draft: ' + (xhr.responseJSON?.error ?? xhr.statusText)));
+    }
+
+    async function loadDetailDraftFromRelations() {
+        const rel = getPrimaryOneToManyRelation();
+        if (!rel) return;
+
+        state.detailEntity = rel.ChildEntity ?? rel.childEntity;
+        state.detailForeignKey = rel.ForeignKey ?? rel.foreignKey;
+        $('#detailEntityName').text(state.detailEntity);
+        $('#detailForeignKey').text(state.detailForeignKey);
+        $('#detailEntityInfo').removeClass('d-none');
+
+        try {
+            let detail = null;
+            try {
+                detail = await $.getJSON(`/api/metaforge/formconfig/by-entity/${state.detailEntity}`);
+            } catch {
+                detail = await $.getJSON(`/api/metaforge/formconfig/draft/${state.detailEntity}?groupName=${encodeURIComponent($('#groupName').val())}`);
+            }
+            loadDetailConfig(detail);
+        } catch {
+            /* detail entity may not exist yet */
+        }
+    }
+
+    function syncDetailFromRelations() {
+        const screenType = $('#screenType').val();
+        if (screenType !== 'MasterDetail' && screenType !== 'MasterDetailTabular') return;
+
+        const rel = getPrimaryOneToManyRelation();
+        if (!rel) {
+            state.detailEntity = null;
+            $('#detailEntityInfo').addClass('d-none');
+            return;
+        }
+
+        state.detailEntity = rel.ChildEntity ?? rel.childEntity;
+        state.detailForeignKey = rel.ForeignKey ?? rel.foreignKey;
+        $('#detailEntityName').text(state.detailEntity);
+        $('#detailForeignKey').text(state.detailForeignKey);
+        $('#detailEntityInfo').removeClass('d-none');
+
+        if ($('#detailFieldsTable tbody tr').length === 0) {
+            loadDetailDraftFromRelations();
+        }
+    }
+
+    function getPrimaryOneToManyRelation() {
+        let found = null;
+        $('#relationsTable tbody tr').each(function (index) {
+            const type = $(this).find('.rel-type').val();
+            if (type === 'OneToMany' && !found) {
+                found = collectRelationRow($(this), index);
+            }
+        });
+        return found;
+    }
+
+    function getOneToManyRelations() {
+        const relations = [];
+        $('#relationsTable tbody tr').each(function (index) {
+            const type = $(this).find('.rel-type').val();
+            if (type === 'OneToMany') {
+                relations.push(collectRelationRow($(this), index));
+            }
+        });
+        return relations;
+    }
+
+    function collectRelationRow($row, index) {
+        return {
+            RelationType: $row.find('.rel-type').val(),
+            ParentEntity: $row.find('.rel-parent').val()?.trim(),
+            ChildEntity: $row.find('.rel-child').val()?.trim(),
+            ForeignKey: $row.find('.rel-fk').val()?.trim(),
+            NavigationProperty: $row.find('.rel-nav').val()?.trim() || null,
+            TabLabel: $row.find('.rel-tab-label').val()?.trim() || null,
+            DisplayOrder: parseInt($row.find('.rel-order').val(), 10) || index
+        };
+    }
+
+    function renderFields(tableSelector, fields, previewFn) {
+        const $tbody = $(`${tableSelector} tbody`).empty();
+        fields.forEach(f => addFieldRow(tableSelector, f, null, false));
+        if (fields.length === 0) addFieldRow(tableSelector, {}, null, false);
+        if (previewFn) previewFn();
+    }
+
+    function renderColumns(columns) {
+        const $tbody = $('#columnsTable tbody').empty();
+        columns.forEach(c => addColumnRow(c));
+        if (columns.length === 0) addColumnRow();
+    }
+
+    function renderRelations(relations) {
+        const $tbody = $('#relationsTable tbody').empty();
+        relations.forEach(r => addRelationRow(r));
+    }
+
+    function addFieldRow(tableSelector, field = {}, previewFn = refreshPreviews, triggerPreview = true) {
+        const controlOptions = CONTROL_TYPES.map(c =>
+            `<option value="${c}" ${(field.ControlType ?? field.controlType) === c ? 'selected' : ''}>${c}</option>`).join('');
+
+        $(`${tableSelector} tbody`).append(`
+            <tr>
+                <td class="col-order">
+                    <div class="btn-group-vertical btn-group-sm">
+                        <button type="button" class="btn btn-outline-secondary btn-sm btn-move-up" title="Move Up" aria-label="Move Up"><i class="fa-solid fa-chevron-up"></i></button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm btn-move-down" title="Move Down" aria-label="Move Down"><i class="fa-solid fa-chevron-down"></i></button>
+                    </div>
+                </td>
+                <td><input type="text" class="form-control form-control-sm field-prop" value="${esc(field.PropertyName ?? field.propertyName ?? '')}" /></td>
+                <td><input type="text" class="form-control form-control-sm field-label" value="${esc(field.Label ?? field.label ?? '')}" /></td>
+                <td><select class="form-select form-select-sm field-control">${controlOptions}</select></td>
+                <td><input type="text" class="form-control form-control-sm field-section" value="${esc(field.SectionName ?? field.sectionName ?? '')}" placeholder="optional" /></td>
+                <td><input type="text" class="form-control form-control-sm field-lookup" value="${esc(field.LookupEntity ?? field.lookupEntity ?? '')}" placeholder="e.g. Country" /></td>
+                <td><input type="text" class="form-control form-control-sm field-cascade-parent" value="${esc(field.LookupParentField ?? field.lookupParentField ?? '')}" placeholder="e.g. CountryId" /></td>
+                <td><input type="text" class="form-control form-control-sm field-cascade-filter" value="${esc(field.LookupFilterField ?? field.lookupFilterField ?? '')}" placeholder="optional" /></td>
+                <td class="text-center"><input type="checkbox" class="form-check-input field-required" ${(field.IsRequired ?? field.isRequired) ? 'checked' : ''} /></td>
+                <td class="text-center"><input type="checkbox" class="form-check-input field-visible" ${(field.IsVisible ?? field.isVisible ?? true) ? 'checked' : ''} /></td>
+                <td class="text-center"><input type="checkbox" class="form-check-input field-readonly" ${(field.IsReadOnly ?? field.isReadOnly) ? 'checked' : ''} /></td>
+                <td><input type="text" class="form-control form-control-sm field-validation" value="${esc(field.ValidationRule ?? field.validationRule ?? '')}" placeholder="MaxLength:50" /></td>
+                <td><button type="button" class="btn btn-sm btn-outline-danger btn-icon btn-remove-row" title="Remove" aria-label="Remove"><i class="fa-solid fa-trash"></i></button></td>
+            </tr>`);
+
+        if (triggerPreview && previewFn) previewFn();
+    }
+
+    function addColumnRow(col = {}) {
+        $('#columnsTable tbody').append(`
+            <tr>
+                <td><input type="text" class="form-control form-control-sm col-prop" value="${esc(col.PropertyName ?? col.propertyName ?? '')}" /></td>
+                <td><input type="text" class="form-control form-control-sm col-label" value="${esc(col.Label ?? col.label ?? '')}" /></td>
+                <td class="text-center"><input type="checkbox" class="form-check-input col-sortable" ${(col.IsSortable ?? col.isSortable ?? true) ? 'checked' : ''} /></td>
+                <td class="text-center"><input type="checkbox" class="form-check-input col-searchable" ${(col.IsSearchable ?? col.isSearchable) ? 'checked' : ''} /></td>
+                <td class="text-center"><input type="checkbox" class="form-check-input col-visible" ${(col.IsVisible ?? col.isVisible ?? true) ? 'checked' : ''} /></td>
+                <td><button type="button" class="btn btn-sm btn-outline-danger btn-icon btn-remove-row" title="Remove" aria-label="Remove"><i class="fa-solid fa-trash"></i></button></td>
+            </tr>`);
+    }
+
+    function addRelationRow(rel = {}) {
+        const typeOptions = RELATION_TYPES.map(t =>
+            `<option value="${t}" ${(rel.RelationType ?? rel.relationType) === t ? 'selected' : ''}>${t}</option>`).join('');
+
+        $('#relationsTable tbody').append(`
+            <tr>
+                <td><select class="form-select form-select-sm rel-type">${typeOptions}</select></td>
+                <td><input type="text" class="form-control form-control-sm rel-parent" value="${esc(rel.ParentEntity ?? rel.parentEntity ?? '')}" /></td>
+                <td><input type="text" class="form-control form-control-sm rel-child" value="${esc(rel.ChildEntity ?? rel.childEntity ?? '')}" /></td>
+                <td><input type="text" class="form-control form-control-sm rel-fk" value="${esc(rel.ForeignKey ?? rel.foreignKey ?? '')}" /></td>
+                <td><input type="text" class="form-control form-control-sm rel-nav" value="${esc(rel.NavigationProperty ?? rel.navigationProperty ?? '')}" /></td>
+                <td><input type="text" class="form-control form-control-sm rel-tab-label" value="${esc(rel.TabLabel ?? rel.tabLabel ?? '')}" placeholder="Tab name" /></td>
+                <td><input type="number" class="form-control form-control-sm rel-order" value="${rel.DisplayOrder ?? rel.displayOrder ?? 0}" min="0" /></td>
+                <td><button type="button" class="btn btn-sm btn-outline-danger btn-icon btn-remove-row" title="Remove" aria-label="Remove"><i class="fa-solid fa-trash"></i></button></td>
+            </tr>`);
+    }
+
+    function collectFields(tableSelector) {
+        const fields = [];
+        $(`${tableSelector} tbody tr`).each(function (i) {
+            const prop = $(this).find('.field-prop').val()?.trim();
+            if (!prop) return;
+            fields.push({
+                PropertyName: prop,
+                Label: $(this).find('.field-label').val()?.trim() || prop,
+                ControlType: $(this).find('.field-control').val(),
+                SectionName: $(this).find('.field-section').val()?.trim() || null,
+                LookupEntity: $(this).find('.field-lookup').val()?.trim() || null,
+                LookupParentField: $(this).find('.field-cascade-parent').val()?.trim() || null,
+                LookupFilterField: $(this).find('.field-cascade-filter').val()?.trim() || null,
+                IsRequired: $(this).find('.field-required').is(':checked'),
+                IsVisible: $(this).find('.field-visible').is(':checked'),
+                IsReadOnly: $(this).find('.field-readonly').is(':checked'),
+                ValidationRule: $(this).find('.field-validation').val()?.trim() || null,
+                DisplayOrder: i
+            });
+        });
+        return fields;
+    }
+
+    function collectMasterConfig() {
+        const gridColumns = [];
+        $('#columnsTable tbody tr').each(function (i) {
+            const prop = $(this).find('.col-prop').val()?.trim();
+            if (!prop) return;
+            gridColumns.push({
+                PropertyName: prop,
+                Label: $(this).find('.col-label').val()?.trim() || prop,
+                IsSortable: $(this).find('.col-sortable').is(':checked'),
+                IsSearchable: $(this).find('.col-searchable').is(':checked'),
+                IsVisible: $(this).find('.col-visible').is(':checked'),
+                DisplayOrder: i
+            });
+        });
+
+        const relations = [];
+        $('#relationsTable tbody tr').each(function (index) {
+            const parent = $(this).find('.rel-parent').val()?.trim();
+            const child = $(this).find('.rel-child').val()?.trim();
+            if (!parent || !child) return;
+            relations.push({
+                RelationType: $(this).find('.rel-type').val(),
+                ParentEntity: parent,
+                ChildEntity: child,
+                ForeignKey: $(this).find('.rel-fk').val()?.trim() || '',
+                NavigationProperty: $(this).find('.rel-nav').val()?.trim() || null,
+                TabLabel: $(this).find('.rel-tab-label').val()?.trim() || null,
+                DisplayOrder: parseInt($(this).find('.rel-order').val(), 10) || index
+            });
+        });
+
+        return {
+            Id: state.masterId,
+            Code: $('#formCode').val()?.trim(),
+            Name: $('#moduleName').val()?.trim(),
+            EntityName: $('#entityName').val()?.trim(),
+            TableName: $('#tableName').val()?.trim(),
+            GroupName: $('#groupName').val(),
+            DisplayOrder: parseInt($('#displayOrder').val(), 10) || 0,
+            IsActive: $('#isActive').is(':checked'),
+            Fields: collectFields('#masterFieldsTable'),
+            GridColumns: gridColumns,
+            Relations: relations
+        };
+    }
+
+    function collectDetailConfig() {
+        const rel = getPrimaryOneToManyRelation();
+        if (!rel) return null;
+
+        const entityMeta = state.entities.find(e =>
+            (e.EntityName ?? e.entityName)?.toLowerCase() === (rel.ChildEntity ?? '').toLowerCase());
+
+        return {
+            Id: state.detailId,
+            Code: (rel.ChildEntity ?? '').toLowerCase(),
+            Name: splitPascalCase(rel.ChildEntity ?? ''),
+            EntityName: rel.ChildEntity,
+            TableName: entityMeta?.TableName ?? entityMeta?.tableName ?? '',
+            GroupName: $('#groupName').val(),
+            DisplayOrder: (parseInt($('#displayOrder').val(), 10) || 0) + 1,
+            IsActive: true,
+            Fields: collectFields('#detailFieldsTable'),
+            GridColumns: [],
+            Relations: []
+        };
+    }
+
+    function saveScreen() {
+        const screenType = $('#screenType').val();
+        const master = collectMasterConfig();
+
+        if (!master.Code || !master.Name || !master.EntityName) {
+            alert('Code, display name, and entity are required.');
+            return;
+        }
+        if (master.Fields.length === 0) {
+            alert('Master form requires at least one field.');
+            return;
+        }
+        if (master.GridColumns.length === 0) {
+            alert('List grid requires at least one column.');
+            return;
+        }
+
+        const payload = {
+            ScreenType: screenType,
+            Master: master,
+            Detail: null
+        };
+
+        if (screenType === 'MasterDetail') {
+            const rel = getPrimaryOneToManyRelation();
+            if (!rel) {
+                alert('Master + Detail requires a OneToMany relation on the Relations tab.');
+                return;
+            }
+            payload.Detail = collectDetailConfig();
+            if (!payload.Detail || payload.Detail.Fields.length === 0) {
+                alert('Detail form requires at least one field.');
+                return;
+            }
+        }
+
+        if (screenType === 'MasterDetailTabular') {
+            const relations = getOneToManyRelations();
+            if (relations.length === 0) {
+                alert('Master + Tabular Details requires at least one OneToMany relation on the Relations tab.');
+                return;
+            }
+            payload.Detail = collectDetailConfig();
+        }
+
+        $.ajax({
+            url: '/api/metaforge/formconfig/screen',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(payload)
+        }).done(function () {
+            alert('Form saved successfully!');
+            window.location = '/FormBuilder';
+        }).fail(function (xhr) {
+            const msg = xhr.responseJSON?.error ?? xhr.responseText ?? xhr.statusText;
+            alert('Save failed: ' + msg);
+        });
+    }
+
+    function refreshPreviews() {
+        refreshMasterPreview();
+        refreshDetailPreview();
+    }
+
+    function refreshMasterPreview() {
+        const fields = collectFields('#masterFieldsTable');
+        DynamicForm.init('#masterFormPreview', {
+            FormName: $('#moduleName').val() || 'Master Form',
+            Fields: fields
+        }, { layoutClass: 'admin-form-preview-layout' });
+        DynamicForm.refreshLookups();
+    }
+
+    function refreshDetailPreview() {
+        const fields = collectFields('#detailFieldsTable');
+        DynamicForm.init('#detailFormPreview', {
+            FormName: state.detailEntity || 'Detail Form',
+            Fields: fields
+        }, { layoutClass: 'admin-form-preview-layout admin-form-inline' });
+        DynamicForm.refreshLookups();
+    }
+
+    function esc(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/"/g, '&quot;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+    }
+
+    function splitPascalCase(value) {
+        return value.replace(/([A-Z])/g, ' $1').trim();
+    }
+
+    return { init };
+})();
+
+/** @deprecated Use FormBuilder — kept for backward compatibility */
+const ModuleConfig = FormBuilder;
+
+$(function () { FormBuilder.init(); });

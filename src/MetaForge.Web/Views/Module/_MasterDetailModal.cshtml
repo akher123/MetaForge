@@ -1,0 +1,55 @@
+@* Full master-detail entry modal for list page *@
+<div class="modal fade admin-modal" id="masterDetailModal" tabindex="-1" aria-labelledby="masterDetailModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="masterDetailModalTitle">Entry</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-section-card">
+                    <div class="section-header">
+                        <span class="section-icon"><i class="fa-solid fa-file-lines"></i></span>
+                        Document Header
+                    </div>
+                    <div class="section-body">
+                        <form id="masterForm" data-module="" data-entity=""></form>
+                    </div>
+                </div>
+
+                <div class="modal-section-card mb-0">
+                    <div class="section-header d-flex justify-content-between align-items-center">
+                        <span><span class="section-icon"><i class="fa-solid fa-table-list"></i></span> <span id="detailSectionLabel">Line Items</span></span>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="detail-count-badge"><span id="detailItemCount">0</span> items</span>
+                            <button type="button" class="btn btn-sm btn-teal btn-icon d-none" id="btnAddDetail" title="Add Item" aria-label="Add Item"><i class="fa-solid fa-plus"></i></button>
+                        </div>
+                    </div>
+                    <div class="section-body p-0">
+                        <div class="table-responsive">
+                            <table id="detailGrid" class="table table-bordered table-hover master-detail-grid mb-0">
+                                <thead>
+                                    <tr id="detailGridHead">
+                                        <th style="width:48px">#</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="detailGridBody"></tbody>
+                                <tfoot>
+                                    <tr id="detailSummaryRow" class="d-none">
+                                        <td colspan="99" class="text-end fw-semibold">
+                                            Line Total: <span id="detailLineTotal">0.00</span>
+                                        </td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary btn-icon" data-bs-dismiss="modal" title="Cancel" aria-label="Cancel"><i class="fa-solid fa-xmark"></i></button>
+                <button type="button" class="btn btn-primary btn-icon d-none" id="btnSaveAll" title="Save" aria-label="Save"><i class="fa-solid fa-floppy-disk"></i></button>
+            </div>
+        </div>
+    </div>
+</div>

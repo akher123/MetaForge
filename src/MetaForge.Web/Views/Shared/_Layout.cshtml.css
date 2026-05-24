@@ -1,0 +1,14 @@
+﻿/* Scoped layout overrides — theme lives in site.css */
+
+a.navbar-brand {
+  white-space: nowrap;
+  word-break: normal;
+}
+
+.footer {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  white-space: nowrap;
+  line-height: 60px;
+}
