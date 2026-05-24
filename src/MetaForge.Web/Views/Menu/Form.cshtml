@@ -9,126 +9,172 @@
     var menuAction = string.IsNullOrEmpty(entry.Action) ? "Index" : entry.Action;
 }
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h1 class="h3 mb-0">@(isEdit ? "Edit Menu Item" : "New Menu Item")</h1>
-        <p class="text-muted mb-0">Define folder, module link, or custom URL for sidebar navigation.</p>
-    </div>
-    <a class="btn btn-outline-secondary btn-icon" href="/Menu" title="Back" aria-label="Back"><i class="fa-solid fa-arrow-left"></i></a>
-</div>
-
-<div id="menuFormApp" class="card admin-card" data-is-edit="@isEdit.ToString().ToLower()">
-    <div class="card-body">
-        <input type="hidden" id="menuId" value="@entry.Id" />
-
-        <div class="row g-3">
-            <div class="col-md-6">
-                <label class="form-label">Parent Folder</label>
-                <select id="parentId" class="form-select">
-                    <option value="">— Root Level —</option>
-                    @if (parentOptions != null)
-                    {
-                        @foreach (var p in parentOptions)
-                        {
-                            var prefix = new string('\u2014', p.Depth);
-                            if (entry.ParentId == p.Id)
-                            {
-                                <option value="@p.Id" selected="selected">@prefix @p.Name</option>
-                            }
-                            else
-                            {
-                                <option value="@p.Id">@prefix @p.Name</option>
-                            }
-                        }
-                    }
-                </select>
-            </div>
-            <div class="col-md-6">
-                <label class="form-label">Name *</label>
-                <input type="text" id="menuName" class="form-control" value="@entry.Name" required />
-            </div>
-            <div class="col-md-4">
-                <label class="form-label">Item Type *</label>
-                <select id="itemType" class="form-select">
-                    @if (itemType == "Folder")
-                    {
-                        <option value="Folder" selected="selected">Folder</option>
-                    }
-                    else
-                    {
-                        <option value="Folder">Folder</option>
-                    }
-                    @if (itemType == "Form")
-                    {
-                        <option value="Form" selected="selected">Module</option>
-                    }
-                    else
-                    {
-                        <option value="Form">Module</option>
-                    }
-                    @if (itemType == "Url")
-                    {
-                        <option value="Url" selected="selected">Custom URL</option>
-                    }
-                    else
-                    {
-                        <option value="Url">Custom URL</option>
-                    }
-                </select>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label">Icon (Font Awesome class)</label>
-                <input type="text" id="menuIcon" class="form-control" value="@entry.Icon" placeholder="fa-database" />
-            </div>
-            <div class="col-md-4">
-                <label class="form-label">Display Order</label>
-                <input type="number" id="displayOrder" class="form-control" value="@entry.DisplayOrder" min="0" />
-            </div>
-
-            <div class="col-md-6 module-fields">
-                <label class="form-label">Module *</label>
-                <select id="moduleId" class="form-select">
-                    <option value="">— Select Module —</option>
-                    @if (moduleOptions != null)
-                    {
-                        @foreach (var m in moduleOptions)
-                        {
-                            if (entry.FormId == m.Id)
-                            {
-                                <option value="@m.Id" selected="selected">@m.Name (@m.Code)</option>
-                            }
-                            else
-                            {
-                                <option value="@m.Id">@m.Name (@m.Code)</option>
-                            }
-                        }
-                    }
-                </select>
-            </div>
-            <div class="col-md-6 module-fields">
-                <label class="form-label">Action *</label>
-                <select id="menuAction" class="form-select">
-                    <option value="Index" selected="@(menuAction == "Index" || menuAction == "MasterDetail")">List / Grid</option>
-                    <option value="Create" selected="@(menuAction == "Create")">Create Form</option>
-                </select>
-            </div>
-
-            <div class="col-md-12 url-fields">
-                <label class="form-label">URL *</label>
-                <input type="text" id="menuUrl" class="form-control" value="@entry.Url" placeholder="/Home/Dashboard" />
-            </div>
-
-            <div class="col-md-12">
-                <div class="form-check">
-                    <input type="checkbox" id="isActive" class="form-check-input" checked="@(entry.IsActive || !isEdit)" />
-                    <label class="form-check-label" for="isActive">Active</label>
-                </div>
+<div id="menuFormApp" data-is-edit="@isEdit.ToString().ToLower()">
+    <div class="page-header menu-page-header d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+        <div class="d-flex align-items-center gap-3">
+            <span class="menu-header-icon" aria-hidden="true"><i class="fa-solid fa-sitemap"></i></span>
+            <div>
+                <h1 class="h3 mb-0">@(isEdit ? "Edit Menu Item" : "New Menu Item")</h1>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-0 mt-1">
+                        <li class="breadcrumb-item"><a href="/Menu">Menu Management</a></li>
+                        <li class="breadcrumb-item active">@(isEdit ? "Edit" : "Create")</li>
+                    </ol>
+                </nav>
             </div>
         </div>
+        <a class="btn btn-outline-secondary" href="/Menu" title="Back" aria-label="Back">
+            <i class="fa-solid fa-arrow-left me-1"></i>Back to List
+        </a>
+    </div>
 
-        <div class="mt-4 d-flex gap-2">
-            <button type="button" id="btnSaveMenu" class="btn btn-primary btn-lg btn-icon" title="Save" aria-label="Save"><i class="fa-solid fa-floppy-disk"></i></button>
-            <a href="/Menu" class="btn btn-secondary btn-lg btn-icon" title="Cancel" aria-label="Cancel"><i class="fa-solid fa-xmark"></i></a>
+    <div class="card admin-card">
+        <div class="card-header"><i class="fa-solid fa-sliders me-2"></i>Menu Item Configuration</div>
+        <div class="card-body">
+            <input type="hidden" id="menuId" value="@entry.Id" />
+            <select id="itemType" class="d-none" aria-hidden="true">
+                <option value="Folder" selected="@(itemType == "Folder")">Folder</option>
+                <option value="Form" selected="@(itemType == "Form")">Module</option>
+                <option value="Url" selected="@(itemType == "Url")">Custom URL</option>
+            </select>
+
+            <div class="menu-form-section">
+                <div class="menu-form-section-title">
+                    <i class="fa-solid fa-diagram-project"></i>Structure
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label" for="parentId">Parent Folder</label>
+                        <select id="parentId" class="form-select">
+                            <option value="">— Root Level —</option>
+                            @if (parentOptions != null)
+                            {
+                                @foreach (var p in parentOptions)
+                                {
+                                    var prefix = new string('\u2014', p.Depth);
+                                    if (entry.ParentId == p.Id)
+                                    {
+                                        <option value="@p.Id" selected="selected">@prefix @p.Name</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@p.Id">@prefix @p.Name</option>
+                                    }
+                                }
+                            }
+                        </select>
+                        <div class="menu-help-text">Choose a folder to nest this item, or leave at root level.</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label" for="menuName">Display Name *</label>
+                        <input type="text" id="menuName" class="form-control" value="@entry.Name" required placeholder="e.g. Customers" />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label" for="displayOrder">Display Order</label>
+                        <input type="number" id="displayOrder" class="form-control" value="@entry.DisplayOrder" min="0" />
+                        <div class="menu-help-text">Lower numbers appear first within the same folder.</div>
+                    </div>
+                    <div class="col-md-8 d-flex align-items-end">
+                        <div class="form-check form-switch mb-2">
+                            <input type="checkbox" id="isActive" class="form-check-input" role="switch" checked="@(entry.IsActive || !isEdit)" />
+                            <label class="form-check-label" for="isActive">Visible in sidebar navigation</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="menu-form-section">
+                <div class="menu-form-section-title">
+                    <i class="fa-solid fa-shapes"></i>Item Type
+                </div>
+                <div class="menu-type-options" role="radiogroup" aria-label="Menu item type">
+                    <label class="menu-type-option @(itemType == "Folder" ? "is-selected" : "")" data-type="Folder">
+                        <input type="radio" name="menuTypeOption" value="Folder" @(itemType == "Folder" ? "checked" : null) />
+                        <span class="menu-type-option-icon type-folder"><i class="fa-solid fa-folder"></i></span>
+                        <span class="menu-type-option-label">Folder</span>
+                        <span class="menu-type-option-desc">Group related menu items under a collapsible section.</span>
+                    </label>
+                    <label class="menu-type-option @(itemType == "Form" ? "is-selected" : "")" data-type="Form">
+                        <input type="radio" name="menuTypeOption" value="Form" @(itemType == "Form" ? "checked" : null) />
+                        <span class="menu-type-option-icon type-module"><i class="fa-solid fa-table"></i></span>
+                        <span class="menu-type-option-label">Module</span>
+                        <span class="menu-type-option-desc">Link to a configured form or grid screen.</span>
+                    </label>
+                    <label class="menu-type-option @(itemType == "Url" ? "is-selected" : "")" data-type="Url">
+                        <input type="radio" name="menuTypeOption" value="Url" @(itemType == "Url" ? "checked" : null) />
+                        <span class="menu-type-option-icon type-url"><i class="fa-solid fa-link"></i></span>
+                        <span class="menu-type-option-label">Custom URL</span>
+                        <span class="menu-type-option-desc">Navigate to any internal page or route.</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="menu-form-section">
+                <div class="menu-form-section-title">
+                    <i class="fa-solid fa-bullseye"></i>Link Target
+                </div>
+
+                <div class="menu-link-panel module-fields" @(itemType != "Form" ? "hidden" : null)>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label" for="moduleId">Module *</label>
+                            <select id="moduleId" class="form-select">
+                                <option value="">— Select Module —</option>
+                                @if (moduleOptions != null)
+                                {
+                                    @foreach (var m in moduleOptions)
+                                    {
+                                        if (entry.FormId == m.Id)
+                                        {
+                                            <option value="@m.Id" selected="selected">@m.Name (@m.Code)</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="@m.Id">@m.Name (@m.Code)</option>
+                                        }
+                                    }
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="menuAction">Open Action *</label>
+                            <select id="menuAction" class="form-select">
+                                <option value="Index" selected="@(menuAction == "Index" || menuAction == "MasterDetail")">List / Grid</option>
+                                <option value="Create" selected="@(menuAction == "Create")">Create Form</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="menu-link-panel url-fields" @(itemType != "Url" ? "hidden" : null)>
+                    <label class="form-label" for="menuUrl">URL *</label>
+                    <input type="text" id="menuUrl" class="form-control" value="@entry.Url" placeholder="/Home/Dashboard" />
+                    <div class="menu-help-text">Use application-relative paths such as <code>/FormBuilder</code> or <code>/Security</code>.</div>
+                </div>
+            </div>
+
+            <div class="menu-form-section">
+                <div class="menu-form-section-title">
+                    <i class="fa-solid fa-palette"></i>Appearance
+                </div>
+                <label class="form-label" for="menuIcon">Icon (Font Awesome class)</label>
+                <div class="menu-icon-field">
+                    <span class="menu-icon-preview" aria-hidden="true">
+                        <i id="menuIconPreview" class="fa-solid fa-folder"></i>
+                    </span>
+                    <input type="text" id="menuIcon" class="form-control" value="@entry.Icon" placeholder="fa-database" />
+                </div>
+                <div class="menu-help-text">Example: <code>fa-database</code>, <code>fa-users</code>, <code>fa-file-invoice</code></div>
+            </div>
+
+            <div class="d-flex flex-wrap gap-2 mt-4">
+                <button type="button" id="btnSaveMenu" class="btn btn-primary">
+                    <i class="fa-solid fa-floppy-disk me-1"></i>Save Menu Item
+                </button>
+                <a href="/Menu" class="btn btn-outline-secondary">
+                    <i class="fa-solid fa-xmark me-1"></i>Cancel
+                </a>
+            </div>
         </div>
     </div>
 </div>

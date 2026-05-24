@@ -1,79 +1,180 @@
 @{
     ViewData["Title"] = "Menu Management";
     var menus = ViewBag.Menus as IReadOnlyList<MetaForge.Application.DTOs.MenuListItemDto>;
+    var menuList = menus?.ToList() ?? new List<MetaForge.Application.DTOs.MenuListItemDto>();
+
+    var folderCount = menuList.Count(m => m.ItemType == "Folder");
+    var moduleCount = menuList.Count(m => m.ItemType is "Form" or "Module");
+    var urlCount = menuList.Count(m => m.ItemType == "Url");
+    var activeCount = menuList.Count(m => m.IsActive);
+
+    string TypeKey(string itemType) => itemType switch
+    {
+        "Folder" => "folder",
+        "Form" or "Module" => "module",
+        _ => "url"
+    };
+
+    string TypeLabel(string itemType) => itemType switch
+    {
+        "Form" or "Module" => "Module",
+        _ => itemType
+    };
+
+    string DefaultIcon(string itemType) => itemType switch
+    {
+        "Folder" => "fa-folder",
+        "Form" or "Module" => "fa-table",
+        _ => "fa-link"
+    };
 }
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h1 class="h3 mb-0">Menu Management</h1>
-        <p class="text-muted mb-0">Configure sidebar navigation with parent and child menu items.</p>
+<div id="menuIndexApp">
+    <div class="page-header menu-page-header d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+        <div class="d-flex align-items-center gap-3">
+            <span class="menu-header-icon" aria-hidden="true"><i class="fa-solid fa-sitemap"></i></span>
+            <div>
+                <h1 class="h3 mb-0">Menu Management</h1>
+                <p class="page-subtitle mb-0">Organize sidebar navigation with folders, modules, and custom links</p>
+            </div>
+        </div>
+        <a class="btn btn-primary" href="/Menu/Create" title="New Menu Item" aria-label="New Menu Item">
+            <i class="fa-solid fa-plus me-1"></i>New Menu Item
+        </a>
     </div>
-    <a class="btn btn-primary btn-icon" href="/Menu/Create" title="New Menu Item" aria-label="New Menu Item"><i class="fa-solid fa-plus"></i></a>
-</div>
 
-<div class="card admin-card">
-    <div class="card-header">Navigation Tree</div>
-    <div class="card-body p-0">
-        <table class="table table-hover mb-0">
-            <thead class="table-light">
-                <tr>
-                    <th>Name</th>
-                    <th>Type</th>
-                    <th>Target</th>
-                    <th>Order</th>
-                    <th>Status</th>
-                    <th style="width:120px">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                @if (menus != null && menus.Count > 0)
-                {
-                    @foreach (var m in menus)
-                    {
-                        var indent = new string('\u00a0', m.Depth * 4);
+    <div class="row g-3 mb-4 menu-stat-grid security-stat-grid">
+        <div class="col-6 col-xl-3">
+            <div class="stat-card stat-primary h-100">
+                <div class="card-body text-center">
+                    <span class="stat-icon stat-icon-folders"><i class="fa-solid fa-folder"></i></span>
+                    <div class="stat-value">@folderCount</div>
+                    <div class="stat-label">Folders</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-xl-3">
+            <div class="stat-card stat-info h-100">
+                <div class="card-body text-center">
+                    <span class="stat-icon stat-icon-modules"><i class="fa-solid fa-table"></i></span>
+                    <div class="stat-value">@moduleCount</div>
+                    <div class="stat-label">Modules</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-xl-3">
+            <div class="stat-card stat-warning h-100">
+                <div class="card-body text-center">
+                    <span class="stat-icon stat-icon-links"><i class="fa-solid fa-link"></i></span>
+                    <div class="stat-value">@urlCount</div>
+                    <div class="stat-label">Custom Links</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-xl-3">
+            <div class="stat-card stat-success h-100">
+                <div class="card-body text-center">
+                    <span class="stat-icon stat-icon-active"><i class="fa-solid fa-circle-check"></i></span>
+                    <div class="stat-value">@activeCount</div>
+                    <div class="stat-label">Active Items</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card admin-card admin-grid-card">
+        <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <span><i class="fa-solid fa-sitemap me-2"></i>Navigation Tree</span>
+            <span class="text-muted small">@menuList.Count item(s)</span>
+        </div>
+        <div class="card-body p-0">
+            @if (menuList.Count == 0)
+            {
+                <div class="menu-empty-state">
+                    <div class="menu-empty-icon" aria-hidden="true"><i class="fa-solid fa-sitemap"></i></div>
+                    <h2 class="h6 mb-2">No menu items yet</h2>
+                    <p class="mb-3">Create folders and links to build your sidebar navigation structure.</p>
+                    <a class="btn btn-primary btn-sm" href="/Menu/Create">
+                        <i class="fa-solid fa-plus me-1"></i>Create First Item
+                    </a>
+                </div>
+            }
+            else
+            {
+                <table class="table table-sm table-striped table-hover w-100 mb-0" id="menuTable">
+                    <thead>
                         <tr>
-                            <td>@Html.Raw(indent)<i class="fa-solid @(m.ItemType == "Folder" ? "fa-folder" : m.ItemType == "Form" || m.ItemType == "Module" ? "fa-table" : "fa-link") me-2 text-muted"></i>@m.Name</td>
-                            <td><span class="badge bg-secondary">@(m.ItemType == "Form" || m.ItemType == "Module" ? "Module" : m.ItemType)</span></td>
-                            <td>
-                                @if (m.ItemType == "Form" || m.ItemType == "Module")
-                                {
-                                    <span>@m.FormName</span>
-                                }
-                                else if (!string.IsNullOrEmpty(m.Url))
-                                {
-                                    <code>@m.Url</code>
-                                }
-                                else
-                                {
-                                    <span class="text-muted">—</span>
-                                }
-                            </td>
-                            <td>@m.DisplayOrder</td>
-                            <td>
-                                @if (m.IsActive)
-                                {
-                                    <span class="badge bg-success">Active</span>
-                                }
-                                else
-                                {
-                                    <span class="badge bg-warning text-dark">Inactive</span>
-                                }
-                            </td>
-                            <td>
-                                <a class="btn btn-sm btn-outline-primary btn-icon" href="/Menu/Edit/@m.Id" title="Edit" aria-label="Edit"><i class="fa-solid fa-pen-to-square"></i></a>
-                                <button type="button" class="btn btn-sm btn-outline-danger btn-icon btn-delete-menu" data-id="@m.Id" data-name="@m.Name" title="Delete" aria-label="Delete"><i class="fa-solid fa-trash"></i></button>
-                            </td>
+                            <th>Menu Item</th>
+                            <th>Type</th>
+                            <th>Target</th>
+                            <th style="width:80px">Order</th>
+                            <th style="width:100px">Status</th>
+                            <th style="width:120px">Actions</th>
                         </tr>
-                    }
-                }
-                else
-                {
-                    <tr>
-                        <td colspan="6" class="text-center text-muted py-4">No menu items configured yet.</td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+                    </thead>
+                    <tbody>
+                        @foreach (var m in menuList)
+                        {
+                            var typeKey = TypeKey(m.ItemType);
+                            <tr class="menu-tree-row" data-depth="@m.Depth">
+                                <td>
+                                    <div class="menu-tree-cell">
+                                        @if (m.Depth > 0)
+                                        {
+                                            <span class="menu-tree-branch" aria-hidden="true"></span>
+                                        }
+                                        <span class="menu-item-icon type-@typeKey" aria-hidden="true">
+                                            <i class="fa-solid @DefaultIcon(m.ItemType)"></i>
+                                        </span>
+                                        <div>
+                                            <span class="menu-item-name">@m.Name</span>
+                                            @if (m.Depth > 0)
+                                            {
+                                                <span class="menu-item-meta">Level @(m.Depth + 1)</span>
+                                            }
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="menu-type-badge type-@typeKey">@TypeLabel(m.ItemType)</span>
+                                </td>
+                                <td>
+                                    @if (m.ItemType is "Form" or "Module")
+                                    {
+                                        <span class="menu-target-text"><i class="fa-solid fa-table me-1 text-muted"></i>@(m.FormName ?? "—")</span>
+                                    }
+                                    else if (!string.IsNullOrEmpty(m.Url))
+                                    {
+                                        <code class="small">@m.Url</code>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">—</span>
+                                    }
+                                </td>
+                                <td><span class="menu-order-badge">@m.DisplayOrder</span></td>
+                                <td>
+                                    @if (m.IsActive)
+                                    {
+                                        <span class="security-status-pill is-active">Active</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="security-status-pill is-inactive">Inactive</span>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="d-flex gap-1">
+                                        <a class="btn btn-sm btn-outline-primary btn-icon" href="/Menu/Edit/@m.Id" title="Edit" aria-label="Edit"><i class="fa-solid fa-pen-to-square"></i></a>
+                                        <button type="button" class="btn btn-sm btn-outline-danger btn-icon btn-delete-menu" data-id="@m.Id" data-name="@m.Name" title="Delete" aria-label="Delete"><i class="fa-solid fa-trash"></i></button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
     </div>
 </div>
 

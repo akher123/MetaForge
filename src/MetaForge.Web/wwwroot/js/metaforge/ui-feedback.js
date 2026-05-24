@@ -51,8 +51,7 @@ const MetaForgeUi = (function () {
             const detailEl = document.getElementById('confirmDeleteModalDetail');
 
             if (titleEl) {
-                titleEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation me-2"></i>' +
-                    escapeHtml(options.title || 'Confirm Delete');
+                titleEl.textContent = options.title || 'Confirm Delete';
             }
 
             if (messageEl) {
@@ -84,13 +83,13 @@ const MetaForgeUi = (function () {
                 : 'fa-circle-xmark';
 
         const alert = document.createElement('div');
-        alert.className = 'alert alert-' + type + ' alert-dismissible fade show app-alert shadow-sm';
+        alert.className = 'alert alert-dismissible fade show app-alert mf-alert mf-alert--' + type;
         alert.setAttribute('role', 'alert');
         alert.innerHTML =
-            '<div class="d-flex align-items-start">' +
-                '<i class="fa-solid ' + iconClass + ' me-2 mt-1"></i>' +
-                '<div class="flex-grow-1">' + escapeHtml(message) + '</div>' +
-                '<button type="button" class="btn-close ms-2" data-bs-dismiss="alert" aria-label="Close"></button>' +
+            '<div class="mf-alert-inner">' +
+                '<span class="mf-alert-icon" aria-hidden="true"><i class="fa-solid ' + iconClass + '"></i></span>' +
+                '<div class="mf-alert-body">' + escapeHtml(message) + '</div>' +
+                '<button type="button" class="btn-close mf-alert-close" data-bs-dismiss="alert" aria-label="Close"></button>' +
             '</div>';
 
         container.appendChild(alert);
@@ -102,7 +101,19 @@ const MetaForgeUi = (function () {
         }
     }
 
-    return { init, confirmDelete, showAlert };
+    function startProgress() {
+        MetaForgeProgress.start();
+    }
+
+    function doneProgress() {
+        MetaForgeProgress.done();
+    }
+
+    function finishPageLoad() {
+        MetaForgeProgress.finishPageLoad();
+    }
+
+    return { init, confirmDelete, showAlert, startProgress, doneProgress, finishPageLoad };
 })();
 
 $(function () {

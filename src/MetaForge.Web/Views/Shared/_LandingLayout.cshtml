@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="stylesheet" href="~/css/landing.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/top-progress.css" asp-append-version="true" />
 </head>
 <body class="landing-body">
     <a href="#main-content" class="landing-skip">Skip to content</a>
@@ -39,6 +40,9 @@
                 </div>
             </div>
         </nav>
+        <div id="topProgress" class="top-progress" aria-hidden="true" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Page loading">
+            <div id="topProgressBar" class="top-progress-bar"></div>
+        </div>
     </header>
 
     <main id="main-content">
@@ -59,6 +63,7 @@
     </footer>
 
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/metaforge/top-progress.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

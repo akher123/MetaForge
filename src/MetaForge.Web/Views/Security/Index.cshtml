@@ -1,5 +1,6 @@
 @{
     ViewData["Title"] = "Security Management";
+    ViewBag.SecurityNav = "overview";
     var overview = ViewBag.Overview as MetaForge.Application.DTOs.SecurityOverviewDto;
     var canViewUsers = ViewBag.CanViewUsers == true;
     var canManageUsers = ViewBag.CanManageUsers == true;
@@ -9,40 +10,50 @@
     var canSyncPermissions = ViewBag.CanSyncPermissions == true;
 }
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h1 class="h3 mb-0">Security Management</h1>
-        <p class="text-muted mb-0">Manage users, roles, and permissions</p>
+<div class="page-header security-page-header d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+    <div class="d-flex align-items-center gap-3">
+        <span class="security-header-icon" aria-hidden="true"><i class="fa-solid fa-shield-halved"></i></span>
+        <div>
+            <h1 class="h3 mb-0">Security Management</h1>
+            <p class="page-subtitle mb-0">Control users, roles, and module permissions across the platform</p>
+        </div>
     </div>
     @if (canSyncPermissions)
     {
-        <button type="button" id="btnSyncPermissions" class="btn btn-outline-primary btn-icon" title="Sync Module Permissions" aria-label="Sync Module Permissions"><i class="fa-solid fa-rotate"></i></button>
+        <button type="button" id="btnSyncPermissions" class="btn btn-outline-primary" title="Sync Module Permissions" aria-label="Sync Module Permissions">
+            <i class="fa-solid fa-rotate me-1"></i>Sync Permissions
+        </button>
     }
 </div>
 
+@await Html.PartialAsync("_SecuritySubnav")
+
 @if (canViewUsers)
 {
-    <div class="row g-4 mb-4">
-        <div class="col-md-3">
+    <div class="row g-3 mb-4 security-stat-grid">
+        <div class="col-sm-6 col-xl-3">
             <div class="stat-card stat-primary h-100">
-                <div class="card-body text-center py-4">
+                <div class="card-body text-center">
+                    <span class="stat-icon stat-icon-users"><i class="fa-solid fa-users"></i></span>
                     <div class="stat-value">@(overview?.UserCount ?? 0)</div>
                     <div class="stat-label">Total Users</div>
                     <small class="stat-meta text-success">@(overview?.ActiveUserCount ?? 0) active</small>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-sm-6 col-xl-3">
             <div class="stat-card stat-info h-100">
-                <div class="card-body text-center py-4">
+                <div class="card-body text-center">
+                    <span class="stat-icon stat-icon-roles"><i class="fa-solid fa-shield-halved"></i></span>
                     <div class="stat-value">@(overview?.RoleCount ?? 0)</div>
                     <div class="stat-label">Roles</div>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-sm-6 col-xl-3">
             <div class="stat-card stat-warning h-100">
-                <div class="card-body text-center py-4">
+                <div class="card-body text-center">
+                    <span class="stat-icon stat-icon-perms"><i class="fa-solid fa-key"></i></span>
                     <div class="stat-value">@(overview?.PermissionCount ?? 0)</div>
                     <div class="stat-label">Permissions</div>
                 </div>
@@ -50,11 +61,14 @@
         </div>
         @if (canManageUsers)
         {
-            <div class="col-md-3">
+            <div class="col-sm-6 col-xl-3">
                 <div class="stat-card stat-accent h-100">
-                    <div class="card-body d-flex flex-column justify-content-center align-items-center py-4">
-                        <div class="fw-semibold mb-2 stat-label">Quick Access</div>
-                        <a href="/Security/Users/Create" class="btn btn-light btn-sm btn-icon" title="New User" aria-label="New User"><i class="fa-solid fa-user-plus"></i></a>
+                    <div class="card-body d-flex flex-column justify-content-center align-items-center text-center">
+                        <span class="stat-icon stat-icon-quick"><i class="fa-solid fa-bolt"></i></span>
+                        <div class="stat-label mb-2">Quick Action</div>
+                        <a href="/Security/Users/Create" class="btn btn-light btn-sm">
+                            <i class="fa-solid fa-user-plus me-1"></i>New User
+                        </a>
                     </div>
                 </div>
             </div>
@@ -66,11 +80,14 @@
     @if (canViewUsers)
     {
         <div class="col-md-4">
-            <div class="card admin-card h-100">
-                <div class="card-header"><i class="fa-solid fa-users me-2"></i>Users</div>
+            <div class="card admin-card security-hub-card h-100">
                 <div class="card-body">
-                    <p>Create and manage application users. Assign roles to control access.</p>
-                    <a href="/Security/Users" class="btn btn-primary btn-icon" title="Manage Users" aria-label="Manage Users"><i class="fa-solid fa-users"></i></a>
+                    <span class="security-hub-icon security-hub-icon-users"><i class="fa-solid fa-users"></i></span>
+                    <h2 class="h6 mb-0 fw-bold">Users</h2>
+                    <p>Create accounts, assign roles, and manage access for each team member.</p>
+                    <a href="/Security/Users" class="btn btn-primary btn-sm align-self-start">
+                        <i class="fa-solid fa-arrow-right me-1"></i>Manage Users
+                    </a>
                 </div>
             </div>
         </div>
@@ -78,11 +95,14 @@
     @if (canViewRoles)
     {
         <div class="col-md-4">
-            <div class="card admin-card h-100">
-                <div class="card-header"><i class="fa-solid fa-shield-halved me-2"></i>Roles</div>
+            <div class="card admin-card security-hub-card h-100">
                 <div class="card-body">
-                    <p>Define roles and assign module permissions using a permission matrix.</p>
-                    <a href="/Security/Roles" class="btn btn-primary btn-icon" title="Manage Roles" aria-label="Manage Roles"><i class="fa-solid fa-shield-halved"></i></a>
+                    <span class="security-hub-icon security-hub-icon-roles"><i class="fa-solid fa-shield-halved"></i></span>
+                    <h2 class="h6 mb-0 fw-bold">Roles</h2>
+                    <p>Group permissions into roles and assign them using the permission matrix.</p>
+                    <a href="/Security/Roles" class="btn btn-primary btn-sm align-self-start">
+                        <i class="fa-solid fa-arrow-right me-1"></i>Manage Roles
+                    </a>
                 </div>
             </div>
         </div>
@@ -90,11 +110,14 @@
     @if (canViewPermissions)
     {
         <div class="col-md-4">
-            <div class="card admin-card h-100">
-                <div class="card-header"><i class="fa-solid fa-key me-2"></i>Permissions</div>
+            <div class="card admin-card security-hub-card h-100">
                 <div class="card-body">
-                    <p>View all module permissions. Sync permissions when new modules are added.</p>
-                    <a href="/Security/Permissions" class="btn btn-primary btn-icon" title="View Permissions" aria-label="View Permissions"><i class="fa-solid fa-key"></i></a>
+                    <span class="security-hub-icon security-hub-icon-perms"><i class="fa-solid fa-key"></i></span>
+                    <h2 class="h6 mb-0 fw-bold">Permissions</h2>
+                    <p>Browse all module permissions and sync new ones when forms are added.</p>
+                    <a href="/Security/Permissions" class="btn btn-primary btn-sm align-self-start">
+                        <i class="fa-solid fa-arrow-right me-1"></i>View Permissions
+                    </a>
                 </div>
             </div>
         </div>
@@ -106,9 +129,16 @@
     {
         <script>
             $('#btnSyncPermissions').on('click', function () {
+                const $btn = $(this).prop('disabled', true);
                 $.post('/api/metaforge/security/permissions/sync')
-                    .done(r => { alert(r.message); location.reload(); })
-                    .fail(xhr => alert(xhr.responseJSON?.error ?? 'Sync failed'));
+                    .done(function (r) {
+                        MetaForgeUi.showAlert(r.message || 'Permissions synced.', 'success', 3000);
+                        window.setTimeout(function () { location.reload(); }, 900);
+                    })
+                    .fail(function (xhr) {
+                        MetaForgeUi.showAlert(xhr.responseJSON?.error ?? 'Sync failed.', 'danger');
+                    })
+                    .always(function () { $btn.prop('disabled', false); });
             });
         </script>
     }

@@ -1,0 +1,81 @@
+/* Top loading progress bar — sits below the header for contrast */
+:root {
+  --mf-progress-offset: 0px;
+}
+
+body.metaforge-app {
+  --mf-progress-offset: var(--app-navbar-height, 56px);
+}
+
+body.landing-body {
+  --mf-progress-offset: var(--landing-header-height, 60px);
+}
+
+.landing-header {
+  --landing-header-height: 60px;
+}
+
+.top-progress {
+  pointer-events: none;
+  position: fixed;
+  top: var(--mf-progress-offset);
+  left: 0;
+  z-index: 1050;
+  width: 100%;
+  height: 4px;
+  overflow: hidden;
+  background: transparent;
+  transition: background 0.15s ease;
+}
+
+.top-progress.is-active,
+.top-progress.is-complete {
+  background: rgba(15, 23, 42, 0.06);
+}
+
+body.metaforge-app .top-progress.is-active,
+body.metaforge-app .top-progress.is-complete {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.18) 0%,
+    rgba(255, 255, 255, 0.06) 100%
+  );
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+.top-progress-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, #22d3ee 0%, #06b6d4 45%, #fbbf24 100%);
+  box-shadow:
+    0 0 14px rgba(34, 211, 238, 0.95),
+    0 0 6px rgba(251, 191, 36, 0.75),
+    0 1px 0 rgba(255, 255, 255, 0.45);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.15s ease-out;
+  will-change: transform;
+}
+
+.top-progress.is-active .top-progress-bar {
+  transition: transform 0.15s ease-out;
+}
+
+.top-progress.is-complete .top-progress-bar {
+  transition: transform 0.25s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .top-progress-bar {
+    transition: none;
+  }
+}
+
+@media (max-width: 991.98px) {
+  body.metaforge-app {
+    --mf-progress-offset: var(--app-navbar-height, 56px);
+  }
+}

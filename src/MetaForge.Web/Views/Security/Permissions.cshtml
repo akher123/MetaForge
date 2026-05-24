@@ -1,53 +1,104 @@
 @{
     ViewData["Title"] = "Permissions";
+    ViewBag.SecurityNav = "permissions";
     var groups = ViewBag.PermissionGroups as IReadOnlyList<MetaForge.Application.DTOs.PermissionGroupDto>;
     var canSyncPermissions = ViewBag.CanSyncPermissions == true;
+
+    string ActionClass(string action) => action switch
+    {
+        "View" => "action-view",
+        "Create" => "action-create",
+        "Edit" => "action-edit",
+        "Delete" => "action-delete",
+        "Export" => "action-export",
+        _ => "action-default"
+    };
+
+    var categories = (groups ?? [])
+        .GroupBy(g => g.CategoryName)
+        .OrderBy(c => c.Key switch
+        {
+            "System Administration" => 0,
+            "Master Data" => 1,
+            "Transaction" => 2,
+            _ => 3
+        })
+        .ThenBy(c => c.Key)
+        .ToList();
+
+    var totalPermissions = groups?.Sum(g => g.Permissions.Count) ?? 0;
 }
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h1 class="h3 mb-0">Permissions</h1>
-        <nav aria-label="breadcrumb">
-            <ol class="breadcrumb mb-0">
-                <li class="breadcrumb-item"><a href="/Security">Security</a></li>
-                <li class="breadcrumb-item active">Permissions</li>
-            </ol>
-        </nav>
+<div class="page-header security-page-header d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+    <div class="d-flex align-items-center gap-3">
+        <span class="security-header-icon" aria-hidden="true"><i class="fa-solid fa-key"></i></span>
+        <div>
+            <h1 class="h3 mb-0">Permissions</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0 mt-1">
+                    <li class="breadcrumb-item"><a href="/Security">Security</a></li>
+                    <li class="breadcrumb-item active">Permissions</li>
+                </ol>
+            </nav>
+        </div>
     </div>
     @if (canSyncPermissions)
     {
-        <button type="button" id="btnSyncPermissions" class="btn btn-outline-primary btn-icon" title="Sync Module Permissions" aria-label="Sync Module Permissions"><i class="fa-solid fa-rotate"></i></button>
+        <button type="button" id="btnSyncPermissions" class="btn btn-outline-primary" title="Sync Module Permissions" aria-label="Sync Module Permissions">
+            <i class="fa-solid fa-rotate me-1"></i>Sync Permissions
+        </button>
     }
 </div>
 
-@foreach (var group in groups ?? [])
+@await Html.PartialAsync("_SecuritySubnav")
+
+<div class="card admin-card mb-4">
+    <div class="card-body py-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
+        <div>
+            <div class="fw-semibold">@totalPermissions permissions across @categories.Count category(ies)</div>
+            <div class="text-muted small">Permissions are generated from configured forms and assigned through roles.</div>
+        </div>
+    </div>
+</div>
+
+@foreach (var category in categories)
 {
-    <div class="card admin-card shadow-sm mb-3">
-        <div class="card-header fw-semibold">
-            @group.GroupName
-            <span class="badge bg-secondary ms-2">@group.Permissions.Count</span>
+    var moduleCount = category.Count();
+    var permCount = category.Sum(g => g.Permissions.Count);
+
+    <div class="card admin-card admin-grid-card mb-4">
+        <div class="security-permission-category-header">
+            <h2 class="security-permission-category-title">@category.Key</h2>
+            <span class="security-permission-category-meta">@moduleCount module(s) · @permCount permission(s)</span>
         </div>
-        <div class="card-body p-0">
-            <table class="table table-sm mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th>Code</th>
-                        <th>Name</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var p in group.Permissions)
-                    {
+
+        @foreach (var group in category.OrderBy(g => g.GroupName))
+        {
+            <div class="security-permission-module">
+                @group.GroupName <code>@group.FormCode</code>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-sm table-striped table-hover mb-0">
+                    <thead>
                         <tr>
-                            <td><code>@p.Code</code></td>
-                            <td>@p.Name</td>
-                            <td><span class="badge bg-light text-dark border">@p.Action</span></td>
+                            <th>Code</th>
+                            <th>Name</th>
+                            <th style="width:120px">Action</th>
                         </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
+                    </thead>
+                    <tbody>
+                        @foreach (var p in group.Permissions)
+                        {
+                            <tr>
+                                <td><code>@p.Code</code></td>
+                                <td>@p.Name</td>
+                                <td><span class="permission-action-badge @ActionClass(p.Action)">@p.Action</span></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
     </div>
 }
 
@@ -56,9 +107,16 @@
     {
         <script>
             $('#btnSyncPermissions').on('click', function () {
+                const $btn = $(this).prop('disabled', true);
                 $.post('/api/metaforge/security/permissions/sync')
-                    .done(r => { alert(r.message); location.reload(); })
-                    .fail(xhr => alert(xhr.responseJSON?.error ?? 'Sync failed'));
+                    .done(function (r) {
+                        MetaForgeUi.showAlert(r.message || 'Permissions synced.', 'success', 3000);
+                        window.setTimeout(function () { location.reload(); }, 900);
+                    })
+                    .fail(function (xhr) {
+                        MetaForgeUi.showAlert(xhr.responseJSON?.error ?? 'Sync failed.', 'danger');
+                    })
+                    .always(function () { $btn.prop('disabled', false); });
             });
         </script>
     }

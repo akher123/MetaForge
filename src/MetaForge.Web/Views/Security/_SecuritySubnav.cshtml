@@ -1,0 +1,26 @@
+@{
+    var active = ViewBag.SecurityNav as string ?? "";
+}
+
+<ul class="nav nav-pills security-subnav mb-4" role="tablist" aria-label="Security sections">
+    <li class="nav-item" role="presentation">
+        <a class="nav-link @(active == "overview" ? "active" : "")" href="/Security" @(active == "overview" ? "aria-current=\"page\"" : "")>
+            <i class="fa-solid fa-gauge-high me-1"></i>Overview
+        </a>
+    </li>
+    <li class="nav-item" role="presentation">
+        <a class="nav-link @(active == "users" ? "active" : "")" href="/Security/Users" @(active == "users" ? "aria-current=\"page\"" : "")>
+            <i class="fa-solid fa-users me-1"></i>Users
+        </a>
+    </li>
+    <li class="nav-item" role="presentation">
+        <a class="nav-link @(active == "roles" ? "active" : "")" href="/Security/Roles" @(active == "roles" ? "aria-current=\"page\"" : "")>
+            <i class="fa-solid fa-shield-halved me-1"></i>Roles
+        </a>
+    </li>
+    <li class="nav-item" role="presentation">
+        <a class="nav-link @(active == "permissions" ? "active" : "")" href="/Security/Permissions" @(active == "permissions" ? "aria-current=\"page\"" : "")>
+            <i class="fa-solid fa-key me-1"></i>Permissions
+        </a>
+    </li>
+</ul>

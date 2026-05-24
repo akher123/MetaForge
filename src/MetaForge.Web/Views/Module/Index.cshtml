@@ -8,88 +8,111 @@
     var isTabularMasterDetail = ViewBag.IsTabularMasterDetail == true;
     var openMasterDetailId = ViewBag.OpenMasterDetailId as int?;
     var openMasterDetailNew = ViewBag.OpenMasterDetailNew == true;
+    var pageModeClass = hasMasterDetail ? "module-page--transaction" : "module-page--master";
+    var pageIcon = hasMasterDetail ? "fa-file-invoice" : "fa-database";
+    var pageSubtitle = hasMasterDetail
+        ? "Create and manage transaction documents with header and line items"
+        : "Browse, create, and maintain master data records";
 }
 
-<div class="app-page-fill">
-<div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-3">
-    <div>
-        <h1 class="h3 mb-0">@form?.FormName</h1>
-        <p class="page-subtitle mb-0">Manage records and transactions</p>
+<div class="app-page-fill module-page @pageModeClass">
+    <div class="page-header module-page-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <div class="d-flex align-items-center gap-3">
+            <span class="module-page-icon" aria-hidden="true"><i class="fa-solid @pageIcon"></i></span>
+            <div>
+                <h1 class="h3 mb-0">@form?.FormName</h1>
+                <p class="page-subtitle mb-0">@pageSubtitle</p>
+            </div>
+        </div>
+        <div class="d-flex flex-wrap gap-2 module-page-actions">
+            @if (hasMasterDetail && perms?.CanCreate == true)
+            {
+                <button type="button" class="btn btn-primary" id="btnAddMasterDetail" title="New @form?.FormName" aria-label="New @form?.FormName">
+                    <i class="fa-solid fa-plus me-1"></i>New @form?.FormName
+                </button>
+            }
+            else if (!hasMasterDetail && perms?.CanCreate == true)
+            {
+                <button type="button" class="btn btn-primary" id="btnAdd" data-module="@formCode" data-entity="@form?.EntityName" title="Add New" aria-label="Add New">
+                    <i class="fa-solid fa-plus me-1"></i>Add New
+                </button>
+            }
+            @if (perms?.CanExport == true)
+            {
+                <a class="btn btn-outline-success" href="/api/metaforge/grid/@formCode/export/excel?Page=1&PageSize=1000" title="Export Excel" aria-label="Export Excel" data-no-progress>
+                    <i class="fa-solid fa-file-excel me-1"></i>Excel
+                </a>
+                <a class="btn btn-outline-secondary" href="/api/metaforge/grid/@formCode/export/csv?Page=1&PageSize=1000" title="Export CSV" aria-label="Export CSV" data-no-progress>
+                    <i class="fa-solid fa-file-csv me-1"></i>CSV
+                </a>
+            }
+        </div>
     </div>
-    <div class="d-flex flex-wrap gap-2">
-        @if (hasMasterDetail && perms?.CanCreate == true)
-        {
-            <button type="button" class="btn btn-primary btn-icon" id="btnAddMasterDetail" title="New @form?.FormName" aria-label="New @form?.FormName"><i class="fa-solid fa-plus"></i></button>
-        }
-        else if (!hasMasterDetail && perms?.CanCreate == true)
-        {
-            <button type="button" class="btn btn-primary btn-icon" id="btnAdd" data-module="@formCode" data-entity="@form?.EntityName" title="Add New" aria-label="Add New">
-                <i class="fa-solid fa-plus"></i>
-            </button>
-        }
-        @if (perms?.CanExport == true)
-        {
-            <a class="btn btn-outline-success btn-icon" href="/api/metaforge/grid/@formCode/export/excel?Page=1&PageSize=1000" title="Export Excel" aria-label="Export Excel"><i class="fa-solid fa-file-excel"></i></a>
-            <a class="btn btn-outline-secondary btn-icon" href="/api/metaforge/grid/@formCode/export/csv?Page=1&PageSize=1000" title="Export CSV" aria-label="Export CSV"><i class="fa-solid fa-file-csv"></i></a>
-        }
-    </div>
-</div>
 
-@if (!hasMasterDetail && (perms?.CanCreate == true || perms?.CanEdit == true))
-{
-    <div class="modal fade admin-modal" id="recordFormModal" tabindex="-1" aria-labelledby="recordFormModalTitle" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-scrollable">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="recordFormModalTitle">New Record</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="dynamicForm" data-module="@formCode" data-entity="@form?.EntityName"></form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary btn-icon" data-bs-dismiss="modal" title="Cancel" aria-label="Cancel"><i class="fa-solid fa-xmark"></i></button>
-                    <button type="button" class="btn btn-primary btn-icon" id="btnSave" title="Save" aria-label="Save"><i class="fa-solid fa-floppy-disk"></i></button>
+    @if (!hasMasterDetail && (perms?.CanCreate == true || perms?.CanEdit == true))
+    {
+        <div class="modal fade admin-modal module-record-modal" id="recordFormModal" tabindex="-1" aria-labelledby="recordFormModalTitle" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="recordFormModalTitle">New Record</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="module-form-shell">
+                            <form id="dynamicForm" class="master-detail-form" data-module="@formCode" data-entity="@form?.EntityName"></form>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                            <i class="fa-solid fa-xmark me-1"></i>Cancel
+                        </button>
+                        <button type="button" class="btn btn-primary" id="btnSave">
+                            <i class="fa-solid fa-floppy-disk me-1"></i>Save
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-}
+    }
 
-@if (hasMasterDetail && isTabularMasterDetail)
-{
-    @await Html.PartialAsync("_MasterDetailTabularModal")
-}
-else if (hasMasterDetail)
-{
-    @await Html.PartialAsync("_MasterDetailModal")
-}
+    @if (hasMasterDetail && isTabularMasterDetail)
+    {
+        @await Html.PartialAsync("_MasterDetailTabularModal")
+    }
+    else if (hasMasterDetail)
+    {
+        @await Html.PartialAsync("_MasterDetailModal")
+    }
 
-<div class="card admin-card admin-grid-card admin-grid-card--fill">
-    <div class="card-header"><i class="fa-solid fa-table me-2"></i>Records</div>
-    <div class="card-body p-0">
-        <table id="dynamicGrid" class="table table-sm table-striped table-hover w-100 mb-0"
-               data-module="@formCode"
-               data-entity="@grid?.Entity"
-               data-has-master-detail="@(hasMasterDetail ? "true" : "false")">
-            <thead>
-                <tr>
-                    @if (grid?.Columns != null)
-                    {
-                        @foreach (var col in grid.Columns)
+    <div class="card admin-card admin-grid-card admin-grid-card--fill module-grid-card">
+        <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <span><i class="fa-solid fa-table me-2"></i>@(hasMasterDetail ? "Documents" : "Records")</span>
+            <span class="text-muted small module-grid-hint">Use row actions to edit or remove entries</span>
+        </div>
+        <div class="card-body p-0">
+            <table id="dynamicGrid" class="table table-sm table-striped table-hover w-100 mb-0"
+                   data-module="@formCode"
+                   data-entity="@grid?.Entity"
+                   data-has-master-detail="@(hasMasterDetail ? "true" : "false")">
+                <thead>
+                    <tr>
+                        @if (grid?.Columns != null)
                         {
-                            <th data-property="@col.PropertyName">@col.Label</th>
+                            @foreach (var col in grid.Columns)
+                            {
+                                <th data-property="@col.PropertyName">@col.Label</th>
+                            }
                         }
-                    }
-                    @if (perms?.CanEdit == true || perms?.CanDelete == true || (hasMasterDetail && perms?.CanView == true))
-                    {
-                        <th>Actions</th>
-                    }
-                </tr>
-            </thead>
-        </table>
+                        @if (perms?.CanEdit == true || perms?.CanDelete == true || (hasMasterDetail && perms?.CanView == true))
+                        {
+                            <th>Actions</th>
+                        }
+                    </tr>
+                </thead>
+            </table>
+        </div>
     </div>
-</div>
 </div>
 
 @section Scripts {

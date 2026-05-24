@@ -47,7 +47,7 @@ const DynamicGrid = (function () {
         bindActionHandlers();
 
         table = $table.DataTable({
-            processing: true,
+            processing: false,
             serverSide: true,
             scrollX: true,
             autoWidth: false,
@@ -70,6 +70,7 @@ const DynamicGrid = (function () {
                     url: '/api/metaforge/grid/data',
                     method: 'POST',
                     contentType: 'application/json',
+                    metaforgeProgress: false,
                     data: JSON.stringify(request),
                     success: function (response) {
                         callback({
@@ -78,6 +79,9 @@ const DynamicGrid = (function () {
                             recordsFiltered: response.TotalCount ?? response.totalCount ?? 0,
                             data: response.Items ?? response.items ?? []
                         });
+                        if (typeof MetaForgeProgress !== 'undefined') {
+                            MetaForgeProgress.finishPageLoad();
+                        }
                     },
                     error: function (xhr) {
                         console.error('Grid load failed:', xhr.responseText || xhr.statusText);
@@ -92,13 +96,19 @@ const DynamicGrid = (function () {
                             recordsFiltered: 0,
                             data: []
                         });
+                        if (typeof MetaForgeProgress !== 'undefined') {
+                            MetaForgeProgress.finishPageLoad();
+                        }
                     }
                 });
             },
             columns: buildColumns(columns),
             order: [[0, 'asc']],
             pageLength: 15,
-            lengthMenu: [[10, 15, 25, 50], [10, 15, 25, 50]]
+            lengthMenu: [[10, 15, 25, 50], [10, 15, 25, 50]],
+            drawCallback: function () {
+                $table.closest('.dataTables_wrapper').find('.dataTables_processing').hide();
+            }
         });
     }
 

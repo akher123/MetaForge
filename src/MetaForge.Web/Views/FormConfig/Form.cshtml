@@ -5,271 +5,334 @@
     var module = screen?.Master ?? ViewBag.Form as MetaForge.Application.DTOs.FormConfigDto;
     var entities = ViewBag.Entities as IReadOnlyList<MetaForge.Application.DTOs.DiscoveredEntityOptionDto>;
     var defaultGroup = Context.Request.Query["group"].FirstOrDefault() ?? "Master Data";
+    var defaultScreenType = defaultGroup == "Transaction" ? "MasterDetail" : "Master";
 }
-
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h1 class="h3 mb-0">@(isEdit ? "Edit Form" : "New Form")</h1>
-        <p class="text-muted mb-0">Design master and detail forms, list grid, and relationships.</p>
-    </div>
-    <a class="btn btn-outline-secondary btn-icon" href="/FormBuilder" title="Back to Form Builder" aria-label="Back to Form Builder"><i class="fa-solid fa-arrow-left"></i></a>
-</div>
 
 <div id="formBuilderApp"
      class="form-builder-app"
      data-is-edit="@isEdit.ToString().ToLower()"
      data-default-group="@defaultGroup"
-     data-default-screen-type="@(defaultGroup == "Transaction" ? "MasterDetail" : "Master")">
+     data-default-screen-type="@defaultScreenType">
 
-    <!-- Setup -->
+    <div class="page-header form-builder-page-header d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+        <div class="d-flex align-items-center gap-3">
+            <span class="form-builder-header-icon" aria-hidden="true"><i class="fa-solid fa-wand-magic-sparkles"></i></span>
+            <div>
+                <h1 class="h3 mb-0">@(isEdit ? "Edit Form" : "New Form")</h1>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-0 mt-1">
+                        <li class="breadcrumb-item"><a href="/FormBuilder">Form Builder</a></li>
+                        <li class="breadcrumb-item active">@(isEdit ? "Edit" : "Create")</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+        <a class="btn btn-outline-secondary" href="/FormBuilder" title="Back to Form Builder" aria-label="Back to Form Builder">
+            <i class="fa-solid fa-arrow-left me-1"></i>Back to List
+        </a>
+    </div>
+
     <div class="card admin-card mb-4">
-        <div class="card-header fw-semibold"><i class="fa-solid fa-sliders me-2"></i>Screen Setup</div>
+        <div class="card-header"><i class="fa-solid fa-sliders me-2"></i>Screen Setup</div>
         <div class="card-body">
-            <div class="row g-3">
-                <div class="col-md-4">
-                    <label class="form-label">Database Entity *</label>
-                    <select id="entitySelect" class="form-select" @(isEdit ? "disabled" : "")>
-                        <option value="">-- Select Entity --</option>
-                        @if (entities != null)
-                        {
-                            @foreach (var e in entities)
+            <div class="form-builder-form-section">
+                <div class="form-builder-form-section-title">
+                    <i class="fa-solid fa-database"></i>Entity &amp; Screen Type
+                </div>
+                <div class="row g-3">
+                    <div class="col-lg-5">
+                        <label class="form-label" for="entitySelect">Database Entity *</label>
+                        <select id="entitySelect" class="form-select" @(isEdit ? "disabled" : "")>
+                            <option value="">— Select Entity —</option>
+                            @if (entities != null)
                             {
-                                <option value="@e.EntityName" data-table="@e.TableName" data-configured="@e.IsConfigured.ToString().ToLower()">
-                                    @e.EntityName (@e.TableName)@(e.IsConfigured ? " [configured]" : "")
-                                </option>
+                                @foreach (var e in entities)
+                                {
+                                    <option value="@e.EntityName" data-table="@e.TableName" data-configured="@e.IsConfigured.ToString().ToLower()">
+                                        @e.EntityName (@e.TableName)@(e.IsConfigured ? " · configured" : "")
+                                    </option>
+                                }
                             }
-                        }
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label">Screen Type *</label>
-                    <select id="screenType" class="form-select">
-                        <option value="Master">Master Form</option>
-                        <option value="MasterDetail">Master + Detail</option>
-                        <option value="MasterDetailTabular">Master + Tabular Details</option>
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label">Group *</label>
-                    <select id="groupName" class="form-select">
-                        <option value="Master Data">Master Data</option>
-                        <option value="Transaction">Transaction</option>
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label">Code *</label>
-                    <input type="text" id="formCode" class="form-control" placeholder="e.g. salesorder" />
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label">Display Name *</label>
-                    <input type="text" id="moduleName" class="form-control" placeholder="e.g. Sales Order" />
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Entity Name</label>
-                    <input type="text" id="entityName" class="form-control" readonly />
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Table Name</label>
-                    <input type="text" id="tableName" class="form-control" readonly />
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label">Display Order</label>
-                    <input type="number" id="displayOrder" class="form-control" value="0" />
-                </div>
-                <div class="col-md-2 d-flex align-items-end">
-                    <div class="form-check">
-                        <input type="checkbox" id="isActive" class="form-check-input" checked />
-                        <label class="form-check-label" for="isActive">Active</label>
+                        </select>
+                        <div class="form-builder-help-text">Pick the EF Core entity this screen will manage.</div>
+                    </div>
+                    <div class="col-lg-7">
+                        <label class="form-label">Screen Type *</label>
+                        <select id="screenType" class="d-none" aria-hidden="true">
+                            <option value="Master">Master Form</option>
+                            <option value="MasterDetail">Master + Detail</option>
+                            <option value="MasterDetailTabular">Master + Tabular Details</option>
+                        </select>
+                        <div class="form-builder-type-options" role="radiogroup" aria-label="Screen type">
+                            <label class="form-builder-type-option @(defaultScreenType == "Master" ? "is-selected" : "")" data-type="Master">
+                                <input type="radio" name="screenTypeOption" value="Master" @(defaultScreenType == "Master" ? "checked" : null) />
+                                <span class="form-builder-type-option-icon type-master"><i class="fa-solid fa-table"></i></span>
+                                <span class="form-builder-type-option-label">Master Form</span>
+                                <span class="form-builder-type-option-desc">Single entity list and edit screen.</span>
+                            </label>
+                            <label class="form-builder-type-option @(defaultScreenType == "MasterDetail" ? "is-selected" : "")" data-type="MasterDetail">
+                                <input type="radio" name="screenTypeOption" value="MasterDetail" @(defaultScreenType == "MasterDetail" ? "checked" : null) />
+                                <span class="form-builder-type-option-icon type-detail"><i class="fa-solid fa-diagram-project"></i></span>
+                                <span class="form-builder-type-option-label">Master + Detail</span>
+                                <span class="form-builder-type-option-desc">Header form with one detail line section.</span>
+                            </label>
+                            <label class="form-builder-type-option" data-type="MasterDetailTabular">
+                                <input type="radio" name="screenTypeOption" value="MasterDetailTabular" />
+                                <span class="form-builder-type-option-icon type-tabular"><i class="fa-solid fa-table-list"></i></span>
+                                <span class="form-builder-type-option-label">Master + Tabular</span>
+                                <span class="form-builder-type-option-desc">Header with multiple tabbed child grids.</span>
+                            </label>
+                        </div>
                     </div>
                 </div>
-                <div class="col-md-2 d-flex align-items-end">
-                    @if (!isEdit)
-                    {
-                        <button type="button" id="btnLoadDraft" class="btn btn-outline-primary w-100" title="Load from Entity" aria-label="Load from Entity">
-                            <i class="fa-solid fa-wand-magic-sparkles me-1"></i> Auto-Build
-                        </button>
-                    }
+            </div>
+
+            <div class="form-builder-form-section">
+                <div class="form-builder-form-section-title">
+                    <i class="fa-solid fa-tag"></i>Identity
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label" for="groupName">Group *</label>
+                        <select id="groupName" class="form-select">
+                            <option value="Master Data">Master Data</option>
+                            <option value="Transaction">Transaction</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label" for="formCode">Code *</label>
+                        <input type="text" id="formCode" class="form-control" placeholder="salesorder" />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label" for="moduleName">Display Name *</label>
+                        <input type="text" id="moduleName" class="form-control" placeholder="Sales Order" />
+                    </div>
                 </div>
             </div>
-            <div id="detailEntityInfo" class="alert alert-info mt-3 mb-0 py-2 small d-none">
-                <i class="fa-solid fa-diagram-project me-1"></i>
+
+            <div class="form-builder-form-section mb-0">
+                <div class="form-builder-form-section-title">
+                    <i class="fa-solid fa-gear"></i>Options
+                </div>
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-3">
+                        <label class="form-label" for="entityName">Entity Name</label>
+                        <input type="text" id="entityName" class="form-control" readonly />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label" for="tableName">Table Name</label>
+                        <input type="text" id="tableName" class="form-control" readonly />
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label" for="displayOrder">Display Order</label>
+                        <input type="number" id="displayOrder" class="form-control" value="0" min="0" />
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-check form-switch mb-2">
+                            <input type="checkbox" id="isActive" class="form-check-input" role="switch" checked />
+                            <label class="form-check-label" for="isActive">Active</label>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        @if (!isEdit)
+                        {
+                            <button type="button" id="btnLoadDraft" class="btn btn-outline-primary w-100">
+                                <i class="fa-solid fa-wand-magic-sparkles me-1"></i>Auto-Build
+                            </button>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div id="detailEntityInfo" class="form-builder-info-banner mt-3 d-none">
+                <i class="fa-solid fa-diagram-project me-2"></i>
                 Detail entity: <strong id="detailEntityName"></strong>
                 (<span id="detailForeignKey"></span>)
             </div>
         </div>
     </div>
 
-    <!-- Tabs -->
-    <ul class="nav nav-tabs form-builder-tabs mb-0" role="tablist">
-        <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="tab-master-btn" data-bs-toggle="tab" data-bs-target="#tabMaster" type="button" role="tab">
-                <i class="fa-solid fa-file-lines me-1"></i> Master Form
-            </button>
-        </li>
-        <li class="nav-item d-none" id="tab-detail-nav" role="presentation">
-            <button class="nav-link" id="tab-detail-btn" data-bs-toggle="tab" data-bs-target="#tabDetail" type="button" role="tab">
-                <i class="fa-solid fa-table-list me-1"></i> Detail Form
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="tab-grid-btn" data-bs-toggle="tab" data-bs-target="#tabGrid" type="button" role="tab">
-                <i class="fa-solid fa-table me-1"></i> List Grid
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="tab-relations-btn" data-bs-toggle="tab" data-bs-target="#tabRelations" type="button" role="tab">
-                <i class="fa-solid fa-link me-1"></i> Relations
-            </button>
-        </li>
-    </ul>
+    <div class="card admin-card form-builder-workspace-card mb-4">
+        <ul class="nav nav-tabs form-builder-tabs px-2 pt-2" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="tab-master-btn" data-bs-toggle="tab" data-bs-target="#tabMaster" type="button" role="tab">
+                    <i class="fa-solid fa-file-lines me-1"></i> Master Form
+                </button>
+            </li>
+            <li class="nav-item d-none" id="tab-detail-nav" role="presentation">
+                <button class="nav-link" id="tab-detail-btn" data-bs-toggle="tab" data-bs-target="#tabDetail" type="button" role="tab">
+                    <i class="fa-solid fa-table-list me-1"></i> Detail Form
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tab-grid-btn" data-bs-toggle="tab" data-bs-target="#tabGrid" type="button" role="tab">
+                    <i class="fa-solid fa-table me-1"></i> List Grid
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tab-relations-btn" data-bs-toggle="tab" data-bs-target="#tabRelations" type="button" role="tab">
+                    <i class="fa-solid fa-link me-1"></i> Relations
+                </button>
+            </li>
+        </ul>
 
-    <div class="tab-content form-builder-tab-content card admin-card border-top-0 rounded-top-0 shadow-sm mb-4">
-        <!-- Master Form -->
-        <div class="tab-pane fade show active" id="tabMaster" role="tabpanel">
-            <div class="form-builder-workspace">
-                <div class="form-builder-panel form-builder-fields-panel">
-                    <div class="form-builder-panel-header">
-                        <span class="fw-semibold">Master Fields</span>
-                        <button type="button" id="btnAddMasterField" class="btn btn-sm btn-outline-primary btn-icon" title="Add Field" aria-label="Add Field"><i class="fa-solid fa-plus"></i></button>
+        <div class="tab-content form-builder-tab-content">
+            <div class="tab-pane fade show active" id="tabMaster" role="tabpanel">
+                <div class="form-builder-workspace">
+                    <div class="form-builder-panel form-builder-fields-panel">
+                        <div class="form-builder-panel-header">
+                            <span class="fw-semibold"><i class="fa-solid fa-list me-1"></i> Master Fields</span>
+                            <button type="button" id="btnAddMasterField" class="btn btn-sm btn-outline-primary">
+                                <i class="fa-solid fa-plus me-1"></i>Add Field
+                            </button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-sm mb-0 form-builder-field-table" id="masterFieldsTable">
+                                <thead>
+                                    <tr>
+                                        <th class="col-order"></th>
+                                        <th>Property</th>
+                                        <th>Label</th>
+                                        <th>Control</th>
+                                        <th>Section</th>
+                                        <th>Lookup</th>
+                                        <th>Cascade From</th>
+                                        <th>Filter Field</th>
+                                        <th title="Required">Req</th>
+                                        <th title="Visible">Vis</th>
+                                        <th title="Read Only">RO</th>
+                                        <th>Validation</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
                     </div>
-                    <div class="table-responsive">
-                        <table class="table table-sm mb-0 form-builder-field-table" id="masterFieldsTable">
-                            <thead>
-                                <tr>
-                                    <th class="col-order"></th>
-                                    <th>Property</th>
-                                    <th>Label</th>
-                                    <th>Control</th>
-                                    <th>Section</th>
-                                    <th>Lookup</th>
-                                    <th>Cascade From</th>
-                                    <th>Filter Field</th>
-                                    <th title="Required">Req</th>
-                                    <th title="Visible">Vis</th>
-                                    <th title="Read Only">RO</th>
-                                    <th>Validation</th>
-                                    <th></th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-                </div>
-                <div class="form-builder-panel form-builder-preview-panel">
-                    <div class="form-builder-panel-header">
-                        <span class="fw-semibold"><i class="fa-solid fa-eye me-1"></i> Master Preview</span>
-                    </div>
-                    <div class="form-builder-preview-body">
-                        <div id="masterFormPreview" class="admin-form admin-form-preview"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Detail Form -->
-        <div class="tab-pane fade" id="tabDetail" role="tabpanel">
-            <div class="form-builder-workspace">
-                <div class="form-builder-panel form-builder-fields-panel">
-                    <div class="form-builder-panel-header">
-                        <span class="fw-semibold">Detail Line Fields</span>
-                        <button type="button" id="btnAddDetailField" class="btn btn-sm btn-outline-primary btn-icon" title="Add Field" aria-label="Add Field"><i class="fa-solid fa-plus"></i></button>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="table table-sm mb-0 form-builder-field-table" id="detailFieldsTable">
-                            <thead>
-                                <tr>
-                                    <th class="col-order"></th>
-                                    <th>Property</th>
-                                    <th>Label</th>
-                                    <th>Control</th>
-                                    <th>Section</th>
-                                    <th>Lookup</th>
-                                    <th>Cascade From</th>
-                                    <th>Filter Field</th>
-                                    <th title="Required">Req</th>
-                                    <th title="Visible">Vis</th>
-                                    <th title="Read Only">RO</th>
-                                    <th>Validation</th>
-                                    <th></th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-                </div>
-                <div class="form-builder-panel form-builder-preview-panel">
-                    <div class="form-builder-panel-header">
-                        <span class="fw-semibold"><i class="fa-solid fa-eye me-1"></i> Detail Preview</span>
-                    </div>
-                    <div class="form-builder-preview-body">
-                        <div id="detailFormPreview" class="admin-form admin-form-preview admin-form-inline"></div>
+                    <div class="form-builder-panel form-builder-preview-panel">
+                        <div class="form-builder-panel-header">
+                            <span class="fw-semibold"><i class="fa-solid fa-eye me-1"></i> Live Preview</span>
+                        </div>
+                        <div class="form-builder-preview-body">
+                            <div id="masterFormPreview" class="admin-form admin-form-preview"></div>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- List Grid -->
-        <div class="tab-pane fade" id="tabGrid" role="tabpanel">
-            <div class="form-builder-panel-header px-3 pt-3">
-                <span class="fw-semibold">List Grid Columns</span>
-                <button type="button" id="btnAddColumn" class="btn btn-sm btn-outline-primary btn-icon" title="Add Column" aria-label="Add Column"><i class="fa-solid fa-plus"></i></button>
+            <div class="tab-pane fade" id="tabDetail" role="tabpanel">
+                <div class="form-builder-workspace">
+                    <div class="form-builder-panel form-builder-fields-panel">
+                        <div class="form-builder-panel-header">
+                            <span class="fw-semibold"><i class="fa-solid fa-list me-1"></i> Detail Line Fields</span>
+                            <button type="button" id="btnAddDetailField" class="btn btn-sm btn-outline-primary">
+                                <i class="fa-solid fa-plus me-1"></i>Add Field
+                            </button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-sm mb-0 form-builder-field-table" id="detailFieldsTable">
+                                <thead>
+                                    <tr>
+                                        <th class="col-order"></th>
+                                        <th>Property</th>
+                                        <th>Label</th>
+                                        <th>Control</th>
+                                        <th>Section</th>
+                                        <th>Lookup</th>
+                                        <th>Cascade From</th>
+                                        <th>Filter Field</th>
+                                        <th title="Required">Req</th>
+                                        <th title="Visible">Vis</th>
+                                        <th title="Read Only">RO</th>
+                                        <th>Validation</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="form-builder-panel form-builder-preview-panel">
+                        <div class="form-builder-panel-header">
+                            <span class="fw-semibold"><i class="fa-solid fa-eye me-1"></i> Live Preview</span>
+                        </div>
+                        <div class="form-builder-preview-body">
+                            <div id="detailFormPreview" class="admin-form admin-form-preview admin-form-inline"></div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="table-responsive px-3 pb-3">
-                <table class="table table-sm mb-0" id="columnsTable">
-                    <thead>
-                        <tr>
-                            <th>Property</th>
-                            <th>Label</th>
-                            <th>Sortable</th>
-                            <th>Searchable</th>
-                            <th>Visible</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-        </div>
 
-        <!-- Relations -->
-        <div class="tab-pane fade" id="tabRelations" role="tabpanel">
-            <div class="form-builder-panel-header px-3 pt-3">
-                <span class="fw-semibold">Entity Relations</span>
-                <button type="button" id="btnAddRelation" class="btn btn-sm btn-outline-primary btn-icon" title="Add Relation" aria-label="Add Relation"><i class="fa-solid fa-plus"></i></button>
+            <div class="tab-pane fade" id="tabGrid" role="tabpanel">
+                <div class="form-builder-panel-header">
+                    <span class="fw-semibold"><i class="fa-solid fa-table me-1"></i> List Grid Columns</span>
+                    <button type="button" id="btnAddColumn" class="btn btn-sm btn-outline-primary">
+                        <i class="fa-solid fa-plus me-1"></i>Add Column
+                    </button>
+                </div>
+                <div class="table-responsive px-3 pb-3">
+                    <table class="table table-sm table-striped mb-0 form-builder-field-table" id="columnsTable">
+                        <thead>
+                            <tr>
+                                <th>Property</th>
+                                <th>Label</th>
+                                <th>Sortable</th>
+                                <th>Searchable</th>
+                                <th>Visible</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
             </div>
-            <div class="table-responsive px-3 pb-3">
-                <table class="table table-sm mb-0" id="relationsTable">
-                    <thead>
-                        <tr>
-                            <th>Type</th>
-                            <th>Parent Entity</th>
-                            <th>Child Entity</th>
-                            <th>Foreign Key</th>
-                            <th>Navigation</th>
-                            <th>Tab Label</th>
-                            <th>Order</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-            <div class="px-3 pb-3 text-muted small">
-                For <strong>Master + Detail</strong> screens, add a <strong>OneToMany</strong> relation (e.g. SalesOrder → SalesOrderItem).
-                For <strong>Master + Tabular Details</strong>, add multiple <strong>OneToMany</strong> relations — each becomes a tab with its own child grid.
-                Configure the first child on the <strong>Detail Form</strong> tab; other child forms are auto-created from entity metadata when saved.
+
+            <div class="tab-pane fade" id="tabRelations" role="tabpanel">
+                <div class="form-builder-panel-header">
+                    <span class="fw-semibold"><i class="fa-solid fa-link me-1"></i> Entity Relations</span>
+                    <button type="button" id="btnAddRelation" class="btn btn-sm btn-outline-primary">
+                        <i class="fa-solid fa-plus me-1"></i>Add Relation
+                    </button>
+                </div>
+                <div class="table-responsive px-3 pb-2">
+                    <table class="table table-sm table-striped mb-0 form-builder-field-table" id="relationsTable">
+                        <thead>
+                            <tr>
+                                <th>Type</th>
+                                <th>Parent Entity</th>
+                                <th>Child Entity</th>
+                                <th>Foreign Key</th>
+                                <th>Navigation</th>
+                                <th>Tab Label</th>
+                                <th>Order</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <div class="form-builder-help-card mx-3 mb-3">
+                    <strong>Tip:</strong> For <em>Master + Detail</em>, add one <strong>OneToMany</strong> relation (e.g. SalesOrder → SalesOrderItem).
+                    For <em>Master + Tabular</em>, add multiple <strong>OneToMany</strong> relations — each becomes a tab with its own child grid.
+                    Use the <strong>Detail Form</strong> tab for the primary child; other child forms are auto-created from entity metadata when saved.
+                </div>
             </div>
         </div>
     </div>
 
-    <div class="px-3 pb-2 text-muted small">
-        For dropdown fields, set <strong>Lookup</strong> to the entity name. Use <strong>Cascade From</strong> on a child dropdown to filter by the parent field value (e.g. Region filtered by CountryId).
-        Optional <strong>Filter Field</strong> overrides the property name on the lookup entity (defaults to the parent field name).
+    <div class="form-builder-help-card mb-3">
+        <i class="fa-solid fa-lightbulb me-2 text-warning"></i>
+        For dropdown fields, set <strong>Lookup</strong> to the entity name. Use <strong>Cascade From</strong> to filter child dropdowns by a parent field (e.g. Region by CountryId).
+        Optional <strong>Filter Field</strong> overrides the lookup property name.
     </div>
 
-    <div class="d-flex gap-2 mb-5">
-        <button type="button" id="btnSaveScreen" class="btn btn-primary btn-lg btn-icon" title="Save Form" aria-label="Save Form"><i class="fa-solid fa-floppy-disk"></i></button>
-        <a href="/FormBuilder" class="btn btn-secondary btn-lg btn-icon" title="Cancel" aria-label="Cancel"><i class="fa-solid fa-xmark"></i></a>
+    <div class="form-builder-save-bar d-flex flex-wrap gap-2 mb-5">
+        <button type="button" id="btnSaveScreen" class="btn btn-primary">
+            <i class="fa-solid fa-floppy-disk me-1"></i>Save Form
+        </button>
+        <a href="/FormBuilder" class="btn btn-outline-secondary">
+            <i class="fa-solid fa-xmark me-1"></i>Cancel
+        </a>
     </div>
 </div>
 

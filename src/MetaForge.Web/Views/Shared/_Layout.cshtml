@@ -17,6 +17,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/top-progress.css" asp-append-version="true" />
     @if (isAuthenticated && sidebarMenu.Count > 0)
     {
         <script>
@@ -56,23 +57,50 @@
                 @if (isAuthenticated)
                 {
                     <ul class="navbar-nav ms-2">
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle app-user-badge" href="#" role="button" data-bs-toggle="dropdown">
-                                <i class="fa-solid fa-user me-1"></i>@User.Identity!.Name
-                            </a>
-                            <ul class="dropdown-menu dropdown-menu-end">
-                                <li>
-                                    <form asp-controller="Account" asp-action="Logout" method="post" class="px-3 py-2">
-                                        @Html.AntiForgeryToken()
-                                        <button type="submit" class="btn btn-sm btn-outline-danger btn-icon" title="Sign Out" aria-label="Sign Out"><i class="fa-solid fa-right-from-bracket"></i></button>
-                                    </form>
-                                </li>
-                            </ul>
+                        <li class="nav-item dropdown app-user-menu">
+                            <button type="button"
+                                    class="app-user-trigger dropdown-toggle"
+                                    data-bs-toggle="dropdown"
+                                    aria-expanded="false"
+                                    aria-label="Account menu for @User.Identity!.Name">
+                                <span class="app-user-avatar" aria-hidden="true">
+                                    <i class="fa-solid fa-user"></i>
+                                </span>
+                                <span class="app-user-name">@User.Identity!.Name</span>
+                                <i class="fa-solid fa-chevron-down app-user-chevron" aria-hidden="true"></i>
+                            </button>
+                            <div class="dropdown-menu dropdown-menu-end app-user-dropdown">
+                                <div class="app-user-dropdown-header">
+                                    <span class="app-user-dropdown-avatar" aria-hidden="true">
+                                        <i class="fa-solid fa-user"></i>
+                                    </span>
+                                    <div class="app-user-dropdown-meta">
+                                        <span class="app-user-dropdown-name">@User.Identity!.Name</span>
+                                        <span class="app-user-dropdown-status">Signed in</span>
+                                    </div>
+                                </div>
+                                <div class="dropdown-divider app-user-dropdown-divider"></div>
+                                <form asp-controller="Account" asp-action="Logout" method="post" class="app-user-signout-form">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="app-user-signout-btn">
+                                        <span class="app-user-signout-icon" aria-hidden="true">
+                                            <i class="fa-solid fa-right-from-bracket"></i>
+                                        </span>
+                                        <span class="app-user-signout-text">
+                                            <span class="app-user-signout-label">Sign out</span>
+                                            <span class="app-user-signout-hint">End your session</span>
+                                        </span>
+                                    </button>
+                                </form>
+                            </div>
                         </li>
                     </ul>
                 }
             </div>
         </nav>
+        <div id="topProgress" class="top-progress" aria-hidden="true" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Page loading">
+            <div id="topProgressBar" class="top-progress-bar"></div>
+        </div>
     </header>
 
     <div class="app-layout">
@@ -109,6 +137,7 @@
     <script src="~/js/metaforge/master-detail.js" asp-append-version="true"></script>
     <script src="~/js/metaforge/master-detail-tabular.js" asp-append-version="true"></script>
     <script src="~/js/metaforge/sidebar-menu.js" asp-append-version="true"></script>
+    <script src="~/js/metaforge/top-progress.js" asp-append-version="true"></script>
     <script src="~/js/metaforge/ui-feedback.js" asp-append-version="true"></script>
     @await Html.PartialAsync("_ConfirmDeleteModal")
     @await RenderSectionAsync("Scripts", required: false)

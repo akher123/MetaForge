@@ -68,6 +68,34 @@ const SecurityManagement = (function () {
         });
     }
 
+    function initUserForm() {
+        $('#userForm').on('submit', function (e) {
+            e.preventDefault();
+            const payload = {
+                Id: parseInt($('#userId').val(), 10) || 0,
+                UserName: $('#userName').val()?.trim(),
+                Email: $('#email').val()?.trim(),
+                Password: $('#password').val() || null,
+                IsActive: $('#isActive').is(':checked'),
+                RoleIds: $('.role-check:checked').map(function () {
+                    return parseInt($(this).val(), 10);
+                }).get()
+            };
+
+            $.ajax({
+                url: '/api/metaforge/security/users',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(payload)
+            }).done(function () {
+                MetaForgeUi.showAlert('User saved successfully.', 'success', 3000);
+                window.setTimeout(function () { window.location = '/Security/Users'; }, 800);
+            }).fail(function (xhr) {
+                MetaForgeUi.showAlert(xhr.responseJSON?.error ?? xhr.responseJSON?.title ?? 'Save failed.', 'danger');
+            });
+        });
+    }
+
     function initRoleForm() {
         bindMatrixToggles();
         refreshMatrixState();
@@ -137,12 +165,14 @@ const SecurityManagement = (function () {
                 method: 'POST',
                 contentType: 'application/json',
                 data: JSON.stringify(payload)
-            }).done(() => {
-                alert('Role saved.');
-                window.location = '/Security/Roles';
-            }).fail(xhr => alert(xhr.responseJSON?.error ?? 'Save failed'));
+            }).done(function () {
+                MetaForgeUi.showAlert('Role saved successfully.', 'success', 3000);
+                window.setTimeout(function () { window.location = '/Security/Roles'; }, 800);
+            }).fail(function (xhr) {
+                MetaForgeUi.showAlert(xhr.responseJSON?.error ?? xhr.responseJSON?.title ?? 'Save failed.', 'danger');
+            });
         });
     }
 
-    return { initRoleForm };
+    return { initRoleForm, initUserForm };
 })();

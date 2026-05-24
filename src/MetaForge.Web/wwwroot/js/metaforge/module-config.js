@@ -5,6 +5,15 @@ const FormBuilder = (function () {
     const CONTROL_TYPES = ['TextBox', 'TextArea', 'Number', 'Date', 'DateTime', 'Checkbox', 'Dropdown', 'Radio', 'FileUpload', 'Hidden'];
     const RELATION_TYPES = ['OneToOne', 'OneToMany', 'ManyToOne'];
 
+    function notify(message, type) {
+        if (typeof MetaForgeUi !== 'undefined') {
+            MetaForgeUi.showAlert(message, type || 'danger');
+            return;
+        }
+
+        window.alert(message);
+    }
+
     let state = {
         masterId: 0,
         detailId: 0,
@@ -41,6 +50,7 @@ const FormBuilder = (function () {
         $('#btnLoadDraft').on('click', loadDraftFromEntity);
         $('#entitySelect').on('change', onEntitySelected);
         $('#screenType').on('change', onScreenTypeChanged);
+        bindScreenTypeOptions();
         $('#btnAddMasterField').on('click', () => addFieldRow('#masterFieldsTable', {}, refreshMasterPreview));
         $('#btnAddDetailField').on('click', () => addFieldRow('#detailFieldsTable', {}, refreshDetailPreview));
         $('#btnAddColumn').on('click', () => addColumnRow());
@@ -102,11 +112,28 @@ const FormBuilder = (function () {
         }
     }
 
+    function bindScreenTypeOptions() {
+        $('.form-builder-type-option').on('click', function () {
+            const type = $(this).data('type');
+            $('#screenType').val(type);
+            syncScreenTypeCards();
+            onScreenTypeChanged();
+        });
+    }
+
+    function syncScreenTypeCards() {
+        const type = $('#screenType').val();
+        $('.form-builder-type-option').removeClass('is-selected');
+        $(`.form-builder-type-option[data-type="${type}"]`).addClass('is-selected');
+        $(`.form-builder-type-option[data-type="${type}"] input[type="radio"]`).prop('checked', true);
+    }
+
     function updateScreenTypeUi() {
         const screenType = $('#screenType').val();
         const isMasterDetail = screenType === 'MasterDetail' || screenType === 'MasterDetailTabular';
         $('#tab-detail-nav').toggleClass('d-none', !isMasterDetail);
         $('#detailEntityInfo').toggleClass('d-none', !isMasterDetail || !state.detailEntity);
+        syncScreenTypeCards();
 
         if (isMasterDetail) {
             $('#groupName').val('Transaction');
@@ -151,7 +178,7 @@ const FormBuilder = (function () {
         const entity = $('#entitySelect').val();
         const group = $('#groupName').val();
         if (!entity) {
-            alert('Please select an entity first.');
+            notify('Please select an entity first.', 'warning');
             return;
         }
 
@@ -165,7 +192,7 @@ const FormBuilder = (function () {
 
                 refreshPreviews();
             })
-            .fail(xhr => alert('Failed to load draft: ' + (xhr.responseJSON?.error ?? xhr.statusText)));
+            .fail(xhr => notify('Failed to load draft: ' + (xhr.responseJSON?.error ?? xhr.statusText), 'danger'));
     }
 
     async function loadDetailDraftFromRelations() {
@@ -419,15 +446,15 @@ const FormBuilder = (function () {
         const master = collectMasterConfig();
 
         if (!master.Code || !master.Name || !master.EntityName) {
-            alert('Code, display name, and entity are required.');
+            notify('Code, display name, and entity are required.', 'warning');
             return;
         }
         if (master.Fields.length === 0) {
-            alert('Master form requires at least one field.');
+            notify('Master form requires at least one field.', 'warning');
             return;
         }
         if (master.GridColumns.length === 0) {
-            alert('List grid requires at least one column.');
+            notify('List grid requires at least one column.', 'warning');
             return;
         }
 
@@ -440,12 +467,12 @@ const FormBuilder = (function () {
         if (screenType === 'MasterDetail') {
             const rel = getPrimaryOneToManyRelation();
             if (!rel) {
-                alert('Master + Detail requires a OneToMany relation on the Relations tab.');
+                notify('Master + Detail requires a OneToMany relation on the Relations tab.', 'warning');
                 return;
             }
             payload.Detail = collectDetailConfig();
             if (!payload.Detail || payload.Detail.Fields.length === 0) {
-                alert('Detail form requires at least one field.');
+                notify('Detail form requires at least one field.', 'warning');
                 return;
             }
         }
@@ -453,11 +480,13 @@ const FormBuilder = (function () {
         if (screenType === 'MasterDetailTabular') {
             const relations = getOneToManyRelations();
             if (relations.length === 0) {
-                alert('Master + Tabular Details requires at least one OneToMany relation on the Relations tab.');
+                notify('Master + Tabular Details requires at least one OneToMany relation on the Relations tab.', 'warning');
                 return;
             }
             payload.Detail = collectDetailConfig();
         }
+
+        const $btn = $('#btnSaveScreen').prop('disabled', true);
 
         $.ajax({
             url: '/api/metaforge/formconfig/screen',
@@ -465,11 +494,15 @@ const FormBuilder = (function () {
             contentType: 'application/json',
             data: JSON.stringify(payload)
         }).done(function () {
-            alert('Form saved successfully!');
-            window.location = '/FormBuilder';
+            notify('Form saved successfully.', 'success');
+            window.setTimeout(function () {
+                window.location = '/FormBuilder';
+            }, 700);
         }).fail(function (xhr) {
             const msg = xhr.responseJSON?.error ?? xhr.responseText ?? xhr.statusText;
-            alert('Save failed: ' + msg);
+            notify('Save failed: ' + msg, 'danger');
+        }).always(function () {
+            $btn.prop('disabled', false);
         });
     }
 

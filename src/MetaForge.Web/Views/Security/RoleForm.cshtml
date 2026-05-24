@@ -2,6 +2,7 @@
 @{
     var isEdit = ViewBag.IsEdit as bool? ?? false;
     ViewData["Title"] = isEdit ? "Edit Role" : "New Role";
+    ViewBag.SecurityNav = "roles";
     var role = ViewBag.Role as MetaForge.Application.DTOs.RoleDetailDto;
     var selectedIds = role?.PermissionIds?.ToHashSet() ?? new HashSet<int>();
     var groups = role?.PermissionGroups ?? new List<MetaForge.Application.DTOs.PermissionGroupDto>();
@@ -26,20 +27,26 @@
         .ToList();
 }
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h1 class="h3 mb-0">@(isEdit ? "Edit Role" : "New Role")</h1>
-        <nav aria-label="breadcrumb">
-            <ol class="breadcrumb mb-0">
-                <li class="breadcrumb-item"><a href="/Security">Security</a></li>
-                <li class="breadcrumb-item"><a href="/Security/Roles">Roles</a></li>
-                <li class="breadcrumb-item active">@(isEdit ? "Edit" : "Create")</li>
-            </ol>
-        </nav>
+<div class="page-header security-page-header d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+    <div class="d-flex align-items-center gap-3">
+        <span class="security-header-icon" aria-hidden="true"><i class="fa-solid fa-shield-halved"></i></span>
+        <div>
+            <h1 class="h3 mb-0">@(isEdit ? "Edit Role" : "New Role")</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0 mt-1">
+                    <li class="breadcrumb-item"><a href="/Security">Security</a></li>
+                    <li class="breadcrumb-item"><a href="/Security/Roles">Roles</a></li>
+                    <li class="breadcrumb-item active">@(isEdit ? "Edit" : "Create")</li>
+                </ol>
+            </nav>
+        </div>
     </div>
 </div>
 
-<div class="card admin-card shadow-sm mb-4">
+@await Html.PartialAsync("_SecuritySubnav")
+
+<div class="card admin-card mb-4">
+    <div class="card-header"><i class="fa-solid fa-shield-halved me-2"></i>Role Details</div>
     <div class="card-body">
         <form id="roleForm">
             <input type="hidden" id="roleId" value="@(role?.Id ?? 0)" />
@@ -57,14 +64,14 @@
     </div>
 </div>
 
-<div class="card admin-card shadow-sm">
-    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
-        <span class="fw-semibold"><i class="fa-solid fa-table-columns me-2"></i>Permission Matrix</span>
-        <div class="d-flex gap-1">
-            <button type="button" class="btn btn-sm btn-outline-secondary btn-icon" id="btnExpandAll" title="Expand All" aria-label="Expand All"><i class="fa-solid fa-angles-down"></i></button>
-            <button type="button" class="btn btn-sm btn-outline-secondary btn-icon" id="btnCollapseAll" title="Collapse All" aria-label="Collapse All"><i class="fa-solid fa-angles-up"></i></button>
-            <button type="button" class="btn btn-sm btn-outline-secondary btn-icon" id="btnSelectAll" title="Select All" aria-label="Select All"><i class="fa-solid fa-check-double"></i></button>
-            <button type="button" class="btn btn-sm btn-outline-secondary btn-icon" id="btnClearAll" title="Clear All" aria-label="Clear All"><i class="fa-solid fa-eraser"></i></button>
+<div class="card admin-card">
+    <div class="security-permissions-toolbar">
+        <span class="toolbar-label"><i class="fa-solid fa-table-columns me-2"></i>Permission Matrix</span>
+        <div class="d-flex flex-wrap gap-1">
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="btnExpandAll" title="Expand All"><i class="fa-solid fa-angles-down me-1"></i>Expand</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="btnCollapseAll" title="Collapse All"><i class="fa-solid fa-angles-up me-1"></i>Collapse</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="btnSelectAll" title="Select All"><i class="fa-solid fa-check-double me-1"></i>All</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="btnClearAll" title="Clear All"><i class="fa-solid fa-eraser me-1"></i>Clear</button>
         </div>
     </div>
     <div class="card-body p-0">
@@ -184,9 +191,13 @@
             }
         </div>
     </div>
-    <div class="card-footer">
-        <button type="button" id="btnSaveRole" class="btn btn-primary btn-icon" title="Save Role" aria-label="Save Role"><i class="fa-solid fa-floppy-disk"></i></button>
-        <a href="/Security/Roles" class="btn btn-secondary btn-icon" title="Cancel" aria-label="Cancel"><i class="fa-solid fa-xmark"></i></a>
+    <div class="card-footer d-flex flex-wrap gap-2">
+        <button type="button" id="btnSaveRole" class="btn btn-primary">
+            <i class="fa-solid fa-floppy-disk me-1"></i>Save Role
+        </button>
+        <a href="/Security/Roles" class="btn btn-outline-secondary">
+            <i class="fa-solid fa-xmark me-1"></i>Cancel
+        </a>
     </div>
 </div>
 

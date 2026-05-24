@@ -1,93 +1,197 @@
 @{
     ViewData["Title"] = "Form Builder";
     var modules = ViewBag.Forms as IReadOnlyList<MetaForge.Application.DTOs.FormConfigListItemDto>;
+    var formList = modules?.ToList() ?? new List<MetaForge.Application.DTOs.FormConfigListItemDto>();
+
+    var masterDataCount = formList.Count(m => m.GroupName == "Master Data");
+    var transactionCount = formList.Count(m => m.GroupName == "Transaction");
+    var activeCount = formList.Count(m => m.IsActive);
+
+    string TypeKey(string formType) => formType switch
+    {
+        "MasterDetail" or "MasterDetailTabular" => "detail",
+        "Detail" => "child",
+        _ => "master"
+    };
+
+    string TypeLabel(string formType) => formType switch
+    {
+        "MasterDetail" => "Master + Detail",
+        "MasterDetailTabular" => "Master + Tabular",
+        "Detail" => "Detail",
+        _ => "Master"
+    };
 }
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h1 class="h3 mb-0">Form Builder</h1>
-        <p class="text-muted mb-0">Design master and detail forms for Master Data and Transaction screens.</p>
+<div id="formBuilderIndexApp">
+    <div class="page-header form-builder-page-header d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+        <div class="d-flex align-items-center gap-3">
+            <span class="form-builder-header-icon" aria-hidden="true"><i class="fa-solid fa-wand-magic-sparkles"></i></span>
+            <div>
+                <h1 class="h3 mb-0">Form Builder</h1>
+                <p class="page-subtitle mb-0">Design screens, fields, grids, and relationships from your domain entities</p>
+            </div>
+        </div>
+        <a class="btn btn-primary" href="/FormBuilder/Create" title="New Form" aria-label="New Form">
+            <i class="fa-solid fa-plus me-1"></i>New Form
+        </a>
     </div>
-    <a class="btn btn-primary btn-icon" href="/FormBuilder/Create" title="New Form" aria-label="New Form"><i class="fa-solid fa-plus"></i></a>
-</div>
 
-<div class="card admin-card">
-    <div class="card-header">Configured Screens</div>
-    <div class="card-body p-0">
-        <table class="table table-hover mb-0">
-            <thead class="table-light">
-                <tr>
-                    <th>Group</th>
-                    <th>Type</th>
-                    <th>Name</th>
-                    <th>Code</th>
-                    <th>Entity</th>
-                    <th>Fields</th>
-                    <th>Status</th>
-                    <th style="width:200px">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                @if (modules != null && modules.Count > 0)
-                {
-                    @foreach (var m in modules)
-                    {
+    <div class="row g-3 mb-4 form-builder-stat-grid security-stat-grid">
+        <div class="col-6 col-xl-3">
+            <div class="stat-card stat-primary h-100">
+                <div class="card-body text-center">
+                    <span class="stat-icon stat-icon-screens"><i class="fa-solid fa-table-columns"></i></span>
+                    <div class="stat-value">@formList.Count</div>
+                    <div class="stat-label">Configured Screens</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-xl-3">
+            <div class="stat-card stat-info h-100">
+                <div class="card-body text-center">
+                    <span class="stat-icon stat-icon-master"><i class="fa-solid fa-database"></i></span>
+                    <div class="stat-value">@masterDataCount</div>
+                    <div class="stat-label">Master Data</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-xl-3">
+            <div class="stat-card stat-warning h-100">
+                <div class="card-body text-center">
+                    <span class="stat-icon stat-icon-transaction"><i class="fa-solid fa-file-invoice"></i></span>
+                    <div class="stat-value">@transactionCount</div>
+                    <div class="stat-label">Transactions</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-xl-3">
+            <div class="stat-card stat-success h-100">
+                <div class="card-body text-center">
+                    <span class="stat-icon stat-icon-active"><i class="fa-solid fa-circle-check"></i></span>
+                    <div class="stat-value">@activeCount</div>
+                    <div class="stat-label">Active Screens</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-md-6">
+            <div class="card admin-card form-builder-hub-card card-group-master h-100">
+                <div class="card-body">
+                    <span class="form-builder-hub-icon hub-master"><i class="fa-solid fa-database"></i></span>
+                    <h2 class="h6 mb-1 fw-bold">Master Data Form</h2>
+                    <p>Single-form screens for reference data such as customers, products, and suppliers.</p>
+                    <a href="/FormBuilder/Create?group=Master%20Data" class="btn btn-sm btn-outline-primary align-self-start">
+                        <i class="fa-solid fa-wand-magic-sparkles me-1"></i>New Master Form
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card admin-card form-builder-hub-card card-group-transaction h-100">
+                <div class="card-body">
+                    <span class="form-builder-hub-icon hub-transaction"><i class="fa-solid fa-file-invoice"></i></span>
+                    <h2 class="h6 mb-1 fw-bold">Transaction Form</h2>
+                    <p>Master + detail screens with header forms and editable line items like sales orders.</p>
+                    <a href="/FormBuilder/Create?group=Transaction" class="btn btn-sm btn-outline-success align-self-start">
+                        <i class="fa-solid fa-diagram-project me-1"></i>New Master + Detail
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card admin-card admin-grid-card">
+        <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <span><i class="fa-solid fa-table-columns me-2"></i>Configured Screens</span>
+            <span class="text-muted small">@formList.Count screen(s)</span>
+        </div>
+        <div class="card-body p-0">
+            @if (formList.Count == 0)
+            {
+                <div class="form-builder-empty-state">
+                    <div class="form-builder-empty-icon" aria-hidden="true"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+                    <h2 class="h6 mb-2">No forms configured yet</h2>
+                    <p class="mb-3">Start with a master data screen or build a transaction with line items.</p>
+                    <a class="btn btn-primary btn-sm" href="/FormBuilder/Create">
+                        <i class="fa-solid fa-plus me-1"></i>Create First Form
+                    </a>
+                </div>
+            }
+            else
+            {
+                <table class="table table-sm table-striped table-hover w-100 mb-0" id="formsTable">
+                    <thead>
                         <tr>
-                            <td><span class="badge bg-secondary">@m.GroupName</span></td>
-                            <td><span class="badge @(m.FormType == "MasterDetail" ? "bg-info" : m.FormType == "Detail" ? "bg-light text-dark" : "bg-primary")">@m.FormType</span></td>
-                            <td>@m.Name</td>
-                            <td><code>@m.Code</code></td>
-                            <td>@m.EntityName</td>
-                            <td>@m.FieldCount</td>
-                            <td>
-                                @if (m.IsActive)
-                                {
-                                    <span class="badge bg-success">Active</span>
-                                }
-                                else
-                                {
-                                    <span class="badge bg-warning text-dark">Inactive</span>
-                                }
-                            </td>
-                            <td>
-                                <a class="btn btn-sm btn-outline-primary btn-icon" href="/FormBuilder/Edit/@m.Id" title="Edit Form" aria-label="Edit Form"><i class="fa-solid fa-pen-to-square"></i></a>
-                                <a class="btn btn-sm btn-outline-secondary btn-icon" href="@m.Url" title="Open" aria-label="Open"><i class="fa-solid fa-arrow-up-right-from-square"></i></a>
-                            </td>
+                            <th>Screen</th>
+                            <th>Group</th>
+                            <th>Type</th>
+                            <th>Entity</th>
+                            <th>Fields</th>
+                            <th>Status</th>
+                            <th style="width:120px">Actions</th>
                         </tr>
-                    }
-                }
-                else
-                {
-                    <tr>
-                        <td colspan="8" class="text-center text-muted py-4">No forms configured yet. Create your first screen to get started.</td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+                    </thead>
+                    <tbody>
+                        @foreach (var m in formList)
+                        {
+                            var typeKey = TypeKey(m.FormType);
+                            <tr>
+                                <td>
+                                    <div class="form-builder-screen-cell">
+                                        <span class="form-builder-screen-icon type-@typeKey" aria-hidden="true">
+                                            <i class="fa-solid @(typeKey == "detail" ? "fa-diagram-project" : typeKey == "child" ? "fa-table-list" : "fa-table")"></i>
+                                        </span>
+                                        <div>
+                                            <span class="form-builder-screen-name">@m.Name</span>
+                                            <code class="form-builder-screen-code">@m.Code</code>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td><span class="form-builder-group-badge">@m.GroupName</span></td>
+                                <td><span class="form-builder-type-badge type-@typeKey">@TypeLabel(m.FormType)</span></td>
+                                <td><span class="form-builder-entity-text">@m.EntityName</span></td>
+                                <td><span class="menu-order-badge">@m.FieldCount</span></td>
+                                <td>
+                                    @if (m.IsActive)
+                                    {
+                                        <span class="security-status-pill is-active">Active</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="security-status-pill is-inactive">Inactive</span>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="d-flex gap-1">
+                                        <a class="btn btn-sm btn-outline-primary btn-icon" href="/FormBuilder/Edit/@m.Id" title="Edit Form" aria-label="Edit Form"><i class="fa-solid fa-pen-to-square"></i></a>
+                                        <a class="btn btn-sm btn-outline-secondary btn-icon" href="@m.Url" title="Open Screen" aria-label="Open Screen"><i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
     </div>
 </div>
 
-<div class="row mt-4">
-    <div class="col-md-6">
-        <div class="card admin-card card-group-master">
-            <div class="card-header"><i class="fa-solid fa-database me-2"></i>Master Data Form</div>
-            <div class="card-body">
-                <p class="mb-2">Single-form screens for reference data: Country, Customer, Product, Supplier.</p>
-                <a href="/FormBuilder/Create?group=Master%20Data" class="btn btn-sm btn-outline-primary">
-                    <i class="fa-solid fa-wand-magic-sparkles me-1"></i> New Master Form
-                </a>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-6">
-        <div class="card admin-card card-group-transaction">
-            <div class="card-header"><i class="fa-solid fa-file-invoice me-2"></i>Transaction Form</div>
-            <div class="card-body">
-                <p class="mb-2">Master + detail screens: header form with editable line items (e.g. Sales Order).</p>
-                <a href="/FormBuilder/Create?group=Transaction" class="btn btn-sm btn-outline-success">
-                    <i class="fa-solid fa-diagram-project me-1"></i> New Master + Detail
-                </a>
-            </div>
-        </div>
-    </div>
-</div>
+@section Scripts {
+    <script>
+        $(function () {
+            if ($('#formsTable').length) {
+                $('#formsTable').DataTable({
+                    pageLength: 25,
+                    order: [[0, 'asc']],
+                    processing: false,
+                    metaforgeProgress: false,
+                    columnDefs: [{ orderable: false, targets: -1 }],
+                    language: { search: 'Filter screens:' }
+                });
+            }
+        });
+    </script>
+}

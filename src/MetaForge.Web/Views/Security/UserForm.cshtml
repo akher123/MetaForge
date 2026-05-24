@@ -1,97 +1,102 @@
 @{
     var isEdit = ViewBag.IsEdit as bool? ?? false;
     ViewData["Title"] = isEdit ? "Edit User" : "New User";
+    ViewBag.SecurityNav = "users";
     var user = ViewBag.User as MetaForge.Application.DTOs.SaveUserDto;
     var roles = ViewBag.Roles as IReadOnlyList<MetaForge.Application.DTOs.RoleOptionDto>;
     var selectedRoles = user?.RoleIds?.ToHashSet() ?? new HashSet<int>();
 }
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h1 class="h3 mb-0">@(isEdit ? "Edit User" : "New User")</h1>
-        <nav aria-label="breadcrumb">
-            <ol class="breadcrumb mb-0">
-                <li class="breadcrumb-item"><a href="/Security">Security</a></li>
-                <li class="breadcrumb-item"><a href="/Security/Users">Users</a></li>
-                <li class="breadcrumb-item active">@(isEdit ? "Edit" : "Create")</li>
-            </ol>
-        </nav>
+<div class="page-header security-page-header d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+    <div class="d-flex align-items-center gap-3">
+        <span class="security-header-icon" aria-hidden="true"><i class="fa-solid @(isEdit ? "fa-user-pen" : "fa-user-plus")"></i></span>
+        <div>
+            <h1 class="h3 mb-0">@(isEdit ? "Edit User" : "New User")</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0 mt-1">
+                    <li class="breadcrumb-item"><a href="/Security">Security</a></li>
+                    <li class="breadcrumb-item"><a href="/Security/Users">Users</a></li>
+                    <li class="breadcrumb-item active">@(isEdit ? "Edit" : "Create")</li>
+                </ol>
+            </nav>
+        </div>
     </div>
 </div>
 
-<div class="card admin-card shadow-sm">
+@await Html.PartialAsync("_SecuritySubnav")
+
+<div class="card admin-card">
+    <div class="card-header"><i class="fa-solid fa-id-card me-2"></i>User Details</div>
     <div class="card-body">
         <form id="userForm">
             <input type="hidden" id="userId" value="@(user?.Id ?? 0)" />
-            <div class="row g-3">
-                <div class="col-md-4">
-                    <label class="form-label">Username *</label>
-                    <input type="text" id="userName" class="form-control" value="@user?.UserName" required />
+
+            <div class="security-form-section">
+                <div class="security-form-section-title">
+                    <i class="fa-solid fa-circle-user"></i>Account Information
                 </div>
-                <div class="col-md-4">
-                    <label class="form-label">Email *</label>
-                    <input type="email" id="email" class="form-control" value="@user?.Email" required />
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label">Password @(isEdit ? "(leave blank to keep)" : "*")</label>
-                    <input type="password" id="password" class="form-control" @(isEdit ? "" : "required") />
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">Roles</label>
-                    <select id="roleIds" class="form-select" multiple size="5">
-                        @if (roles != null)
-                        {
-                            @foreach (var r in roles)
-                            {
-                                if (selectedRoles.Contains(r.Id))
-                                {
-                                    <option value="@r.Id" selected="selected">@r.Name</option>
-                                }
-                                else
-                                {
-                                    <option value="@r.Id">@r.Name</option>
-                                }
-                            }
-                        }
-                    </select>
-                    <div class="form-text">Hold Ctrl to select multiple roles.</div>
-                </div>
-                <div class="col-md-6 d-flex align-items-end">
-                    <div class="form-check mb-3">
-                        <input type="checkbox" id="isActive" class="form-check-input" @(user?.IsActive != false ? "checked" : null) />
-                        <label class="form-check-label" for="isActive">Active</label>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label" for="userName">Username *</label>
+                        <input type="text" id="userName" class="form-control" value="@user?.UserName" required autocomplete="username" />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label" for="email">Email *</label>
+                        <input type="email" id="email" class="form-control" value="@user?.Email" required autocomplete="email" />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label" for="password">Password @(isEdit ? "(leave blank to keep)" : "*")</label>
+                        <input type="password" id="password" class="form-control" @(isEdit ? "" : "required") autocomplete="@(isEdit ? "new-password" : "new-password")" />
+                    </div>
+                    <div class="col-md-12">
+                        <div class="form-check form-switch">
+                            <input type="checkbox" id="isActive" class="form-check-input" role="switch" @(user?.IsActive != false ? "checked" : null) />
+                            <label class="form-check-label" for="isActive">Active account</label>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="mt-4">
-                <button type="submit" class="btn btn-primary btn-icon" title="Save User" aria-label="Save User"><i class="fa-solid fa-floppy-disk"></i></button>
-                <a href="/Security/Users" class="btn btn-secondary btn-icon" title="Cancel" aria-label="Cancel"><i class="fa-solid fa-xmark"></i></a>
+
+            <div class="security-form-section">
+                <div class="security-form-section-title">
+                    <i class="fa-solid fa-shield-halved"></i>Assigned Roles
+                </div>
+                <div class="security-role-options" id="roleOptions">
+                    @if (roles != null && roles.Count > 0)
+                    {
+                        @foreach (var r in roles)
+                        {
+                            var inputId = $"role_{r.Id}";
+                            <label class="security-role-option" for="@inputId">
+                                <input type="checkbox"
+                                       class="form-check-input role-check"
+                                       id="@inputId"
+                                       value="@r.Id"
+                                       @(selectedRoles.Contains(r.Id) ? "checked" : null) />
+                                <span class="security-role-option-label">@r.Name</span>
+                            </label>
+                        }
+                    }
+                    else
+                    {
+                        <p class="text-muted mb-0 small">No roles available. Create a role first.</p>
+                    }
+                </div>
+            </div>
+
+            <div class="d-flex flex-wrap gap-2 mt-4">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fa-solid fa-floppy-disk me-1"></i>Save User
+                </button>
+                <a href="/Security/Users" class="btn btn-outline-secondary">
+                    <i class="fa-solid fa-xmark me-1"></i>Cancel
+                </a>
             </div>
         </form>
     </div>
 </div>
 
 @section Scripts {
-    <script>
-        $('#userForm').on('submit', function (e) {
-            e.preventDefault();
-            const payload = {
-                Id: parseInt($('#userId').val()) || 0,
-                UserName: $('#userName').val(),
-                Email: $('#email').val(),
-                Password: $('#password').val() || null,
-                IsActive: $('#isActive').is(':checked'),
-                RoleIds: $('#roleIds').val()?.map(Number) || []
-            };
-            $.ajax({
-                url: '/api/metaforge/security/users',
-                method: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify(payload)
-            }).done(() => {
-                alert('User saved.');
-                window.location = '/Security/Users';
-            }).fail(xhr => alert(xhr.responseJSON?.error ?? 'Save failed'));
-        });
-    </script>
+    <script src="~/js/metaforge/security-management.js" asp-append-version="true"></script>
+    <script>SecurityManagement.initUserForm();</script>
 }

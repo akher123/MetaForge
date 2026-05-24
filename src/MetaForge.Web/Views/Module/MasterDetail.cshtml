@@ -16,43 +16,55 @@
     var isNew = screen?.MasterData == null;
 }
 
-<div class="master-detail-page">
-    <div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-3">
-        <div>
-            <h1 class="h3 mb-0">@moduleName Entry</h1>
-            <p class="page-subtitle mb-0">Edit header in modal, manage line items below</p>
+<div class="master-detail-page module-page module-page--transaction">
+    <div class="page-header module-page-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <div class="d-flex align-items-center gap-3">
+            <span class="module-page-icon" aria-hidden="true"><i class="fa-solid fa-file-invoice"></i></span>
+            <div>
+                <h1 class="h3 mb-0">@moduleName Entry</h1>
+                <p class="page-subtitle mb-0">Edit the document header and manage line items below</p>
+            </div>
         </div>
-        <div class="d-flex gap-2">
+        <div class="d-flex flex-wrap gap-2">
             @if (canSave)
             {
-                <button type="button" class="btn btn-primary btn-icon" id="btnSaveAll" title="Save @moduleName" aria-label="Save @moduleName"><i class="fa-solid fa-floppy-disk"></i></button>
+                <button type="button" class="btn btn-primary" id="btnSaveAll">
+                    <i class="fa-solid fa-floppy-disk me-1"></i>Save @moduleName
+                </button>
             }
-            <a class="btn btn-outline-secondary btn-icon" href="/Modules/@formCode" title="Back to List" aria-label="Back to List"><i class="fa-solid fa-arrow-left"></i></a>
+            <a class="btn btn-outline-secondary" href="/Modules/@formCode" title="Back to List" aria-label="Back to List">
+                <i class="fa-solid fa-arrow-left me-1"></i>Back to List
+            </a>
         </div>
     </div>
 
-    <div class="card admin-card mb-4 master-summary-card">
-        <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-3 py-3">
-            <div id="masterSummary" class="flex-grow-1">
-                @(isNew ? "No header entered yet." : "Loading header…")
-            </div>
+    <div class="card admin-card mb-4 master-summary-card module-summary-card">
+        <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <span><i class="fa-solid fa-file-lines me-2"></i>Document Header</span>
             @if (canSave)
             {
-                <button type="button" class="btn btn-teal btn-sm btn-icon" id="btnEditMaster" title="@(isNew ? "Enter Header" : "Edit Header")" aria-label="@(isNew ? "Enter Header" : "Edit Header")">
-                    <i class="fa-solid fa-pen-to-square"></i>
+                <button type="button" class="btn btn-sm btn-teal" id="btnEditMaster">
+                    <i class="fa-solid fa-pen-to-square me-1"></i>@(isNew ? "Enter Header" : "Edit Header")
                 </button>
             }
         </div>
+        <div class="card-body py-3">
+            <div id="masterSummary" class="module-summary-content">
+                @(isNew ? "No header entered yet." : "Loading header…")
+            </div>
+        </div>
     </div>
 
-    <div class="card admin-card master-detail-detail-card">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <span>@detailLabel</span>
+    <div class="card admin-card master-detail-detail-card module-detail-card">
+        <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <span><i class="fa-solid fa-table-list me-2"></i>@detailLabel</span>
             <div class="d-flex align-items-center gap-2">
                 <span class="detail-count-badge"><span id="detailItemCount">0</span> items</span>
                 @if (perms?.CanCreate == true)
                 {
-                    <button type="button" class="btn btn-sm btn-teal btn-icon" id="btnAddDetail" title="Add Item" aria-label="Add Item"><i class="fa-solid fa-plus"></i></button>
+                    <button type="button" class="btn btn-sm btn-teal" id="btnAddDetail">
+                        <i class="fa-solid fa-plus me-1"></i>Add Item
+                    </button>
                 }
             </div>
         </div>
@@ -68,7 +80,7 @@
                             }
                             @if (perms?.CanDelete == true)
                             {
-                                <th style="width:72px" class="text-center">Remove</th>
+                                <th style="width:88px" class="text-center">Actions</th>
                             }
                         </tr>
                     </thead>
@@ -86,7 +98,7 @@
     </div>
 </div>
 
-<div class="modal fade admin-modal" id="masterFormModal" tabindex="-1" aria-labelledby="masterFormModalTitle" aria-hidden="true">
+<div class="modal fade admin-modal module-record-modal" id="masterFormModal" tabindex="-1" aria-labelledby="masterFormModalTitle" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
@@ -94,13 +106,19 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form id="masterForm" data-module="@formCode" data-entity="@screen?.MasterForm?.EntityName"></form>
+                <div class="module-form-shell">
+                    <form id="masterForm" class="master-detail-form" data-module="@formCode" data-entity="@screen?.MasterForm?.EntityName"></form>
+                </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-outline-secondary btn-icon" data-bs-dismiss="modal" title="Cancel" aria-label="Cancel"><i class="fa-solid fa-xmark"></i></button>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    <i class="fa-solid fa-xmark me-1"></i>Cancel
+                </button>
                 @if (canSave)
                 {
-                    <button type="button" class="btn btn-teal btn-icon" id="btnApplyMaster" title="Apply Header" aria-label="Apply Header"><i class="fa-solid fa-check"></i></button>
+                    <button type="button" class="btn btn-teal" id="btnApplyMaster">
+                        <i class="fa-solid fa-check me-1"></i>Apply Header
+                    </button>
                 }
             </div>
         </div>
