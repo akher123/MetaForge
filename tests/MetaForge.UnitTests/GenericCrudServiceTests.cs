@@ -49,7 +49,8 @@ public class GenericCrudServiceTests
 
         Assert.Equal(2, result.TotalCount);
         Assert.Equal(2, result.Items.Count);
-        Assert.Equal("US", result.Items[0]["Code"]);
+        Assert.Contains(result.Items, item => item["Code"]?.ToString() == "UK");
+        Assert.Contains(result.Items, item => item["Code"]?.ToString() == "US");
         Assert.True(result.Items[0].ContainsKey("Id"));
         Assert.NotNull(result.Items[0]["Id"]);
     }

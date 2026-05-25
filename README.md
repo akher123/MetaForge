@@ -103,7 +103,7 @@ All dynamic screens are driven by database-backed metadata:
 ### Platform stack
 
 - **Runtime:** .NET 10, ASP.NET Core MVC
-- **ORM:** Entity Framework Core (SQL Server)
+- **ORM:** Entity Framework Core (SQL Server) with code-first migrations
 - **Auth:** Cookie authentication + RBAC
 - **Validation:** FluentValidation (dynamic rules from metadata)
 - **UI:** Bootstrap 5, jQuery, Font Awesome
@@ -143,13 +143,25 @@ Open the app in your browser (typically `https://localhost:5001` or the URL show
 
 ### Database commands
 
+On startup, MetaForge applies pending **EF Core migrations** automatically, then runs idempotent data seed/upgrades.
+
 ```bash
-# Reset and reseed the database (drops all data)
+# Reset and reseed the database (drops all data, reapplies migrations)
 dotnet run --project src/MetaForge.Web -- --reset-db
 
-# Seed only (exit after seeding, do not start the web server)
+# Seed / upgrade data only (migrate + seed, then exit — no web server)
 dotnet run --project src/MetaForge.Web -- --seed-only
+
+# Apply migrations manually (CI/production)
+dotnet ef database update --project src/MetaForge.Infrastructure --startup-project src/MetaForge.Web
+
+# Add a migration after changing entities or EF configurations
+dotnet ef migrations add <MigrationName> --project src/MetaForge.Infrastructure --startup-project src/MetaForge.Web --output-dir Persistence/Migrations --context MetaForgeDbContext
 ```
+
+**Upgrading from an older `EnsureCreated` database:** run `--reset-db` in development, or create a fresh database and run `dotnet ef database update`. Schema is no longer patched with ad-hoc SQL at startup.
+
+Migrations live in `src/MetaForge.Infrastructure/Persistence/Migrations/`.
 
 On first run, MetaForge creates the database, seeds sample ERP data, form metadata, security roles, and navigation menus.
 

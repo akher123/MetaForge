@@ -13,6 +13,8 @@ public interface IEntityTypeResolver
     Type Resolve(string entityName);
 
     IReadOnlyList<Type> GetAllEntityTypes();
+
+    bool IsBusinessEntity(string entityName);
 }
 
 public sealed class EntityTypeResolver : IEntityTypeResolver
@@ -40,6 +42,19 @@ public sealed class EntityTypeResolver : IEntityTypeResolver
                      && t.ClrType != typeof(Domain.Audit.AuditLog))
             .Select(t => t.ClrType)
             .ToList();
+
+    public bool IsBusinessEntity(string entityName)
+    {
+        try
+        {
+            var entityType = Resolve(entityName);
+            return entityType.Namespace?.StartsWith("MetaForge.Domain.Business", StringComparison.Ordinal) == true;
+        }
+        catch (NotFoundException)
+        {
+            return false;
+        }
+    }
 }
 
 /// <summary>

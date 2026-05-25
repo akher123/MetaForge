@@ -1,3 +1,4 @@
+using MetaForge.Domain.Audit;
 using MetaForge.Domain.Security;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -105,6 +106,7 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.ToTable("Users");
         builder.HasKey(x => x.Id);
         builder.Property(x => x.UserName).HasMaxLength(100).IsRequired();
+        builder.Property(x => x.SecurityStamp).HasMaxLength(64);
         builder.HasIndex(x => x.UserName).IsUnique();
     }
 }
@@ -145,5 +147,20 @@ public class RolePermissionConfiguration : IEntityTypeConfiguration<RolePermissi
     {
         builder.ToTable("RolePermissions");
         builder.HasKey(x => new { x.RoleId, x.PermissionId });
+    }
+}
+
+public class AuditLogConfiguration : IEntityTypeConfiguration<AuditLog>
+{
+    public void Configure(EntityTypeBuilder<AuditLog> builder)
+    {
+        builder.ToTable("AuditLogs");
+        builder.HasKey(x => x.Id);
+        builder.Property(x => x.EntityName).HasMaxLength(200).IsRequired();
+        builder.Property(x => x.RecordId).HasMaxLength(100).IsRequired();
+        builder.Property(x => x.Action).HasMaxLength(50).IsRequired();
+        builder.Property(x => x.UserName).HasMaxLength(100);
+        builder.HasIndex(x => x.Timestamp);
+        builder.HasIndex(x => new { x.EntityName, x.RecordId });
     }
 }

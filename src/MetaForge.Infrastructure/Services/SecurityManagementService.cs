@@ -10,11 +10,16 @@ public class SecurityManagementService : ISecurityManagementService
 {
     private readonly MetaForgeDbContext _dbContext;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ISecurityStampService _securityStampService;
 
-    public SecurityManagementService(MetaForgeDbContext dbContext, IUnitOfWork unitOfWork)
+    public SecurityManagementService(
+        MetaForgeDbContext dbContext,
+        IUnitOfWork unitOfWork,
+        ISecurityStampService securityStampService)
     {
         _dbContext = dbContext;
         _unitOfWork = unitOfWork;
+        _securityStampService = securityStampService;
     }
 
     public async Task<SecurityOverviewDto> GetOverviewAsync(CancellationToken cancellationToken = default) =>
@@ -128,6 +133,7 @@ public class SecurityManagementService : ISecurityManagementService
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
+        await _securityStampService.BumpUserStampAsync(user.Id, cancellationToken);
         return user.Id;
     }
 
@@ -217,6 +223,7 @@ public class SecurityManagementService : ISecurityManagementService
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
+        await _securityStampService.BumpUsersInRoleAsync(role.Id, cancellationToken);
         return role.Id;
     }
 
@@ -346,6 +353,10 @@ public class SecurityManagementService : ISecurityManagementService
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
+
+        if (adminRole != null && added > 0)
+            await _securityStampService.BumpUsersInRoleAsync(adminRole.Id, cancellationToken);
+
         return added;
     }
 

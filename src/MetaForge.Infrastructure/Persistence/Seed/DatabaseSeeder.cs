@@ -19,8 +19,9 @@ public static class DatabaseSeeder
 
         logger.LogWarning("Dropping database...");
         await context.Database.EnsureDeletedAsync();
-        logger.LogInformation("Database dropped. Seeding fresh data...");
-        await SeedAsync(services);
+        logger.LogInformation("Database dropped. Applying migrations and seeding...");
+        await DatabaseMigrator.MigrateAsync(context, logger);
+        await SeedDataAsync(scope, context, logger);
     }
 
     public static async Task SeedAsync(IServiceProvider services)
@@ -29,34 +30,46 @@ public static class DatabaseSeeder
         var context = scope.ServiceProvider.GetRequiredService<MetaForgeDbContext>();
         var logger = scope.ServiceProvider.GetRequiredService<ILogger<MetaForgeDbContext>>();
 
-        await context.Database.EnsureCreatedAsync();
-        await EnsureFormSchemaAsync(context, logger);
-        await EnsureBusinessSchemaAsync(context, logger);
+        await DatabaseMigrator.MigrateAsync(context, logger);
 
         if (await context.ForgeForms.AnyAsync())
         {
             logger.LogInformation("Database already seeded.");
-            await UpgradeLegacyPasswordsAsync(context, logger);
-            await EnsureSecurityPermissionsAsync(context, logger);
-            await EnsureFormPermissionsAsync(context, logger);
-            await EnsureCascadeLookupUpgradeAsync(context, logger);
-            await EnsurePagedLookupUpgradeAsync(context, logger);
-            await EnsureSampleCustomerAsync(context, logger);
-            await EnsureSampleTransactionDataAsync(context, logger);
-            await EnsureTabularSalesOrderUpgradeAsync(context, logger);
-            await EnsureFormPermissionsAsync(context, logger);
-            await EnsureMenusAsync(scope, logger);
+            await ApplyDataUpgradesAsync(context, scope, logger);
             return;
         }
 
+        await SeedDataAsync(scope, context, logger);
+    }
+
+    private static async Task SeedDataAsync(IServiceScope scope, MetaForgeDbContext context, ILogger logger)
+    {
         SeedBusinessData(context);
         SeedMetadata(context);
         SeedLookups(context);
         SeedSecurity(context);
 
         await context.SaveChangesAsync();
-        await EnsureMenusAsync(scope, logger);
+        await ApplyDataUpgradesAsync(context, scope, logger);
         logger.LogInformation("Database seeded successfully.");
+    }
+
+    private static async Task ApplyDataUpgradesAsync(
+        MetaForgeDbContext context,
+        IServiceScope scope,
+        ILogger logger)
+    {
+        await EnsureUserSecurityStampsAsync(context, logger);
+        await UpgradeLegacyPasswordsAsync(context, logger);
+        await EnsureSecurityPermissionsAsync(context, logger);
+        await EnsureFormPermissionsAsync(context, logger);
+        await EnsureCascadeLookupUpgradeAsync(context, logger);
+        await EnsurePagedLookupUpgradeAsync(context, logger);
+        await EnsureSampleCustomerAsync(context, logger);
+        await EnsureSampleTransactionDataAsync(context, logger);
+        await EnsureTabularSalesOrderUpgradeAsync(context, logger);
+        await EnsureFormPermissionsAsync(context, logger);
+        await EnsureMenusAsync(scope, logger);
     }
 
     private static async Task EnsureMenusAsync(IServiceScope scope, ILogger logger)
@@ -64,122 +77,35 @@ public static class DatabaseSeeder
         try
         {
             var context = scope.ServiceProvider.GetRequiredService<MetaForgeDbContext>();
-            await EnsureMenuSchemaAsync(context, logger);
+
+            await context.ForgeMenus
+                .Where(m => m.Action == "MasterDetail")
+                .ExecuteUpdateAsync(setters => setters.SetProperty(m => m.Action, "Index"));
+
             var menuSync = scope.ServiceProvider.GetRequiredService<IMenuSyncService>();
             await menuSync.EnsureDefaultMenusAsync();
             logger.LogInformation("Navigation menus ensured.");
         }
         catch (Exception ex)
         {
-            logger.LogWarning(ex, "Could not ensure navigation menus. Reset the database if the ForgeMenus table is missing.");
+            logger.LogWarning(ex, "Could not ensure navigation menus.");
         }
     }
 
-    private static async Task EnsureFormSchemaAsync(MetaForgeDbContext context, ILogger logger)
+    private static async Task EnsureUserSecurityStampsAsync(MetaForgeDbContext context, ILogger logger)
     {
-        const string sql = """
-            IF EXISTS (SELECT * FROM sys.tables WHERE name = 'AdminForms') AND NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'ForgeForms')
-                EXEC sp_rename 'AdminForms', 'ForgeForms';
-            IF EXISTS (SELECT * FROM sys.tables WHERE name = 'AdminFields') AND NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'ForgeFields')
-                EXEC sp_rename 'AdminFields', 'ForgeFields';
-            IF EXISTS (SELECT * FROM sys.tables WHERE name = 'AdminRelations') AND NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'ForgeRelations')
-                EXEC sp_rename 'AdminRelations', 'ForgeRelations';
-            IF EXISTS (SELECT * FROM sys.tables WHERE name = 'AdminGridColumns') AND NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'ForgeGridColumns')
-                EXEC sp_rename 'AdminGridColumns', 'ForgeGridColumns';
-            IF EXISTS (SELECT * FROM sys.tables WHERE name = 'AdminMenus') AND NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'ForgeMenus')
-                EXEC sp_rename 'AdminMenus', 'ForgeMenus';
+        var users = await context.Users
+            .Where(u => u.SecurityStamp == null || u.SecurityStamp == string.Empty)
+            .ToListAsync();
 
-            IF EXISTS (SELECT * FROM sys.tables WHERE name = 'AdminModules') AND NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'ForgeForms')
-                EXEC sp_rename 'AdminModules', 'ForgeForms';
+        if (users.Count == 0)
+            return;
 
-            IF EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('ForgeFields') AND name = 'ModuleId')
-                EXEC sp_rename 'ForgeFields.ModuleId', 'FormId', 'COLUMN';
+        foreach (var user in users)
+            user.SecurityStamp = Guid.NewGuid().ToString("N");
 
-            IF EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('ForgeRelations') AND name = 'ModuleId')
-                EXEC sp_rename 'ForgeRelations.ModuleId', 'FormId', 'COLUMN';
-
-            IF EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('ForgeGridColumns') AND name = 'ModuleId')
-                EXEC sp_rename 'ForgeGridColumns.ModuleId', 'FormId', 'COLUMN';
-
-            IF EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('ForgeMenus') AND name = 'ModuleId')
-                EXEC sp_rename 'ForgeMenus.ModuleId', 'FormId', 'COLUMN';
-
-            IF EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('Permissions') AND name = 'ModuleId')
-                EXEC sp_rename 'Permissions.ModuleId', 'FormId', 'COLUMN';
-
-            IF OBJECT_ID('ForgeForms') IS NOT NULL
-               AND NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('ForgeForms') AND name = 'FormType')
-                ALTER TABLE ForgeForms ADD FormType nvarchar(50) NOT NULL CONSTRAINT DF_ForgeForms_FormType DEFAULT 'Master';
-
-            IF OBJECT_ID('ForgeForms') IS NOT NULL
-            BEGIN
-                UPDATE ForgeForms SET FormType = 'MasterDetailTabular' WHERE Code = 'salesorder' AND FormType IN ('Master', 'MasterDetail');
-                UPDATE ForgeForms SET FormType = 'Detail' WHERE Code IN ('salesorderitem', 'salesordercharge') AND (FormType IS NULL OR FormType = 'Master');
-            END
-
-            IF OBJECT_ID('ForgeRelations') IS NOT NULL
-            BEGIN
-                IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('ForgeRelations') AND name = 'TabLabel')
-                    ALTER TABLE ForgeRelations ADD TabLabel nvarchar(200) NULL;
-                IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('ForgeRelations') AND name = 'DisplayOrder')
-                    ALTER TABLE ForgeRelations ADD DisplayOrder int NOT NULL CONSTRAINT DF_ForgeRelations_DisplayOrder DEFAULT 0;
-            END
-
-            IF OBJECT_ID('ForgeFields') IS NOT NULL
-            BEGIN
-                IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('ForgeFields') AND name = 'LookupParentField')
-                    ALTER TABLE ForgeFields ADD LookupParentField nvarchar(200) NULL;
-                IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('ForgeFields') AND name = 'LookupFilterField')
-                    ALTER TABLE ForgeFields ADD LookupFilterField nvarchar(200) NULL;
-            END
-
-            IF EXISTS (SELECT 1 FROM sys.tables WHERE name = 'ForgeMenus')
-                UPDATE ForgeMenus SET ItemType = 'Form' WHERE ItemType = 'Module';
-            """;
-
-        await context.Database.ExecuteSqlRawAsync(sql);
-        logger.LogInformation("ForgeForms schema migration verified.");
-    }
-
-    private static async Task EnsureBusinessSchemaAsync(MetaForgeDbContext context, ILogger logger)
-    {
-        await BusinessTableEnsurer.EnsureMissingTablesAsync(context, logger);
-
-        const string sql = """
-            IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'SalesOrderCharges')
-            BEGIN
-                CREATE TABLE SalesOrderCharges (
-                    Id int NOT NULL IDENTITY,
-                    SalesOrderId int NOT NULL,
-                    ChargeType nvarchar(50) NOT NULL,
-                    Description nvarchar(500) NULL,
-                    Amount decimal(18,2) NOT NULL,
-                    CONSTRAINT PK_SalesOrderCharges PRIMARY KEY (Id),
-                    CONSTRAINT FK_SalesOrderCharges_SalesOrders_SalesOrderId FOREIGN KEY (SalesOrderId) REFERENCES SalesOrders (Id) ON DELETE CASCADE
-                );
-                CREATE INDEX IX_SalesOrderCharges_SalesOrderId ON SalesOrderCharges (SalesOrderId);
-            END
-
-            IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Regions')
-            BEGIN
-                CREATE TABLE Regions (
-                    Id int NOT NULL IDENTITY,
-                    Code nvarchar(50) NOT NULL,
-                    Name nvarchar(200) NOT NULL,
-                    CountryId int NOT NULL,
-                    CONSTRAINT PK_Regions PRIMARY KEY (Id),
-                    CONSTRAINT FK_Regions_Countries_CountryId FOREIGN KEY (CountryId) REFERENCES Countries (Id)
-                );
-                CREATE INDEX IX_Regions_CountryId ON Regions (CountryId);
-            END
-
-            IF EXISTS (SELECT * FROM sys.tables WHERE name = 'Customers')
-               AND NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('Customers') AND name = 'RegionId')
-                ALTER TABLE Customers ADD RegionId int NULL;
-            """;
-
-        await context.Database.ExecuteSqlRawAsync(sql);
-        logger.LogInformation("Business schema migration verified.");
+        await context.SaveChangesAsync();
+        logger.LogInformation("Assigned security stamps to {Count} user(s).", users.Count);
     }
 
     private static async Task EnsureTabularSalesOrderUpgradeAsync(MetaForgeDbContext context, ILogger logger)
@@ -479,38 +405,6 @@ public static class DatabaseSeeder
         }
     }
 
-    private static async Task EnsureMenuSchemaAsync(MetaForgeDbContext context, ILogger logger)
-    {
-        const string sql = """
-            IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'ForgeMenus')
-            BEGIN
-                CREATE TABLE ForgeMenus (
-                    Id int NOT NULL IDENTITY,
-                    ParentId int NULL,
-                    Name nvarchar(200) NOT NULL,
-                    Icon nvarchar(100) NULL,
-                    ItemType nvarchar(50) NOT NULL,
-                    FormId int NULL,
-                    Action nvarchar(50) NULL,
-                    Url nvarchar(500) NULL,
-                    DisplayOrder int NOT NULL,
-                    IsActive bit NOT NULL,
-                    CONSTRAINT PK_ForgeMenus PRIMARY KEY (Id),
-                    CONSTRAINT FK_ForgeMenus_ForgeMenus_ParentId FOREIGN KEY (ParentId) REFERENCES ForgeMenus (Id),
-                    CONSTRAINT FK_ForgeMenus_ForgeForms_FormId FOREIGN KEY (FormId) REFERENCES ForgeForms (Id) ON DELETE SET NULL
-                );
-                CREATE INDEX IX_ForgeMenus_ParentId ON ForgeMenus (ParentId);
-                CREATE INDEX IX_ForgeMenus_FormId ON ForgeMenus (FormId);
-            END
-            """;
-
-        await context.Database.ExecuteSqlRawAsync(sql);
-        logger.LogInformation("ForgeMenus schema verified.");
-
-        await context.Database.ExecuteSqlRawAsync(
-            "UPDATE ForgeMenus SET Action = 'Index' WHERE Action = 'MasterDetail'");
-    }
-
     private static async Task EnsureSecurityPermissionsAsync(MetaForgeDbContext context, ILogger logger)
     {
         var adminRole = await context.Roles.FirstOrDefaultAsync(r => r.Name == "Administrator");
@@ -675,13 +569,22 @@ public static class DatabaseSeeder
 
     private static async Task UpgradeLegacyPasswordsAsync(MetaForgeDbContext context, ILogger logger)
     {
+        var adminPasswordHash = await context.Users
+            .AsNoTracking()
+            .Where(u => u.UserName == "admin")
+            .Select(u => u.PasswordHash)
+            .FirstOrDefaultAsync();
+
+        if (string.IsNullOrEmpty(adminPasswordHash) || !PasswordHasher.IsLegacyHash(adminPasswordHash))
+            return;
+
         var admin = await context.Users.FirstOrDefaultAsync(u => u.UserName == "admin");
-        if (admin != null && admin.PasswordHash == "admin")
-        {
-            admin.PasswordHash = PasswordHasher.Hash("admin");
-            await context.SaveChangesAsync();
-            logger.LogInformation("Upgraded legacy admin password hash.");
-        }
+        if (admin == null)
+            return;
+
+        admin.PasswordHash = PasswordHasher.Hash("admin");
+        await context.SaveChangesAsync();
+        logger.LogInformation("Upgraded legacy admin password hash.");
     }
 
     private static void SeedBusinessData(MetaForgeDbContext context)
@@ -912,6 +815,7 @@ public static class DatabaseSeeder
             UserName = "admin",
             Email = "admin@localhost",
             PasswordHash = PasswordHasher.Hash("admin"),
+            SecurityStamp = Guid.NewGuid().ToString("N"),
             IsActive = true,
             UserRoles = [new UserRole { Role = adminRole }]
         });

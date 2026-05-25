@@ -15,7 +15,9 @@ public static class DependencyInjection
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddDbContext<MetaForgeDbContext>(options =>
-            options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
+            options.UseSqlServer(
+                configuration.GetConnectionString("DefaultConnection"),
+                sql => sql.MigrationsAssembly(typeof(MetaForgeDbContext).Assembly.FullName)));
 
         services.Configure<MetadataCacheOptions>(configuration.GetSection(MetadataCacheOptions.SectionName));
         services.AddMemoryCache();
@@ -37,6 +39,9 @@ public static class DependencyInjection
         services.AddScoped<IDynamicValidationService, DynamicValidationService>();
         services.AddScoped<IAuditService, AuditService>();
         services.AddScoped<IFormAuthorizationService, FormAuthorizationService>();
+        services.AddScoped<IUserAuthorizationSnapshotProvider, UserAuthorizationSnapshotProvider>();
+        services.AddScoped<ISecurityStampService, SecurityStampService>();
+        services.AddScoped<IUserClaimsFactory, UserClaimsFactory>();
 
         services.AddScoped<ISecurityManagementService, SecurityManagementService>();
         services.AddScoped<IAuthService, AuthService>();

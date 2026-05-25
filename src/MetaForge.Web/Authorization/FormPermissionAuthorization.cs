@@ -104,4 +104,14 @@ public static class PermissionGuard
         var allowed = await authService.HasPermissionCodeAsync(httpContext.User, permissionCode, cancellationToken);
         return allowed ? null : new ForbidResult();
     }
+
+    public static async Task<IActionResult?> EnsureLookupAccessAsync(
+        HttpContext httpContext,
+        string entityName,
+        CancellationToken cancellationToken = default)
+    {
+        var authService = httpContext.RequestServices.GetRequiredService<IFormAuthorizationService>();
+        var allowed = await authService.CanAccessLookupAsync(httpContext.User, entityName, cancellationToken);
+        return allowed ? null : new ForbidResult();
+    }
 }

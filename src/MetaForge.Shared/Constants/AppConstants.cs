@@ -13,4 +13,9 @@ public static class AppConstants
     /// <summary>Hard cap for legacy full-list lookup responses.</summary>
     public const int MaxLookupListSize = 100;
     public const string PermissionClaimType = "permission";
+
+    /// <summary>Claim type for the per-user security stamp used to invalidate stale sessions.</summary>
+    public const string SecurityStampClaimType = "AspNet.Identity.SecurityStamp";
+
+    public const string AuthorizationSnapshotCacheKeyPrefix = "auth:snapshot:";
 }

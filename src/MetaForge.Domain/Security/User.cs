@@ -15,5 +15,7 @@ public class User
 
     public bool IsActive { get; set; } = true;
 
+    public string? SecurityStamp { get; set; }
+
     public ICollection<UserRole> UserRoles { get; set; } = [];
 }

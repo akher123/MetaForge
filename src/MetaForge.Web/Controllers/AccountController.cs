@@ -7,12 +7,12 @@ namespace MetaForge.Web.Controllers;
 public class AccountController : Controller
 {
     private readonly IAuthService _authService;
-    private readonly IFormAuthorizationService _authorizationService;
+    private readonly IUserClaimsFactory _claimsFactory;
 
-    public AccountController(IAuthService authService, IFormAuthorizationService authorizationService)
+    public AccountController(IAuthService authService, IUserClaimsFactory claimsFactory)
     {
         _authService = authService;
-        _authorizationService = authorizationService;
+        _claimsFactory = claimsFactory;
     }
 
     [AllowAnonymous]
@@ -40,19 +40,12 @@ public class AccountController : Controller
             return View(model);
         }
 
-        var claims = new List<Claim>
+        var principal = await _claimsFactory.CreatePrincipalAsync(result.UserId, cancellationToken);
+        if (principal == null)
         {
-            new(ClaimTypes.NameIdentifier, result.UserId.ToString()),
-            new(ClaimTypes.Name, result.UserName),
-            new(ClaimTypes.Email, result.Email)
-        };
-        claims.AddRange(result.Roles.Select(r => new Claim(ClaimTypes.Role, r)));
-
-        var permissions = await _authorizationService.GetUserPermissionsAsync(result.UserId, cancellationToken);
-        claims.AddRange(permissions.Select(p => new Claim(Shared.Constants.AppConstants.PermissionClaimType, p)));
-
-        var identity = new ClaimsIdentity(claims, "Cookies");
-        var principal = new ClaimsPrincipal(identity);
+            model.ErrorMessage = "Your account is inactive or unavailable.";
+            return View(model);
+        }
 
         await HttpContext.SignInAsync("Cookies", principal, new AuthenticationProperties
         {

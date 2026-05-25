@@ -27,6 +27,7 @@ public class LookupService : ILookupService
         string? filterValue = null,
         CancellationToken cancellationToken = default)
     {
+        EnsureBusinessLookupEntity(entityName);
         var canonicalEntity = GetCanonicalEntityName(entityName);
         var version = GetCacheVersion(canonicalEntity);
         var cacheKey =
@@ -48,6 +49,7 @@ public class LookupService : ILookupService
         string? filterValue = null,
         CancellationToken cancellationToken = default)
     {
+        EnsureBusinessLookupEntity(entityName);
         var canonicalEntity = GetCanonicalEntityName(entityName);
         skip = Math.Max(0, skip);
         take = Math.Clamp(take, 1, AppConstants.MaxLookupListSize);
@@ -70,6 +72,7 @@ public class LookupService : ILookupService
         if (string.IsNullOrWhiteSpace(value))
             return null;
 
+        EnsureBusinessLookupEntity(entityName);
         var canonicalEntity = GetCanonicalEntityName(entityName);
         var cacheKey = $"{AppConstants.LookupCacheKeyPrefix}{canonicalEntity}:item:{value}";
 
@@ -118,6 +121,12 @@ public class LookupService : ILookupService
 
     private string GetCanonicalEntityName(string entityName) =>
         _typeResolver.Resolve(entityName).Name;
+
+    private void EnsureBusinessLookupEntity(string entityName)
+    {
+        if (!_typeResolver.IsBusinessEntity(entityName))
+            throw new BusinessException($"Lookups are not available for entity '{entityName}'.");
+    }
 
     private static string VersionKey(string entityName) =>
         $"{AppConstants.LookupCacheKeyPrefix}version:{entityName}";

@@ -2,7 +2,9 @@ using System.Linq.Expressions;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Security.Claims;
+using MetaForge.Domain.Enums;
 using MetaForge.Infrastructure.Dynamic;
+using MetaForge.Shared.Constants;
 using FluentValidation;
 using FluentValidation.Results;
 using Microsoft.AspNetCore.Http;
@@ -177,8 +179,18 @@ public class AuditService : IAuditService
 public class FormAuthorizationService : IFormAuthorizationService
 {
     private readonly MetaForgeDbContext _dbContext;
+    private readonly IEntityTypeResolver _typeResolver;
+    private readonly IUserAuthorizationSnapshotProvider _snapshotProvider;
 
-    public FormAuthorizationService(MetaForgeDbContext dbContext) => _dbContext = dbContext;
+    public FormAuthorizationService(
+        MetaForgeDbContext dbContext,
+        IEntityTypeResolver typeResolver,
+        IUserAuthorizationSnapshotProvider snapshotProvider)
+    {
+        _dbContext = dbContext;
+        _typeResolver = typeResolver;
+        _snapshotProvider = snapshotProvider;
+    }
 
     public async Task<bool> HasPermissionAsync(int userId, string formCode, string action, CancellationToken cancellationToken = default)
     {
@@ -196,43 +208,24 @@ public class FormAuthorizationService : IFormAuthorizationService
             .ToListAsync(cancellationToken);
     }
 
-    public Task<bool> HasFormPermissionAsync(ClaimsPrincipal user, string formCode, string action, CancellationToken cancellationToken = default)
+    public async Task<bool> HasFormPermissionAsync(ClaimsPrincipal user, string formCode, string action, CancellationToken cancellationToken = default)
     {
-        if (user?.Identity?.IsAuthenticated != true)
-            return Task.FromResult(false);
-
-        if (user.IsInRole("Administrator"))
-            return Task.FromResult(true);
-
-        var code = $"{formCode}.{action}";
-        var allowed = user.Claims.Any(c =>
-            c.Type == Shared.Constants.AppConstants.PermissionClaimType
-            && string.Equals(c.Value, code, StringComparison.OrdinalIgnoreCase));
-
-        return Task.FromResult(allowed);
+        var snapshot = await _snapshotProvider.GetSnapshotAsync(user, cancellationToken);
+        return snapshot?.HasPermission($"{formCode}.{action}") == true;
     }
 
-    public Task<bool> HasPermissionCodeAsync(ClaimsPrincipal user, string permissionCode, CancellationToken cancellationToken = default)
+    public async Task<bool> HasPermissionCodeAsync(ClaimsPrincipal user, string permissionCode, CancellationToken cancellationToken = default)
     {
-        if (user?.Identity?.IsAuthenticated != true)
-            return Task.FromResult(false);
-
-        if (user.IsInRole("Administrator"))
-            return Task.FromResult(true);
-
-        return Task.FromResult(user.Claims.Any(c =>
-            c.Type == Shared.Constants.AppConstants.PermissionClaimType
-            && string.Equals(c.Value, permissionCode, StringComparison.OrdinalIgnoreCase)));
+        var snapshot = await _snapshotProvider.GetSnapshotAsync(user, cancellationToken);
+        return snapshot?.HasPermission(permissionCode) == true;
     }
 
-    public Task<FormPermissionsDto> GetFormPermissionsAsync(ClaimsPrincipal user, string formCode, CancellationToken cancellationToken = default)
+    public async Task<FormPermissionsDto> GetFormPermissionsAsync(ClaimsPrincipal user, string formCode, CancellationToken cancellationToken = default)
     {
-        var isAdmin = user.IsInRole("Administrator");
-        bool Has(string action) => isAdmin || user.Claims.Any(c =>
-            c.Type == Shared.Constants.AppConstants.PermissionClaimType
-            && string.Equals(c.Value, $"{formCode}.{action}", StringComparison.OrdinalIgnoreCase));
+        var snapshot = await _snapshotProvider.GetSnapshotAsync(user, cancellationToken);
+        bool Has(string action) => snapshot?.HasPermission($"{formCode}.{action}") == true;
 
-        return Task.FromResult(new FormPermissionsDto
+        return new FormPermissionsDto
         {
             FormCode = formCode,
             CanView = Has(PermissionAction.View),
@@ -241,7 +234,7 @@ public class FormAuthorizationService : IFormAuthorizationService
             CanDelete = Has(PermissionAction.Delete),
             CanExport = Has(PermissionAction.Export),
             CanApprove = Has(PermissionAction.Approve)
-        });
+        };
     }
 
     public async Task<string?> ResolveFormCodeByEntityAsync(string entityName, CancellationToken cancellationToken = default)
@@ -251,5 +244,83 @@ public class FormAuthorizationService : IFormAuthorizationService
             .FirstOrDefaultAsync(f => f.EntityName == entityName, cancellationToken);
 
         return form?.Code;
+    }
+
+    public async Task<bool> CanAccessLookupAsync(ClaimsPrincipal user, string entityName, CancellationToken cancellationToken = default)
+    {
+        if (user?.Identity?.IsAuthenticated != true)
+            return false;
+
+        if (!_typeResolver.IsBusinessEntity(entityName))
+            return false;
+
+        var snapshot = await _snapshotProvider.GetSnapshotAsync(user, cancellationToken);
+        if (snapshot == null)
+            return false;
+
+        if (snapshot.IsAdministrator)
+            return true;
+
+        if (snapshot.HasPermission(ConfigPermissions.View) || snapshot.HasPermission(ConfigPermissions.Manage))
+            return true;
+
+        var formCodes = await GetLookupReferencingFormCodesAsync(entityName, cancellationToken);
+        foreach (var formCode in formCodes)
+        {
+            if (await HasFormPermissionAsync(user, formCode, PermissionAction.View, cancellationToken))
+                return true;
+        }
+
+        return false;
+    }
+
+    private async Task<IReadOnlyList<string>> GetLookupReferencingFormCodesAsync(
+        string lookupEntityName,
+        CancellationToken cancellationToken)
+    {
+        var forms = await _dbContext.ForgeForms
+            .AsNoTracking()
+            .Where(f => f.IsActive)
+            .Select(f => new
+            {
+                f.Code,
+                f.EntityName,
+                f.FormType,
+                FieldLookups = f.Fields.Select(field => field.LookupEntity),
+                ChildEntities = f.Relations.Select(relation => relation.ChildEntity)
+            })
+            .ToListAsync(cancellationToken);
+
+        var codes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var form in forms)
+        {
+            if (string.Equals(form.EntityName, lookupEntityName, StringComparison.OrdinalIgnoreCase)
+                || form.FieldLookups.Any(l => string.Equals(l, lookupEntityName, StringComparison.OrdinalIgnoreCase)))
+            {
+                codes.Add(form.Code);
+            }
+        }
+
+        var detailEntityByCode = forms
+            .Where(f => f.FormType == FormType.Detail)
+            .ToDictionary(f => f.Code, f => f.EntityName, StringComparer.OrdinalIgnoreCase);
+
+        foreach (var formCode in codes.ToList())
+        {
+            if (!detailEntityByCode.TryGetValue(formCode, out var detailEntity))
+                continue;
+
+            foreach (var parent in forms)
+            {
+                if (parent.ChildEntities.Any(child =>
+                        string.Equals(child, detailEntity, StringComparison.OrdinalIgnoreCase)))
+                {
+                    codes.Add(parent.Code);
+                }
+            }
+        }
+
+        return codes.ToList();
     }
 }

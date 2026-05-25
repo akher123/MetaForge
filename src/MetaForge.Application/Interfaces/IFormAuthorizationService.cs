@@ -18,4 +18,6 @@ public interface IFormAuthorizationService
     Task<FormPermissionsDto> GetFormPermissionsAsync(ClaimsPrincipal user, string formCode, CancellationToken cancellationToken = default);
 
     Task<string?> ResolveFormCodeByEntityAsync(string entityName, CancellationToken cancellationToken = default);
+
+    Task<bool> CanAccessLookupAsync(ClaimsPrincipal user, string entityName, CancellationToken cancellationToken = default);
 }

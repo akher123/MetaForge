@@ -240,6 +240,9 @@ public class LookupsApiController : ControllerBase
         [FromQuery] string? filter,
         CancellationToken cancellationToken)
     {
+        var denied = await PermissionGuard.EnsureLookupAccessAsync(HttpContext, entityName, cancellationToken);
+        if (denied != null) return denied;
+
         if (!string.IsNullOrWhiteSpace(filter) && string.IsNullOrWhiteSpace(filterField))
         {
             var parts = filter.Split('=', 2);
@@ -266,6 +269,9 @@ public class LookupsApiController : ControllerBase
         [FromQuery] string? filterValue = null,
         CancellationToken cancellationToken = default)
     {
+        var denied = await PermissionGuard.EnsureLookupAccessAsync(HttpContext, entityName, cancellationToken);
+        if (denied != null) return denied;
+
         Response.Headers.CacheControl = "no-store, no-cache";
         Response.Headers.Pragma = "no-cache";
 
@@ -285,6 +291,9 @@ public class LookupsApiController : ControllerBase
         string value,
         CancellationToken cancellationToken = default)
     {
+        var denied = await PermissionGuard.EnsureLookupAccessAsync(HttpContext, entityName, cancellationToken);
+        if (denied != null) return denied;
+
         Response.Headers.CacheControl = "no-store, no-cache";
         Response.Headers.Pragma = "no-cache";
 
