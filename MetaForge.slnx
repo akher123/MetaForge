@@ -1,10 +1,27 @@
 <Solution>
-  <Folder Name="/src/">
-    <Project Path="src/MetaForge.Application/MetaForge.Application.csproj" />
-    <Project Path="src/MetaForge.Domain/MetaForge.Domain.csproj" />
-    <Project Path="src/MetaForge.Infrastructure/MetaForge.Infrastructure.csproj" />
-    <Project Path="src/MetaForge.Shared/MetaForge.Shared.csproj" />
-    <Project Path="src/MetaForge.Web/MetaForge.Web.csproj" />
+  <Folder Name="/src/BuildingBlocks/">
+    <Project Path="src/BuildingBlocks/MetaForge.SharedKernel/MetaForge.SharedKernel.csproj" />
+  </Folder>
+  <Folder Name="/src/Platform/">
+    <Project Path="src/Platform/MetaForge.Domain/MetaForge.Domain.csproj" />
+    <Project Path="src/Platform/MetaForge.Application/MetaForge.Application.csproj" />
+    <Project Path="src/Platform/MetaForge.Infrastructure/MetaForge.Infrastructure.csproj" />
+    <Project Path="src/Platform/MetaForge.Web/MetaForge.Web.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/MasterData/">
+    <Project Path="src/Modules/MasterData/MasterData.Domain/MasterData.Domain.csproj" />
+    <Project Path="src/Modules/MasterData/MasterData.Infrastructure/MasterData.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Sales/">
+    <Project Path="src/Modules/Sales/Sales.Domain/Sales.Domain.csproj" />
+    <Project Path="src/Modules/Sales/Sales.Infrastructure/Sales.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Hr/">
+    <Project Path="src/Modules/Hr/Hr.Domain/Hr.Domain.csproj" />
+    <Project Path="src/Modules/Hr/Hr.Infrastructure/Hr.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Host/">
+    <Project Path="src/Host/MetaForge.Host/MetaForge.Host.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/MetaForge.UnitTests/MetaForge.UnitTests.csproj" />

@@ -18,18 +18,26 @@ Metadata-driven ASP.NET Core MVC admin platform for .NET 10. MetaForge discovers
 
 ## Architecture
 
-MetaForge follows **Clean Architecture** with a metadata-first admin shell. Business entities live in Domain; the Web layer renders screens from cached `ForgeForm` definitions stored in SQL Server.
+MetaForge follows **Clean Architecture** as a **modular monolith**: a metadata-first platform shell plus vertical business modules. Business entities live in module projects; the platform renders screens from cached `ForgeForm` definitions stored in SQL Server.
 
 ### Solution structure
 
 ```text
 MetaForge.slnx
 ├── src/
-│   ├── MetaForge.Domain/           Entities, enums, metadata model (ForgeForm, security)
-│   ├── MetaForge.Application/      Interfaces, DTOs, application contracts
-│   ├── MetaForge.Infrastructure/   EF Core, repositories, dynamic CRUD/grid/services
-│   ├── MetaForge.Shared/           Constants, shared exceptions
-│   └── MetaForge.Web/              MVC UI, REST API, authorization, Razor views
+│   ├── BuildingBlocks/
+│   │   └── MetaForge.SharedKernel/     BaseEntity, IForgeBusinessEntity, constants, exceptions
+│   ├── Platform/
+│   │   ├── MetaForge.Domain/           Metadata model (ForgeForm), security, audit, enums
+│   │   ├── MetaForge.Application/      Interfaces, DTOs, application contracts
+│   │   ├── MetaForge.Infrastructure/   EF Core, generic CRUD/grid, discovery, auth, migrations
+│   │   └── MetaForge.Web/              MVC UI, REST API, authorization, Razor views
+│   ├── Modules/
+│   │   ├── MasterData/                 Country, Customer, Product, Supplier, …
+│   │   ├── Sales/                      SalesOrder, line items, charges
+│   │   └── Hr/                         Department, Student
+│   └── Host/
+│       └── MetaForge.Host/             Entry point (Program.cs, appsettings)
 └── tests/
     └── MetaForge.UnitTests/
 ```
@@ -37,21 +45,28 @@ MetaForge.slnx
 ### Layer dependencies
 
 ```text
-MetaForge.Domain          ← no framework dependencies
+MetaForge.SharedKernel      ← shared base types
         ↑
-MetaForge.Application     ← interfaces, DTOs, contracts
+Platform Domain / Modules   ← metadata + business entities
         ↑
-MetaForge.Infrastructure  ← EF Core, services, repositories
+MetaForge.Application       ← interfaces, DTOs, contracts
         ↑
-MetaForge.Web             ← MVC controllers, API, Razor views
+MetaForge.Infrastructure    ← EF Core, services, repositories (+ module EF configs)
+        ↑
+MetaForge.Web               ← MVC controllers, API, Razor views
+        ↑
+MetaForge.Host              ← wires platform + all modules
 ```
 
 | Layer | Responsibility | Must not contain |
 |---|---|---|
-| **Domain** | Business entities (`MetaForge.Domain.Business`), metadata model (`ForgeForm`, `ForgeField`, `ForgeGridColumn`, `ForgeRelation`, `ForgeMenu`), RBAC entities, enums | EF Core, ASP.NET, service logic |
+| **SharedKernel** | `BaseEntity`, `IForgeBusinessEntity`, shared constants and exceptions | Business rules, EF Core |
+| **Platform Domain** | Metadata model (`ForgeForm`, `ForgeField`, …), RBAC entities, enums | Business module entities |
+| **Module Domain** | Module entities in `MetaForge.Domain.Business` namespace (e.g. Customer, SalesOrder) | Platform metadata, UI |
 | **Application** | Service interfaces, DTOs, repository contracts, validation contracts | EF Core, infrastructure implementations |
-| **Infrastructure** | `MetaForgeDbContext`, EF configurations, generic CRUD, grid/export, discovery, auth, caching | UI or controller code |
-| **Web** | `ModuleController` for dynamic screens, Form Builder, Security UI, REST API, cookie authentication | Direct database access |
+| **Infrastructure** | `MetaForgeDbContext`, generic CRUD, grid/export, discovery, auth, caching | UI or controller code |
+| **Web** | `ModuleController`, Form Builder, Security UI, REST API | Direct database access |
+| **Host** | Startup, DI wiring for platform + modules | Business logic |
 
 ### Metadata model
 
@@ -79,7 +94,7 @@ All dynamic screens are driven by database-backed metadata:
 
 | Service | Role |
 |---|---|
-| `EntityMetadataDiscoveryService` | Scans EF Core model types under `MetaForge.Domain.Business` and auto-generates draft form config |
+| `EntityMetadataDiscoveryService` | Scans EF Core entities implementing `IForgeBusinessEntity` and auto-generates draft form config |
 | `FormConfigurationService` | Form Builder CRUD — fields, columns, relations, screen preview |
 | `FormMetadataService` | Loads cached form definitions for runtime rendering |
 | `GenericCrudService` | Dynamic create/read/update/delete against any configured entity |
@@ -115,7 +130,7 @@ All dynamic screens are driven by database-backed metadata:
 
 - [.NET 10 SDK](https://dotnet.microsoft.com/download)
 - SQL Server (LocalDB or full instance)
-- Update the connection string in `src/MetaForge.Web/appsettings.json` if needed:
+- Update the connection string in `src/Host/MetaForge.Host/appsettings.json` if needed:
 
 ```json
 "ConnectionStrings": {
@@ -130,7 +145,7 @@ All dynamic screens are driven by database-backed metadata:
 ```bash
 dotnet restore MetaForge.slnx
 dotnet build MetaForge.slnx
-dotnet run --project src/MetaForge.Web
+dotnet run --project src/Host/MetaForge.Host
 ```
 
 Open the app in your browser (typically `https://localhost:5001` or the URL shown in the console).
@@ -147,21 +162,21 @@ On startup, MetaForge applies pending **EF Core migrations** automatically, then
 
 ```bash
 # Reset and reseed the database (drops all data, reapplies migrations)
-dotnet run --project src/MetaForge.Web -- --reset-db
+dotnet run --project src/Host/MetaForge.Host -- --reset-db
 
 # Seed / upgrade data only (migrate + seed, then exit — no web server)
-dotnet run --project src/MetaForge.Web -- --seed-only
+dotnet run --project src/Host/MetaForge.Host -- --seed-only
 
 # Apply migrations manually (CI/production)
-dotnet ef database update --project src/MetaForge.Infrastructure --startup-project src/MetaForge.Web
+dotnet ef database update --project src/Platform/MetaForge.Infrastructure --startup-project src/Host/MetaForge.Host
 
 # Add a migration after changing entities or EF configurations
-dotnet ef migrations add <MigrationName> --project src/MetaForge.Infrastructure --startup-project src/MetaForge.Web --output-dir Persistence/Migrations --context MetaForgeDbContext
+dotnet ef migrations add <MigrationName> --project src/Platform/MetaForge.Infrastructure --startup-project src/Host/MetaForge.Host --output-dir Persistence/Migrations --context MetaForgeDbContext
 ```
 
 **Upgrading from an older `EnsureCreated` database:** run `--reset-db` in development, or create a fresh database and run `dotnet ef database update`. Schema is no longer patched with ad-hoc SQL at startup.
 
-Migrations live in `src/MetaForge.Infrastructure/Persistence/Migrations/`.
+Migrations live in `src/Platform/MetaForge.Infrastructure/Persistence/Migrations/`.
 
 On first run, MetaForge creates the database, seeds sample ERP data, form metadata, security roles, and navigation menus.
 
@@ -382,13 +397,21 @@ All endpoints require authentication (cookie session). Form-scoped endpoints als
 
 ### Add a new business entity
 
-1. Create a class in `src/MetaForge.Domain/Business/` inheriting from `BaseEntity`.
-2. Add a `DbSet<T>` and configure relationships in `MetaForgeDbContext`.
-3. Restart the app — the entity appears in Form Builder's entity list.
-4. Use **Auto-Build** or POST `/api/metaforge/form-catalog/discover/{entityName}` to generate metadata.
-5. Link the form to a menu item and sync permissions.
+1. Add a class in the appropriate module under `src/Modules/{ModuleName}/{ModuleName}.Domain/` inheriting from `BaseEntity` and implementing `IForgeBusinessEntity`. Use namespace `MetaForge.Domain.Business`.
+2. Add EF configuration in `{ModuleName}.Infrastructure/Persistence/`.
+3. Register `DbSet<T>` in `MetaForgeDbContext` (platform Infrastructure).
+4. Restart the app — the entity appears in Form Builder's entity list.
+5. Use **Auto-Build** or POST `/api/metaforge/form-catalog/discover/{entityName}` to generate metadata.
+6. Link the form to a menu item and sync permissions.
 
-Only entities in the `MetaForge.Domain.Business` namespace are discovered automatically.
+Only entities implementing `IForgeBusinessEntity` are discovered automatically.
+
+### Add a new business module
+
+1. Create `src/Modules/{Name}/{Name}.Domain` and `{Name}.Infrastructure` projects.
+2. Add a `{Name}Module` class with `Add{Name}Module()` and `Apply{Name}Configurations()` extension methods.
+3. Reference the module from `MetaForge.Infrastructure` and register it in `MetaForge.Host/Program.cs`.
+4. Add entities and EF configs following the steps above.
 
 ### Metadata cache
 

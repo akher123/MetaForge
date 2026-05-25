@@ -21,9 +21,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\MetaForge.Application\MetaForge.Application.csproj" />
-    <ProjectReference Include="..\..\src\MetaForge.Infrastructure\MetaForge.Infrastructure.csproj" />
-    <ProjectReference Include="..\..\src\MetaForge.Domain\MetaForge.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Platform\MetaForge.Application\MetaForge.Application.csproj" />
+    <ProjectReference Include="..\..\src\Platform\MetaForge.Infrastructure\MetaForge.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\Platform\MetaForge.Domain\MetaForge.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Modules\MasterData\MasterData.Domain\MasterData.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Sales\Sales.Domain\Sales.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Hr\Hr.Domain\Hr.Domain.csproj" />
   </ItemGroup>
 
 </Project>
