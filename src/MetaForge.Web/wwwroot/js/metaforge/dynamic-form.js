@@ -4,31 +4,69 @@
 const DynamicForm = (function () {
     let $form, formDef, recordId = null;
 
-    function getFields() {
-        return formDef?.Fields ?? formDef?.fields ?? [];
+    function getFields(definition) {
+        const source = definition ?? formDef;
+        return source?.Fields ?? source?.fields ?? [];
     }
 
     function getField(name) {
         return getFields().find(f => (f.PropertyName ?? f.propertyName) === name);
     }
 
+    function destroyLookups($scope) {
+        if (typeof MetaForgeLookups !== 'undefined') {
+            MetaForgeLookups.destroyFormLookups($scope);
+        }
+    }
+
     function init(selector, definition, options) {
+        const opts = options || {};
         $form = $(selector);
         formDef = definition;
         recordId = null;
-        if (options?.layoutClass) {
-            $form.addClass(options.layoutClass);
+        if (opts.layoutClass) {
+            $form.addClass(opts.layoutClass);
         }
         render();
+        if (opts.initLookups !== false && typeof MetaForgeLookups !== 'undefined') {
+            return MetaForgeLookups.initFormLookups($form, getFields());
+        }
+        return $.when();
+    }
+
+    function renderPreview(selector, definition, options) {
+        const opts = options || {};
+        const $target = $(selector);
+        const fields = getFields(definition);
+
+        destroyLookups($target);
+        $target.empty();
+
+        if (opts.layoutClass) {
+            $target.addClass(opts.layoutClass);
+        }
+
+        appendFields($target, fields);
+
+        if (opts.initLookups === false || typeof MetaForgeLookups === 'undefined') {
+            return $.when();
+        }
+
+        return MetaForgeLookups.initFormLookups($target, fields, opts.data || {});
     }
 
     function render() {
+        destroyLookups($form);
         $form.empty();
-        const sections = groupBySection(getFields());
+        appendFields($form, getFields());
+    }
+
+    function appendFields($container, fields) {
+        const sections = groupBySection(fields);
 
         Object.keys(sections).forEach(sectionName => {
             if (sectionName !== 'default') {
-                $form.append(`<div class="admin-form-section-title">${sectionName}</div>`);
+                $container.append(`<div class="admin-form-section-title">${sectionName}</div>`);
             }
 
             sections[sectionName].forEach(field => {
@@ -39,7 +77,7 @@ const DynamicForm = (function () {
                 const col = $('<div class="admin-form-field"></div>');
                 col.append(`<label class="admin-form-label">${label}${isRequired ? ' <span class="required-mark">*</span>' : ''}</label>`);
                 col.append(buildControl(field));
-                $form.append(col);
+                $container.append(col);
             });
         });
     }
@@ -66,6 +104,8 @@ const DynamicForm = (function () {
                 return `<div class="form-check mt-1"><input type="checkbox" class="form-check-input" name="${name}" ${readonly} ${disabled} /></div>`;
             case 'Dropdown':
                 return `<select class="form-select admin-form-control lookup-select" name="${name}" data-lookup="${lookupEntity || (name || '').replace(/Id$/, '')}" ${cascadeAttrs} ${required} ${disabled}></select>`;
+            case 'Autocomplete':
+                return `<select class="form-select admin-form-control lookup-autocomplete" name="${name}" data-lookup="${lookupEntity || (name || '').replace(/Id$/, '')}" ${cascadeAttrs} ${required} ${disabled}></select>`;
             case 'Hidden':
                 return `<input type="hidden" name="${name}" />`;
             default:
@@ -100,7 +140,7 @@ const DynamicForm = (function () {
             return Number.isNaN(num) ? null : num;
         }
 
-        if (controlType === 'Dropdown' && (field?.PropertyName ?? field?.propertyName ?? '').endsWith('Id')) {
+        if ((controlType === 'Dropdown' || controlType === 'Autocomplete') && (field?.PropertyName ?? field?.propertyName ?? '').endsWith('Id')) {
             const num = parseInt(raw, 10);
             return Number.isNaN(num) || num === 0 ? null : num;
         }
@@ -181,7 +221,7 @@ const DynamicForm = (function () {
     function applySelectValues(data) {
         if (!data) return;
 
-        $form.find('select.lookup-select').each(function () {
+        $form.find('select.lookup-select, select.lookup-autocomplete').each(function () {
             const name = $(this).attr('name');
             const val = getDataValue(data, name);
             if (val != null && val !== '') {
@@ -228,15 +268,21 @@ const DynamicForm = (function () {
 
     function showNew() {
         recordId = null;
-        $form[0].reset();
-        if (typeof MetaForgeLookups !== 'undefined') {
-            MetaForgeLookups.initFormLookups($form, getFields());
+        if ($form[0]?.reset) {
+            $form[0].reset();
         }
+        if (typeof MetaForgeLookups !== 'undefined') {
+            return MetaForgeLookups.initFormLookups($form, getFields());
+        }
+        return $.when();
     }
 
     function reset() {
         recordId = null;
-        $form[0].reset();
+        if ($form[0]?.reset) {
+            $form[0].reset();
+        }
+        destroyLookups($form);
     }
 
     function refreshLookups(data) {
@@ -246,5 +292,16 @@ const DynamicForm = (function () {
         return $.when();
     }
 
-    return { init, load, save, showNew, reset, getData, setData, setDataWhenReady, refreshLookups };
+    return {
+        init,
+        renderPreview,
+        load,
+        save,
+        showNew,
+        reset,
+        getData,
+        setData,
+        setDataWhenReady,
+        refreshLookups
+    };
 })();

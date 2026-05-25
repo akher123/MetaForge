@@ -12,6 +12,7 @@ public static class ControlType
     public const string DateTime = "DateTime";
     public const string Checkbox = "Checkbox";
     public const string Dropdown = "Dropdown";
+    public const string Autocomplete = "Autocomplete";
     public const string Radio = "Radio";
     public const string FileUpload = "FileUpload";
     public const string Hidden = "Hidden";
@@ -19,6 +20,6 @@ public static class ControlType
     public static readonly IReadOnlyList<string> All =
     [
         TextBox, TextArea, Number, Date, DateTime,
-        Checkbox, Dropdown, Radio, FileUpload, Hidden
+        Checkbox, Dropdown, Autocomplete, Radio, FileUpload, Hidden
     ];
 }

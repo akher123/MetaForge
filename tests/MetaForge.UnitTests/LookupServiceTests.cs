@@ -39,6 +39,92 @@ public class LookupServiceTests
         var refreshed = await service.GetLookupItemsAsync("Region", "CountryId", country.Id.ToString());
         Assert.Equal(2, refreshed.Count);
     }
+
+    [Fact]
+    public async Task SearchLookupItemsAsync_FiltersBySearchTermAndPaginates()
+    {
+        var options = new DbContextOptionsBuilder<MetaForgeDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+
+        await using var context = new MetaForgeDbContext(options);
+        context.Countries.AddRange(
+            new Country { Code = "US", Name = "United States" },
+            new Country { Code = "CA", Name = "Canada" },
+            new Country { Code = "MX", Name = "Mexico" });
+        context.LookupConfigurations.Add(new LookupConfiguration
+        {
+            EntityName = "Country",
+            ValueField = "Id",
+            TextField = "Name",
+            IsActive = true
+        });
+        await context.SaveChangesAsync();
+
+        var service = new LookupService(context, new EntityTypeResolver(context), new MemoryCache(new MemoryCacheOptions()));
+
+        var page = await service.SearchLookupItemsAsync("Country", "a", skip: 0, take: 1);
+        Assert.Single(page.Items);
+        Assert.True(page.HasMore);
+
+        var canada = await service.SearchLookupItemsAsync("Country", "Canada");
+        Assert.Single(canada.Items);
+        Assert.Equal("Canada", canada.Items[0].Text);
+    }
+
+    [Fact]
+    public async Task GetLookupItemByValueAsync_ReturnsMatchingItem()
+    {
+        var options = new DbContextOptionsBuilder<MetaForgeDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+
+        await using var context = new MetaForgeDbContext(options);
+        var country = new Country { Code = "US", Name = "United States" };
+        context.Countries.Add(country);
+        context.LookupConfigurations.Add(new LookupConfiguration
+        {
+            EntityName = "Country",
+            ValueField = "Id",
+            TextField = "Name",
+            IsActive = true
+        });
+        await context.SaveChangesAsync();
+
+        var service = new LookupService(context, new EntityTypeResolver(context), new MemoryCache(new MemoryCacheOptions()));
+        var item = await service.GetLookupItemByValueAsync("Country", country.Id.ToString());
+
+        Assert.NotNull(item);
+        Assert.Equal("United States", item!.Text);
+    }
+
+    [Fact]
+    public async Task GetLookupItemsAsync_CapsResultsForLargeDatasets()
+    {
+        var options = new DbContextOptionsBuilder<MetaForgeDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+
+        await using var context = new MetaForgeDbContext(options);
+        for (var i = 1; i <= 150; i++)
+        {
+            context.Products.Add(new Product { Code = $"P{i:D3}", Name = $"Product {i}", UnitPrice = 1m });
+        }
+
+        context.LookupConfigurations.Add(new LookupConfiguration
+        {
+            EntityName = "Product",
+            ValueField = "Id",
+            TextField = "Name",
+            IsActive = true
+        });
+        await context.SaveChangesAsync();
+
+        var service = new LookupService(context, new EntityTypeResolver(context), new MemoryCache(new MemoryCacheOptions()));
+        var items = await service.GetLookupItemsAsync("Product");
+
+        Assert.True(items.Count <= 100);
+    }
 }
 
 public class GenericCrudServiceLookupCacheTests

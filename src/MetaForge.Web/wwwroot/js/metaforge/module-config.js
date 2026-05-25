@@ -2,7 +2,7 @@
  * Form Builder — design master and detail forms for admin screens.
  */
 const FormBuilder = (function () {
-    const CONTROL_TYPES = ['TextBox', 'TextArea', 'Number', 'Date', 'DateTime', 'Checkbox', 'Dropdown', 'Radio', 'FileUpload', 'Hidden'];
+    const CONTROL_TYPES = ['TextBox', 'TextArea', 'Number', 'Date', 'DateTime', 'Checkbox', 'Dropdown', 'Autocomplete', 'Radio', 'FileUpload', 'Hidden'];
     const RELATION_TYPES = ['OneToOne', 'OneToMany', 'ManyToOne'];
 
     function notify(message, type) {
@@ -82,8 +82,8 @@ const FormBuilder = (function () {
             }
         });
 
-        $(document).on('change input', '#masterFieldsTable input, #masterFieldsTable select', refreshMasterPreview);
-        $(document).on('change input', '#detailFieldsTable input, #detailFieldsTable select', refreshDetailPreview);
+        $(document).on('change', '#masterFieldsTable input, #masterFieldsTable select', refreshMasterPreview);
+        $(document).on('change', '#detailFieldsTable input, #detailFieldsTable select', refreshDetailPreview);
         $(document).on('change', '#relationsTable select, #relationsTable input', syncDetailFromRelations);
     }
 
@@ -419,12 +419,28 @@ const FormBuilder = (function () {
         };
     }
 
+    function buildGridColumnsFromFields(fields) {
+        return (fields || [])
+            .filter(f => (f.IsVisible ?? f.isVisible ?? true)
+                && (f.ControlType ?? f.controlType) !== 'Hidden')
+            .map((f, i) => ({
+                PropertyName: f.PropertyName ?? f.propertyName,
+                Label: f.Label ?? f.label ?? f.PropertyName ?? f.propertyName,
+                DisplayOrder: i,
+                IsSortable: false,
+                IsSearchable: false,
+                IsVisible: true
+            }));
+    }
+
     function collectDetailConfig() {
         const rel = getPrimaryOneToManyRelation();
         if (!rel) return null;
 
         const entityMeta = state.entities.find(e =>
             (e.EntityName ?? e.entityName)?.toLowerCase() === (rel.ChildEntity ?? '').toLowerCase());
+
+        const fields = collectFields('#detailFieldsTable');
 
         return {
             Id: state.detailId,
@@ -435,8 +451,8 @@ const FormBuilder = (function () {
             GroupName: $('#groupName').val(),
             DisplayOrder: (parseInt($('#displayOrder').val(), 10) || 0) + 1,
             IsActive: true,
-            Fields: collectFields('#detailFieldsTable'),
-            GridColumns: [],
+            Fields: fields,
+            GridColumns: buildGridColumnsFromFields(fields),
             Relations: []
         };
     }
@@ -513,20 +529,18 @@ const FormBuilder = (function () {
 
     function refreshMasterPreview() {
         const fields = collectFields('#masterFieldsTable');
-        DynamicForm.init('#masterFormPreview', {
+        DynamicForm.renderPreview('#masterFormPreview', {
             FormName: $('#moduleName').val() || 'Master Form',
             Fields: fields
         }, { layoutClass: 'admin-form-preview-layout' });
-        DynamicForm.refreshLookups();
     }
 
     function refreshDetailPreview() {
         const fields = collectFields('#detailFieldsTable');
-        DynamicForm.init('#detailFormPreview', {
+        DynamicForm.renderPreview('#detailFormPreview', {
             FormName: state.detailEntity || 'Detail Form',
             Fields: fields
         }, { layoutClass: 'admin-form-preview-layout admin-form-inline' });
-        DynamicForm.refreshLookups();
     }
 
     function esc(value) {

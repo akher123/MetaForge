@@ -156,6 +156,7 @@ public class FormConfigurationService : IFormConfigurationService
 
     public async Task<int> SaveFormAsync(FormConfigDto config, CancellationToken cancellationToken = default)
     {
+        EnsureGridColumns(config);
         Validate(config);
 
         if (await _unitOfWork.Forms.ExistsByCodeAsync(config.Code, config.Id > 0 ? config.Id : null, cancellationToken))
@@ -282,7 +283,7 @@ public class FormConfigurationService : IFormConfigurationService
 
         var masterId = await SaveFormAsync(screen.Master, cancellationToken);
 
-        if (isMasterDetail && screen.Detail != null && screen.Detail.Fields.Count > 0)
+        if ((isMasterDetail || isTabular) && screen.Detail != null && screen.Detail.Fields.Count > 0)
         {
             if (screen.Detail.Id == 0)
             {
@@ -342,8 +343,30 @@ public class FormConfigurationService : IFormConfigurationService
             throw new BusinessException("Entity name is required.");
         if (config.Fields.Count == 0)
             throw new BusinessException("At least one field is required.");
-        if (config.GridColumns.Count == 0)
+
+        var isDetailForm = config.FormType.Equals(FormType.Detail.ToString(), StringComparison.OrdinalIgnoreCase);
+        if (config.GridColumns.Count == 0 && !isDetailForm)
             throw new BusinessException("At least one grid column is required.");
+    }
+
+    private static void EnsureGridColumns(FormConfigDto config)
+    {
+        if (config.GridColumns.Count > 0)
+            return;
+
+        config.GridColumns = config.Fields
+            .Where(f => f.IsVisible
+                && !string.Equals(f.ControlType, ControlType.Hidden, StringComparison.OrdinalIgnoreCase))
+            .Select((f, i) => new FormGridColumnConfigDto
+            {
+                PropertyName = f.PropertyName,
+                Label = f.Label,
+                DisplayOrder = i,
+                IsSortable = false,
+                IsSearchable = false,
+                IsVisible = true
+            })
+            .ToList();
     }
 
     private static FormConfigDto MapToDto(ForgeForm module) => new()
@@ -417,7 +440,7 @@ public class FormConfigurationService : IFormConfigurationService
     private static string InferControlType(string clrType, string propertyName)
     {
         if (propertyName.EndsWith("Id", StringComparison.Ordinal) && propertyName != "Id")
-            return ControlType.Dropdown;
+            return ControlType.Autocomplete;
         if (clrType.Contains("Boolean", StringComparison.Ordinal)) return ControlType.Checkbox;
         if (clrType.Contains("DateTime", StringComparison.Ordinal)) return ControlType.DateTime;
         if (clrType.Contains("DateOnly", StringComparison.Ordinal) || propertyName.Contains("Date", StringComparison.Ordinal))

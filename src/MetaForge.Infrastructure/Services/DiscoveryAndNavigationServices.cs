@@ -125,7 +125,7 @@ public class EntityMetadataDiscoveryService : IEntityMetadataDiscoveryService
     private static string InferControlType(string clrType, string propertyName)
     {
         if (propertyName.EndsWith("Id") && propertyName != "Id")
-            return ControlType.Dropdown;
+            return ControlType.Autocomplete;
         if (clrType.Contains("Boolean")) return ControlType.Checkbox;
         if (clrType.Contains("DateTime")) return ControlType.DateTime;
         if (clrType.Contains("DateOnly") || propertyName.Contains("Date")) return ControlType.Date;

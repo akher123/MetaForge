@@ -7,11 +7,10 @@ public class GridDisplayEnricherTests
     {
         var lookupService = new Mock<ILookupService>();
         lookupService
-            .Setup(s => s.GetLookupItemsAsync("Customer", null, null, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<LookupItemDto>
+            .Setup(s => s.ResolveLookupTextsAsync("Customer", It.Is<IEnumerable<string>>(v => v.Contains("1")), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
-                new() { Value = "1", Text = "Acme Corp" },
-                new() { Value = "2", Text = "Globex" }
+                ["1"] = "Acme Corp"
             });
 
         var rows = new List<Dictionary<string, object?>>

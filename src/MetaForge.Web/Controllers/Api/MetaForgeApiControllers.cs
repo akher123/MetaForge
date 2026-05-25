@@ -1,5 +1,6 @@
 using MetaForge.Application.Common;
 using MetaForge.Infrastructure.Dynamic;
+using MetaForge.Shared.Constants;
 
 namespace MetaForge.Web.Controllers.Api;
 
@@ -253,6 +254,42 @@ public class LookupsApiController : ControllerBase
         Response.Headers.Pragma = "no-cache";
 
         return Ok(await _lookupService.GetLookupItemsAsync(entityName, filterField, filterValue, cancellationToken));
+    }
+
+    [HttpGet("{entityName}/search")]
+    public async Task<IActionResult> Search(
+        string entityName,
+        [FromQuery] string? search,
+        [FromQuery] int skip = 0,
+        [FromQuery] int take = AppConstants.DefaultLookupPageSize,
+        [FromQuery] string? filterField = null,
+        [FromQuery] string? filterValue = null,
+        CancellationToken cancellationToken = default)
+    {
+        Response.Headers.CacheControl = "no-store, no-cache";
+        Response.Headers.Pragma = "no-cache";
+
+        return Ok(await _lookupService.SearchLookupItemsAsync(
+            entityName,
+            search,
+            skip,
+            take,
+            filterField,
+            filterValue,
+            cancellationToken));
+    }
+
+    [HttpGet("{entityName}/item/{value}")]
+    public async Task<IActionResult> GetItem(
+        string entityName,
+        string value,
+        CancellationToken cancellationToken = default)
+    {
+        Response.Headers.CacheControl = "no-store, no-cache";
+        Response.Headers.Pragma = "no-cache";
+
+        var item = await _lookupService.GetLookupItemByValueAsync(entityName, value, cancellationToken);
+        return item == null ? NotFound() : Ok(item);
     }
 }
 

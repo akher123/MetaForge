@@ -1,7 +1,25 @@
 /**
  * Cascading lookup engine — shared by master forms and detail line grids.
+ * All lookup controls load data via paged search (10 items per request).
  */
 const MetaForgeLookups = (function () {
+    const LOOKUP_PAGE_SIZE = 10;
+
+    function isLookupControlType(controlType) {
+        return controlType === 'Dropdown' || controlType === 'Autocomplete';
+    }
+
+    function isAutocompleteField(field) {
+        return (field?.ControlType ?? field?.controlType) === 'Autocomplete';
+    }
+
+    function usesPagedSearch(field, $select) {
+        if (!$select || $select.length === 0) {
+            return isAutocompleteField(field);
+        }
+        return $select.hasClass('lookup-autocomplete') || isAutocompleteField(field) || $select.hasClass('lookup-select');
+    }
+
     function getEntity(field) {
         const name = field.PropertyName ?? field.propertyName ?? '';
         return field.LookupEntity ?? field.lookupEntity ?? (name.endsWith('Id') ? name.replace(/Id$/, '') : '');
@@ -15,72 +33,169 @@ const MetaForgeLookups = (function () {
         return field.LookupFilterField ?? field.lookupFilterField ?? getParentField(field);
     }
 
-    function buildLookupUrl(entity, filterField, filterValue) {
-        let url = `/api/metaforge/lookups/${encodeURIComponent(entity)}`;
-        if (filterField && filterValue != null && filterValue !== '') {
-            url += `?filterField=${encodeURIComponent(filterField)}&filterValue=${encodeURIComponent(filterValue)}`;
-        }
-        return url;
+    function buildSearchUrl(entity) {
+        return `/api/metaforge/lookups/${encodeURIComponent(entity)}/search`;
     }
 
-    function populateSelect($select, items, selectedValue, useSelect2) {
-        $select.empty().append('<option value="">-- Select --</option>');
-        (items || []).forEach(i => {
-            const val = i.Value ?? i.value;
-            const text = i.Text ?? i.text;
-            $select.append(`<option value="${val}">${escapeHtml(text)}</option>`);
-        });
+    function buildItemUrl(entity, value) {
+        return `/api/metaforge/lookups/${encodeURIComponent(entity)}/item/${encodeURIComponent(value)}`;
+    }
 
-        if (selectedValue != null && selectedValue !== '') {
-            $select.val(String(selectedValue));
-        }
-
-        if (useSelect2 && $select.hasClass('select2-hidden-accessible')) {
+    function destroySelect2($select) {
+        if ($select.hasClass('select2-hidden-accessible')) {
             $select.select2('destroy');
         }
-
-        if (useSelect2) {
-            $select.select2({ theme: 'bootstrap-5', width: '100%' });
-        }
     }
 
-    function clearSelect($select, useSelect2, disabled) {
-        populateSelect($select, [], null, useSelect2);
+    function destroyFormLookups($scope) {
+        ($scope?.jquery ? $scope : $($scope)).find('.lookup-select, .lookup-autocomplete').each(function () {
+            destroySelect2($(this));
+        });
+    }
+
+    function resolveEntity(field, $select, explicitEntity) {
+        return explicitEntity || $select.data('lookup') || (field ? getEntity(field) : '');
+    }
+
+    function getDropdownParent($select) {
+        const $modal = $select.closest('.modal');
+        if ($modal.length) return $modal;
+        const $preview = $select.closest('.form-builder-preview-body, .admin-form-preview');
+        if ($preview.length) return $preview;
+        const $cell = $select.closest('td');
+        if ($cell.length) return $cell;
+        return $(document.body);
+    }
+
+    function clearSelect($select, disabled) {
+        destroySelect2($select);
+        $select.empty().append('<option value=""></option>');
         if (disabled) {
             $select.prop('disabled', true);
         }
     }
 
-    function loadLookup($select, entity, options) {
+    function initPagedLookupSelect($select, entity, options) {
         const opts = options || {};
-        const useSelect2 = opts.useSelect2 === true;
+        const filterField = opts.filterField || null;
+        const filterValue = opts.filterValue ?? null;
+        const selectedValue = opts.selectedValue;
+        const disabled = !!opts.disabled;
+        const placeholder = opts.placeholder || '-- Search --';
+
+        if (!entity) {
+            clearSelect($select, disabled);
+            return $.when();
+        }
+
+        destroySelect2($select);
+        $select.empty().append('<option value=""></option>');
+        $select.prop('disabled', disabled);
+
+        const ajaxData = params => {
+            const payload = {
+                search: params.term || '',
+                skip: ((params.page || 1) - 1) * LOOKUP_PAGE_SIZE,
+                take: LOOKUP_PAGE_SIZE
+            };
+            if (filterField) payload.filterField = filterField;
+            if (filterValue != null && filterValue !== '') payload.filterValue = filterValue;
+            return payload;
+        };
+
+        $select.select2({
+            theme: 'bootstrap-5',
+            width: '100%',
+            placeholder,
+            allowClear: true,
+            minimumInputLength: 0,
+            dropdownParent: getDropdownParent($select),
+            language: {
+                inputTooShort: () => 'Type to search...',
+                searching: () => 'Loading...'
+            },
+            ajax: {
+                url: buildSearchUrl(entity),
+                dataType: 'json',
+                delay: 250,
+                cache: true,
+                data: ajaxData,
+                processResults: (data, params) => {
+                    params.page = params.page || 1;
+                    const items = data.items ?? data.Items ?? [];
+                    return {
+                        results: items.map(i => ({
+                            id: i.value ?? i.Value,
+                            text: i.text ?? i.Text
+                        })),
+                        pagination: { more: !!(data.hasMore ?? data.HasMore) }
+                    };
+                }
+            }
+        });
+
+        if (selectedValue != null && selectedValue !== '') {
+            return $.ajax({
+                url: buildItemUrl(entity, selectedValue),
+                dataType: 'json',
+                cache: false
+            }).then(item => {
+                if (!item) return;
+                const val = item.Value ?? item.value;
+                const text = item.Text ?? item.text;
+                const option = new Option(text, val, true, true);
+                $select.append(option).trigger('change');
+            }).fail(() => {
+                $select.val(String(selectedValue)).trigger('change');
+            });
+        }
+
+        return $.when();
+    }
+
+    function loadLookup($select, field, options) {
+        const opts = options || {};
+        const entity = resolveEntity(field, $select, opts.entity);
         const filterField = opts.filterField;
         const filterValue = opts.filterValue;
         const selectedValue = opts.selectedValue;
 
         if (opts.cascadeParent && (filterValue == null || filterValue === '')) {
-            clearSelect($select, useSelect2, opts.disableWhenEmpty !== false);
+            clearSelect($select, opts.disableWhenEmpty !== false);
             return $.when();
         }
 
-        $select.prop('disabled', !!opts.disabled);
+        if (!entity) {
+            clearSelect($select, false);
+            return $.when();
+        }
 
-        return $.ajax({
-            url: buildLookupUrl(entity, filterField, filterValue),
-            dataType: 'json',
-            cache: false
-        }).then(items => {
-            populateSelect($select, items, selectedValue, useSelect2);
-            if (opts.disabled) {
-                $select.prop('disabled', true);
-            }
-        }).fail(function () {
-            clearSelect($select, useSelect2, false);
-        });
+        if (usesPagedSearch(field, $select)) {
+            return initPagedLookupSelect($select, entity, {
+                filterField,
+                filterValue,
+                selectedValue,
+                disabled: opts.disabled,
+                placeholder: isAutocompleteField(field) || $select.hasClass('lookup-autocomplete')
+                    ? '-- Search --'
+                    : '-- Select --'
+            });
+        }
+
+        clearSelect($select, !!opts.disabled);
+        return $.when();
     }
 
     function getDependentFields(fields, parentName) {
-        return fields.filter(f => getParentField(f) === parentName);
+        return fields.filter(f => getParentField(f) === parentName && isLookupControlType(f.ControlType ?? f.controlType));
+    }
+
+    function getLookupFields(fields) {
+        return fields.filter(f => isLookupControlType(f.ControlType ?? f.controlType));
+    }
+
+    function resolveLookupSelect($scope, name) {
+        return $scope.find(`select[name="${name}"], select.lookup-select[data-field="${name}"], select.lookup-autocomplete[data-field="${name}"]`);
     }
 
     function clearCascadeChain($scope, fields, parentName, resolveSelect) {
@@ -88,16 +203,16 @@ const MetaForgeLookups = (function () {
             const name = field.PropertyName ?? field.propertyName;
             const $child = resolveSelect(name);
             if ($child.length) {
-                clearSelect($child, $child.hasClass('lookup-select') && !$child.hasClass('form-select-sm'), true);
+                clearSelect($child, true);
             }
             clearCascadeChain($scope, fields, name, resolveSelect);
         });
     }
 
     function bindFormCascade($form, fields) {
-        $form.off('change.cascade', '.lookup-select');
+        $form.off('change.cascade', '.lookup-select, .lookup-autocomplete');
 
-        fields.filter(f => getParentField(f)).forEach(field => {
+        getLookupFields(fields).filter(f => getParentField(f)).forEach(field => {
             const parentName = getParentField(field);
             const $parent = $form.find(`[name="${parentName}"]`);
             if ($parent.length === 0) return;
@@ -113,7 +228,7 @@ const MetaForgeLookups = (function () {
         const dependents = getDependentFields(fields, parentName);
         dependents.forEach(field => {
             const name = field.PropertyName ?? field.propertyName;
-            const $child = $form.find(`select[name="${name}"]`);
+            const $child = resolveLookupSelect($form, name);
             if ($child.length === 0) return;
 
             const previous = preserveValues ? $child.val() : null;
@@ -121,14 +236,15 @@ const MetaForgeLookups = (function () {
                 $child.val('');
             }
 
-            clearCascadeChain($form, fields, name, n => $form.find(`select[name="${n}"]`));
+            clearCascadeChain($form, fields, name, n => resolveLookupSelect($form, n));
 
-            loadLookup($child, getEntity(field), {
+            loadLookup($child, field, {
+                entity: getEntity(field),
                 filterField: getFilterField(field),
                 filterValue: parentVal,
                 selectedValue: previous,
                 cascadeParent: true,
-                useSelect2: true
+                disableWhenEmpty: true
             }).then(function () {
                 refreshFormDependents($form, fields, name, $child.val(), preserveValues);
             });
@@ -144,18 +260,20 @@ const MetaForgeLookups = (function () {
     }
 
     function initFormLookups($form, fields, pendingValues) {
-        const dropdownFields = fields.filter(f => (f.ControlType ?? f.controlType) === 'Dropdown');
-        const independent = dropdownFields.filter(f => !getParentField(f));
-        const dependent = dropdownFields
+        destroyFormLookups($form);
+
+        const lookupFields = getLookupFields(fields);
+        const independent = lookupFields.filter(f => !getParentField(f));
+        const dependent = lookupFields
             .filter(f => getParentField(f))
             .sort((a, b) => (a.DisplayOrder ?? a.displayOrder ?? 0) - (b.DisplayOrder ?? b.displayOrder ?? 0));
 
         const independentLoads = independent.map(field => {
             const name = field.PropertyName ?? field.propertyName;
-            const $sel = $form.find(`select[name="${name}"]`);
+            const $sel = resolveLookupSelect($form, name);
             if ($sel.length === 0) return $.when();
-            return loadLookup($sel, getEntity(field), {
-                useSelect2: true,
+            return loadLookup($sel, field, {
+                entity: getEntity(field),
                 selectedValue: getPendingValue(pendingValues, name)
             });
         });
@@ -172,17 +290,18 @@ const MetaForgeLookups = (function () {
                 const field = dependent[index];
                 const name = field.PropertyName ?? field.propertyName;
                 const parentName = getParentField(field);
-                const $sel = $form.find(`select[name="${name}"]`);
+                const $sel = resolveLookupSelect($form, name);
                 const parentVal = getPendingValue(pendingValues, parentName)
                     ?? $form.find(`[name="${parentName}"]`).val();
                 const selected = getPendingValue(pendingValues, name);
 
-                loadLookup($sel, getEntity(field), {
+                loadLookup($sel, field, {
+                    entity: getEntity(field),
                     filterField: getFilterField(field),
                     filterValue: parentVal,
                     selectedValue: selected,
                     cascadeParent: true,
-                    useSelect2: true
+                    disableWhenEmpty: true
                 }).always(() => loadNext(index + 1));
             })(0);
         });
@@ -191,7 +310,7 @@ const MetaForgeLookups = (function () {
     }
 
     function initGridLookups($container, fields, getRowValues) {
-        $container.find('.lookup-select').each(function () {
+        $container.find('.lookup-select, .lookup-autocomplete').each(function () {
             const $sel = $(this);
             const entity = $sel.data('lookup');
             const fieldName = $sel.data('field');
@@ -202,38 +321,40 @@ const MetaForgeLookups = (function () {
             const filterField = $sel.data('cascadeFilter') || getFilterField(field);
             const parentVal = parentName ? rowValues[parentName] : null;
             const currentVal = rowValues[fieldName];
-            const useSelect2 = false;
 
-            loadLookup($sel, entity, {
+            loadLookup($sel, field, {
+                entity,
                 filterField: parentName ? filterField : null,
                 filterValue: parentVal,
                 selectedValue: currentVal,
                 cascadeParent: !!parentName,
-                useSelect2,
                 disableWhenEmpty: !!parentName
             });
         });
 
-        $container.off('change.cascade', '.lookup-select').on('change.cascade', '.lookup-select', function () {
-            const $parent = $(this);
-            const parentField = $parent.data('field');
-            const index = $parent.data('index');
-            const parentVal = $parent.val();
+        $container.off('change.cascade', '.lookup-select, .lookup-autocomplete')
+            .on('change.cascade', '.lookup-select, .lookup-autocomplete', function () {
+                const $parent = $(this);
+                const parentField = $parent.data('field');
+                const index = $parent.data('index');
+                const parentVal = $parent.val();
 
-            getDependentFields(fields, parentField).forEach(field => {
-                const name = field.PropertyName ?? field.propertyName;
-                const $child = $container.find(`.lookup-select[data-field="${name}"][data-index="${index}"]`);
-                if ($child.length === 0) return;
+                getDependentFields(fields, parentField).forEach(field => {
+                    const name = field.PropertyName ?? field.propertyName;
+                    const $child = $container.find(
+                        `.lookup-select[data-field="${name}"][data-index="${index}"], .lookup-autocomplete[data-field="${name}"][data-index="${index}"]`
+                    );
+                    if ($child.length === 0) return;
 
-                loadLookup($child, getEntity(field), {
-                    filterField: getFilterField(field),
-                    filterValue: parentVal,
-                    cascadeParent: true,
-                    useSelect2: false,
-                    disableWhenEmpty: true
+                    loadLookup($child, field, {
+                        entity: getEntity(field),
+                        filterField: getFilterField(field),
+                        filterValue: parentVal,
+                        cascadeParent: true,
+                        disableWhenEmpty: true
+                    });
                 });
             });
-        });
     }
 
     function cascadeAttrs(field) {
@@ -255,9 +376,16 @@ const MetaForgeLookups = (function () {
         loadLookup,
         initFormLookups,
         initGridLookups,
+        initPagedLookupSelect,
+        initAutocompleteSelect: initPagedLookupSelect,
+        destroyFormLookups,
         cascadeAttrs,
         getEntity,
         getParentField,
-        getFilterField
+        getFilterField,
+        isLookupControlType,
+        isAutocompleteField,
+        buildItemUrl,
+        LOOKUP_PAGE_SIZE
     };
 })();

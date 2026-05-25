@@ -65,7 +65,7 @@ const MasterDetailTabular = (function () {
 
     function inferControlType(propertyName) {
         if (!propertyName) return 'TextBox';
-        if (propertyName.endsWith('Id')) return 'Dropdown';
+        if (propertyName.endsWith('Id')) return 'Autocomplete';
         const lower = propertyName.toLowerCase();
         if (lower.includes('date')) return 'DateTime';
         if (lower.includes('quantity') || lower.includes('price') || lower.includes('amount') || lower.includes('total')) {
@@ -380,7 +380,7 @@ const MasterDetailTabular = (function () {
             if (controlType === 'Number') {
                 const num = parseFloat(state.rows[index][name]);
                 state.rows[index][name] = Number.isNaN(num) ? null : num;
-            } else if (controlType === 'Dropdown' && name.endsWith('Id')) {
+            } else if ((controlType === 'Dropdown' || controlType === 'Autocomplete') && name.endsWith('Id')) {
                 const num = parseInt(state.rows[index][name], 10);
                 state.rows[index][name] = Number.isNaN(num) ? null : num;
             }
@@ -410,7 +410,7 @@ const MasterDetailTabular = (function () {
                 return;
             }
 
-            if (controlType === 'Dropdown' && name.endsWith('Id')) {
+            if ((controlType === 'Dropdown' || controlType === 'Autocomplete') && name.endsWith('Id')) {
                 const num = parseInt(copy[name], 10);
                 copy[name] = Number.isNaN(num) ? null : num;
             } else if (controlType === 'Number') {

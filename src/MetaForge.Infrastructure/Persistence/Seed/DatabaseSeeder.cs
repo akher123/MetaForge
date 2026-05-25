@@ -40,6 +40,7 @@ public static class DatabaseSeeder
             await EnsureSecurityPermissionsAsync(context, logger);
             await EnsureFormPermissionsAsync(context, logger);
             await EnsureCascadeLookupUpgradeAsync(context, logger);
+            await EnsurePagedLookupUpgradeAsync(context, logger);
             await EnsureSampleCustomerAsync(context, logger);
             await EnsureSampleTransactionDataAsync(context, logger);
             await EnsureTabularSalesOrderUpgradeAsync(context, logger);
@@ -352,6 +353,46 @@ public static class DatabaseSeeder
                 customer.RegionId = regionId;
                 await context.SaveChangesAsync();
             }
+        }
+    }
+
+    private static async Task EnsurePagedLookupUpgradeAsync(MetaForgeDbContext context, ILogger logger)
+    {
+        var largeLookupEntities = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "Product", "Customer", "SalesOrder", "Supplier"
+        };
+
+        var forms = await context.ForgeForms
+            .Include(f => f.Fields)
+            .ToListAsync();
+
+        var changed = false;
+        foreach (var form in forms)
+        {
+            foreach (var field in form.Fields)
+            {
+                var isForeignKey = field.PropertyName.EndsWith("Id", StringComparison.Ordinal)
+                    && !field.PropertyName.Equals("Id", StringComparison.Ordinal);
+                var lookupEntity = field.LookupEntity
+                    ?? (isForeignKey ? field.PropertyName[..^2] : null);
+
+                if (lookupEntity == null)
+                    continue;
+
+                if (field.ControlType == ControlType.Dropdown
+                    && (largeLookupEntities.Contains(lookupEntity) || isForeignKey))
+                {
+                    field.ControlType = ControlType.Autocomplete;
+                    changed = true;
+                }
+            }
+        }
+
+        if (changed)
+        {
+            await context.SaveChangesAsync();
+            logger.LogInformation("Upgraded lookup fields to Autocomplete with paged search for large datasets.");
         }
     }
 
@@ -744,7 +785,7 @@ public static class DatabaseSeeder
                 [
                     ("OrderNo", ControlType.TextBox, true, null, null),
                     ("OrderDate", ControlType.DateTime, true, null, null),
-                    ("CustomerId", ControlType.Dropdown, true, null, "Customer"),
+                    ("CustomerId", ControlType.Autocomplete, true, null, "Customer"),
                     ("Status", ControlType.TextBox, false, null, null)
                 ],
                 grid: ["OrderNo", "OrderDate", "CustomerId", "Status"],
@@ -776,7 +817,7 @@ public static class DatabaseSeeder
                 fields:
                 [
                     ("SalesOrderId", ControlType.Dropdown, true, null, "SalesOrder"),
-                    ("ProductId", ControlType.Dropdown, true, null, "Product"),
+                    ("ProductId", ControlType.Autocomplete, true, null, "Product"),
                     ("Quantity", ControlType.Number, true, null, null),
                     ("UnitPrice", ControlType.Number, true, null, null)
                 ],

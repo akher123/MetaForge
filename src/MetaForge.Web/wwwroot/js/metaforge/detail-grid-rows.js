@@ -76,7 +76,7 @@ const MetaForgeDetailRows = (function () {
             return val === true || val === 'true' || val === 1 || val === '1' ? 'Yes' : 'No';
         }
 
-        if (controlType === 'Dropdown') {
+        if (controlType === 'Dropdown' || controlType === 'Autocomplete') {
             return row.__display?.[name] ?? String(val);
         }
 
@@ -129,6 +129,8 @@ const MetaForgeDetailRows = (function () {
                 return `<div class="form-check"><input type="checkbox" class="form-check-input detail-input" ${dataAttrs} ${val ? 'checked' : ''} ${disabled} /></div>`;
             case 'Dropdown':
                 return `<select class="form-select form-select-sm lookup-select detail-input admin-form-control" ${dataAttrs} data-lookup="${lookupEntity}" ${cascadeAttrs} ${disabled} ${required}></select>`;
+            case 'Autocomplete':
+                return `<select class="form-select form-select-sm lookup-autocomplete detail-input admin-form-control" ${dataAttrs} data-lookup="${lookupEntity}" ${cascadeAttrs} ${disabled} ${required}></select>`;
             case 'Hidden':
                 return `<input type="hidden" class="detail-input" ${dataAttrs} value="${escapeAttr(val)}" />`;
             default:
@@ -174,40 +176,63 @@ const MetaForgeDetailRows = (function () {
         const name = field.PropertyName ?? field.propertyName;
         const controlType = field.ControlType ?? field.controlType ?? 'TextBox';
 
-        if (controlType === 'Dropdown') {
+        if (controlType === 'Dropdown' || controlType === 'Autocomplete') {
             row.__display = row.__display || {};
             const text = $input.find('option:selected').text()?.trim();
-            row.__display[name] = text && text !== '-- Select --' ? text : '';
+            if (text && text !== '-- Select --' && text !== '-- Search --') {
+                row.__display[name] = text;
+            } else {
+                const selected = $input.val();
+                if (selected && typeof MetaForgeLookups !== 'undefined') {
+                    const entity = getLookupEntity(field);
+                    $.getJSON(MetaForgeLookups.buildItemUrl(entity, selected), item => {
+                        if (item) {
+                            row.__display[name] = item.Text ?? item.text ?? String(selected);
+                        }
+                    });
+                }
+            }
         }
     }
 
     function resolveDisplayLabels(rows, fields) {
-        const dropdownFields = (fields || []).filter(f => (f.ControlType ?? f.controlType) === 'Dropdown');
-        if (dropdownFields.length === 0 || rows.length === 0) {
+        const lookupFields = (fields || []).filter(f => {
+            const controlType = f.ControlType ?? f.controlType;
+            return controlType === 'Dropdown' || controlType === 'Autocomplete';
+        });
+        if (lookupFields.length === 0 || rows.length === 0) {
             return $.when();
         }
 
-        const entityNames = [...new Set(dropdownFields.map(getLookupEntity).filter(Boolean))];
-        const loads = entityNames.map(entity =>
-            $.ajax({ url: `/api/metaforge/lookups/${encodeURIComponent(entity)}`, dataType: 'json', cache: false })
-                .then(items => ({ entity, items: items || [] }))
-        );
+        const itemLoads = [];
+        lookupFields.forEach(field => {
+            const entity = getLookupEntity(field);
+            const name = field.PropertyName ?? field.propertyName;
+            const values = [...new Set(rows.map(row => row[name]).filter(v => v != null && v !== ''))];
+            values.forEach(value => {
+                itemLoads.push(
+                    $.ajax({
+                        url: `/api/metaforge/lookups/${encodeURIComponent(entity)}/item/${encodeURIComponent(value)}`,
+                        dataType: 'json',
+                        cache: false
+                    }).then(item => ({ entity, value: String(value), text: item?.Text ?? item?.text ?? String(value) }))
+                        .catch(() => ({ entity, value: String(value), text: String(value) }))
+                );
+            });
+        });
 
-        return $.when.apply($, loads).then(function () {
+        return $.when.apply($, itemLoads.length ? itemLoads : [$.when()]).then(function () {
             const maps = {};
             const results = arguments.length === 1 ? [arguments[0]] : Array.from(arguments);
             results.forEach(result => {
-                if (!result?.entity) return;
-                maps[result.entity] = {};
-                (result.items || []).forEach(item => {
-                    const val = item.Value ?? item.value;
-                    maps[result.entity][String(val)] = item.Text ?? item.text ?? String(val);
-                });
+                if (!result?.entity || result.value == null) return;
+                maps[result.entity] = maps[result.entity] || {};
+                maps[result.entity][result.value] = result.text;
             });
 
             rows.forEach(row => {
                 row.__display = row.__display || {};
-                dropdownFields.forEach(field => {
+                lookupFields.forEach(field => {
                     const name = field.PropertyName ?? field.propertyName;
                     const entity = getLookupEntity(field);
                     const val = row[name];

@@ -21,29 +21,30 @@ public static class GridDisplayEnricher
         if (lookupColumns.Count == 0)
             return;
 
-        var lookupMaps = new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
-        foreach (var entityName in lookupColumns.Select(c => c.LookupEntity!).Distinct(StringComparer.OrdinalIgnoreCase))
+        foreach (var column in lookupColumns)
         {
-            var items = await lookupService.GetLookupItemsAsync(entityName, null, null, cancellationToken);
-            lookupMaps[entityName] = items
-                .Where(i => !string.IsNullOrWhiteSpace(i.Value))
-                .GroupBy(i => i.Value, StringComparer.OrdinalIgnoreCase)
-                .ToDictionary(g => g.Key, g => g.First().Text ?? g.Key, StringComparer.OrdinalIgnoreCase);
-        }
+            var values = rows
+                .Select(row => row.TryGetValue(column.PropertyName, out var rawValue) ? rawValue : null)
+                .Where(v => v != null)
+                .Select(v => Convert.ToString(v, System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty)
+                .Where(v => v.Length > 0);
 
-        foreach (var row in rows)
-        {
-            foreach (var column in lookupColumns)
+            var lookupTexts = await lookupService.ResolveLookupTextsAsync(
+                column.LookupEntity!,
+                values,
+                cancellationToken);
+
+            if (lookupTexts.Count == 0)
+                continue;
+
+            foreach (var row in rows)
             {
                 if (!row.TryGetValue(column.PropertyName, out var rawValue) || rawValue == null)
                     continue;
 
                 var key = Convert.ToString(rawValue, System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty;
-                if (lookupMaps.TryGetValue(column.LookupEntity!, out var map)
-                    && map.TryGetValue(key, out var displayText))
-                {
+                if (lookupTexts.TryGetValue(key, out var displayText))
                     row[column.PropertyName] = displayText;
-                }
             }
         }
     }

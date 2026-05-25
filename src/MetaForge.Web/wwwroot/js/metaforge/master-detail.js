@@ -51,7 +51,7 @@ const MasterDetail = (function () {
 
     function inferControlType(propertyName) {
         if (!propertyName) return 'TextBox';
-        if (propertyName.endsWith('Id')) return 'Dropdown';
+        if (propertyName.endsWith('Id')) return 'Autocomplete';
         const lower = propertyName.toLowerCase();
         if (lower.includes('date')) return 'DateTime';
         if (lower.includes('quantity') || lower.includes('price') || lower.includes('amount') || lower.includes('total')) {
@@ -333,7 +333,7 @@ const MasterDetail = (function () {
                 if (val == null || val === '') return null;
 
                 const controlType = f.ControlType ?? f.controlType ?? 'TextBox';
-                if (controlType === 'Dropdown') {
+                if (controlType === 'Dropdown' || controlType === 'Autocomplete') {
                     const $sel = $(`#masterForm [name="${name}"], #masterForm select[data-field="${name}"]`).first();
                     if ($sel.length) {
                         const selectedText = $sel.find('option:selected').text()?.trim();
@@ -370,7 +370,7 @@ const MasterDetail = (function () {
             if (controlType === 'Number') {
                 const num = parseFloat(detailRows[index][name]);
                 detailRows[index][name] = Number.isNaN(num) ? null : num;
-            } else if (controlType === 'Dropdown' && name.endsWith('Id')) {
+            } else if ((controlType === 'Dropdown' || controlType === 'Autocomplete') && name.endsWith('Id')) {
                 const num = parseInt(detailRows[index][name], 10);
                 detailRows[index][name] = Number.isNaN(num) ? null : num;
             }
@@ -398,7 +398,7 @@ const MasterDetail = (function () {
                 return;
             }
 
-            if (controlType === 'Dropdown' && name.endsWith('Id')) {
+            if ((controlType === 'Dropdown' || controlType === 'Autocomplete') && name.endsWith('Id')) {
                 const num = parseInt(copy[name], 10);
                 copy[name] = Number.isNaN(num) ? null : num;
             } else if (controlType === 'Number') {
