@@ -11,6 +11,7 @@ public class ForgeFormRepository : IForgeFormRepository
             .Include(m => m.Fields.OrderBy(f => f.DisplayOrder))
             .Include(m => m.Relations)
             .Include(m => m.GridColumns.OrderBy(c => c.DisplayOrder))
+            .Include(m => m.GridActions.OrderBy(a => a.DisplayOrder))
             .AsNoTracking()
             .FirstOrDefaultAsync(m => m.Id == id, cancellationToken);
 
@@ -35,6 +36,7 @@ public class ForgeFormRepository : IForgeFormRepository
             .Include(m => m.Fields.OrderBy(f => f.DisplayOrder))
             .Include(m => m.Relations)
             .Include(m => m.GridColumns.OrderBy(c => c.DisplayOrder))
+            .Include(m => m.GridActions.OrderBy(a => a.DisplayOrder))
             .AsNoTracking()
             .FirstOrDefaultAsync(m => m.Code == code, cancellationToken);
 
@@ -43,6 +45,7 @@ public class ForgeFormRepository : IForgeFormRepository
             .Include(m => m.Fields.OrderBy(f => f.DisplayOrder))
             .Include(m => m.Relations)
             .Include(m => m.GridColumns.OrderBy(c => c.DisplayOrder))
+            .Include(m => m.GridActions.OrderBy(a => a.DisplayOrder))
             .AsNoTracking()
             .FirstOrDefaultAsync(m => m.EntityName == entityName, cancellationToken);
 
@@ -60,6 +63,7 @@ public class ForgeFormRepository : IForgeFormRepository
             .Include(m => m.Fields)
             .Include(m => m.Relations)
             .Include(m => m.GridColumns)
+            .Include(m => m.GridActions)
             .FirstOrDefaultAsync(m => m.Id == id, cancellationToken);
 
     public async Task<bool> ExistsByCodeAsync(string code, int? excludeId = null, CancellationToken cancellationToken = default) =>

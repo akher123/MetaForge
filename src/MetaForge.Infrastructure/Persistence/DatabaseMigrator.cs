@@ -15,14 +15,17 @@ public static class DatabaseMigrator
         if (pendingList.Count == 0)
         {
             logger.LogInformation("Database schema is up to date.");
-            return;
+        }
+        else
+        {
+            logger.LogInformation("Applying {Count} pending migration(s): {Migrations}",
+                pendingList.Count,
+                string.Join(", ", pendingList));
+
+            await context.Database.MigrateAsync(cancellationToken);
+            logger.LogInformation("Database migration completed.");
         }
 
-        logger.LogInformation("Applying {Count} pending migration(s): {Migrations}",
-            pendingList.Count,
-            string.Join(", ", pendingList));
-
-        await context.Database.MigrateAsync(cancellationToken);
-        logger.LogInformation("Database migration completed.");
+        await SchemaUpgradeHelper.EnsureForgeFormActionsTableAsync(context, logger, cancellationToken);
     }
 }

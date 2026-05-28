@@ -303,19 +303,9 @@ const MasterDetail = (function () {
     }
 
     function validateMasterForm() {
-        const fields = (screen.MasterForm?.Fields ?? screen.masterForm?.fields ?? [])
-            .filter(f => f.IsRequired ?? f.isRequired);
-
-        const data = DynamicForm.getData();
-        for (const field of fields) {
-            const name = field.PropertyName ?? field.propertyName;
-            const val = data[name];
-            if (isEmptyRequiredValue(val, name)) {
-                alert(`${field.Label ?? field.label ?? name} is required.`);
-                return false;
-            }
-        }
-        return true;
+        const fields = screen.MasterForm?.Fields ?? screen.masterForm?.fields ?? [];
+        const errors = DynamicForm.validateRequiredFields($('#masterForm'), fields, DynamicForm.getData());
+        return !errors;
     }
 
     function updateMasterSummary() {
@@ -419,13 +409,18 @@ const MasterDetail = (function () {
     function validateBeforeSave() {
         if (!validateMasterForm()) return false;
 
+        MetaForgeDetailRows.clearRowFieldErrors($('#detailGridBody'));
         const fields = getDetailFields().filter(f => f.IsRequired ?? f.isRequired);
         for (let i = 0; i < detailRows.length; i++) {
             for (const field of fields) {
                 const name = field.PropertyName ?? field.propertyName;
                 const val = detailRows[i][name];
                 if (isEmptyRequiredValue(val, name)) {
-                    alert(`Line ${i + 1}: ${field.Label ?? field.label ?? name} is required.`);
+                    MetaForgeDetailRows.showRowFieldError(
+                        $('#detailGridBody'),
+                        i,
+                        name,
+                        `${field.Label ?? field.label ?? name} is required.`);
                     return false;
                 }
             }
@@ -485,8 +480,10 @@ const MasterDetail = (function () {
                 window.location = `/Modules/${moduleCode}`;
             }
         }).fail(function (xhr) {
-            const msg = xhr.responseJSON?.error ?? xhr.responseJSON?.title ?? xhr.responseText ?? xhr.statusText;
-            alert('Save failed: ' + msg);
+            if (!DynamicForm.handleAjaxValidationError($('#masterForm'), xhr)) {
+                const msg = xhr.responseJSON?.error ?? xhr.responseJSON?.title ?? xhr.responseText ?? xhr.statusText;
+                alert('Save failed: ' + msg);
+            }
         }).always(() => {
             $btn.prop('disabled', false);
         });

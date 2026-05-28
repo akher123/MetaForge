@@ -8,6 +8,8 @@
     var isTabularMasterDetail = ViewBag.IsTabularMasterDetail == true;
     var openMasterDetailId = ViewBag.OpenMasterDetailId as int?;
     var openMasterDetailNew = ViewBag.OpenMasterDetailNew == true;
+    var rowCustomActions = grid?.Actions?.Where(a => string.Equals(a.Placement, "Row", StringComparison.OrdinalIgnoreCase)).ToList() ?? [];
+    var showActionsColumn = perms?.CanEdit == true || perms?.CanDelete == true || (hasMasterDetail && perms?.CanView == true) || rowCustomActions.Count > 0;
     var pageModeClass = hasMasterDetail ? "module-page--transaction" : "module-page--master";
     var pageIcon = hasMasterDetail ? "fa-file-invoice" : "fa-database";
     var pageSubtitle = hasMasterDetail
@@ -25,6 +27,7 @@
             </div>
         </div>
         <div class="d-flex flex-wrap gap-2 module-page-actions">
+            <span id="moduleGridToolbarActions" class="d-flex flex-wrap gap-2"></span>
             @if (hasMasterDetail && perms?.CanCreate == true)
             {
                 <button type="button" class="btn btn-primary" id="btnAddMasterDetail" title="New @form?.FormName" aria-label="New @form?.FormName">
@@ -104,7 +107,7 @@
                                 <th data-property="@col.PropertyName">@col.Label</th>
                             }
                         }
-                        @if (perms?.CanEdit == true || perms?.CanDelete == true || (hasMasterDetail && perms?.CanView == true))
+                        @if (showActionsColumn)
                         {
                             <th>Actions</th>
                         }
@@ -146,10 +149,6 @@
                         recordModal.hide();
                         DynamicForm.reset();
                         $('#recordFormModalTitle').text('New Record');
-                    })
-                    .fail(function (xhr) {
-                        const msg = xhr.responseJSON?.error ?? xhr.responseText ?? xhr.statusText;
-                        alert('Save failed: ' + msg);
                     });
             });
 

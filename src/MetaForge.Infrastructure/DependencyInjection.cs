@@ -32,6 +32,7 @@ public static class DependencyInjection
         services.AddScoped<IFormMetadataService, FormMetadataService>();
         services.AddScoped<IGenericCrudService, GenericCrudService>();
         services.AddScoped<IGridService, GridService>();
+        services.AddScoped<IGridActionService, GridActionService>();
         services.AddScoped<ILookupService, LookupService>();
         services.AddScoped<IMasterDetailService, MasterDetailService>();
         services.AddScoped<IEntityMetadataDiscoveryService, EntityMetadataDiscoveryService>();

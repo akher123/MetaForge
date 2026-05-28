@@ -242,11 +242,16 @@ Access at **Form Builder** (`/FormBuilder` or `/ModuleConfig`). Requires `config
    - Set **Group**, **Code**, and **Display Name**
    - Click **Auto-Build** to draft fields, grid columns, and relations from EF metadata
 3. Configure tabs:
-   - **Master Form** — field labels, control types, lookups, cascade, validation, read-only flags
+   - **Master Form** — field labels, control types, lookups, cascade, validation rules, read-only flags
    - **Detail Form** — (MasterDetail / Tabular only) child line field layout
    - **List Grid** — visible columns, sortable/searchable flags
    - **Relations** — parent/child mappings for master-detail
-4. **Save** — the module is stored and can be linked to the sidebar menu.
+4. **Validation rules** (Master Form / Detail Form tabs):
+   - Scroll right in the field table to the **Validation** column
+   - Click the blue **Rules** button on any field row
+   - Add rules (max/min length, numeric range, email, phone, URL, regex, compare to another field)
+   - Click **Apply Rules**, then **Save Form**
+5. **Save** — the module is stored and can be linked to the sidebar menu.
 
 #### Edit an existing module
 

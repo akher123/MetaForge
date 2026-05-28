@@ -41,18 +41,52 @@ public class GlobalExceptionMiddleware
 
     private static Task HandleExceptionAsync(HttpContext context, Exception exception)
     {
+        if (exception is ValidationException validationException)
+        {
+            context.Response.ContentType = "application/json";
+            context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+
+            var fieldErrors = validationException.Errors
+                .Where(e => !string.IsNullOrWhiteSpace(e.PropertyName))
+                .GroupBy(e => e.PropertyName)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Select(e => e.ErrorMessage).ToList());
+
+            var unboundMessages = validationException.Errors
+                .Where(e => string.IsNullOrWhiteSpace(e.PropertyName))
+                .Select(e => e.ErrorMessage)
+                .ToList();
+
+            var summary = fieldErrors.Count > 0
+                ? "Please correct the highlighted fields."
+                : unboundMessages.Count > 0
+                    ? string.Join("; ", unboundMessages)
+                    : "One or more validation errors occurred.";
+
+            if (unboundMessages.Count > 0 && fieldErrors.Count > 0)
+                summary = $"{summary} {string.Join("; ", unboundMessages)}";
+
+            var payload = JsonSerializer.Serialize(new
+            {
+                error = summary,
+                fieldErrors
+            });
+
+            return context.Response.WriteAsync(payload);
+        }
+
         var (statusCode, message) = exception switch
         {
             NotFoundException => (HttpStatusCode.NotFound, exception.Message),
             BusinessException => (HttpStatusCode.BadRequest, exception.Message),
-            ValidationException ve => (HttpStatusCode.BadRequest, string.Join("; ", ve.Errors.Select(e => e.ErrorMessage))),
             _ => (HttpStatusCode.InternalServerError, "An unexpected error occurred.")
         };
 
         context.Response.ContentType = "application/json";
         context.Response.StatusCode = (int)statusCode;
 
-        var payload = JsonSerializer.Serialize(new { error = message });
-        return context.Response.WriteAsync(payload);
+        var errorPayload = JsonSerializer.Serialize(new { error = message });
+        return context.Response.WriteAsync(errorPayload);
     }
 }

@@ -45,6 +45,11 @@ public class FormConfigApiController : ControllerBase
     public async Task<IActionResult> BuildDraft(string entityName, [FromQuery] string groupName = "Master Data", CancellationToken cancellationToken = default) =>
         Ok(await _configService.BuildDraftAsync(entityName, groupName, cancellationToken));
 
+    [HttpGet("validation-rules")]
+    [RequirePermissionCode(ConfigPermissions.View)]
+    public IActionResult GetValidationRuleCatalog() =>
+        Ok(ValidationRuleCatalog.GetAll());
+
     [HttpPost]
     [RequirePermissionCode(ConfigPermissions.Manage)]
     public async Task<IActionResult> Save([FromBody] FormConfigDto config, CancellationToken cancellationToken)

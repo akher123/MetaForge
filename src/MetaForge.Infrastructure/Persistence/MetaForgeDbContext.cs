@@ -16,6 +16,7 @@ public class MetaForgeDbContext : DbContext
     public DbSet<ForgeField> ForgeFields => Set<ForgeField>();
     public DbSet<ForgeRelation> ForgeRelations => Set<ForgeRelation>();
     public DbSet<ForgeGridColumn> ForgeGridColumns => Set<ForgeGridColumn>();
+    public DbSet<ForgeFormAction> ForgeFormActions => Set<ForgeFormAction>();
     public DbSet<ForgeMenu> ForgeMenus => Set<ForgeMenu>();
     public DbSet<LookupConfiguration> LookupConfigurations => Set<LookupConfiguration>();
 

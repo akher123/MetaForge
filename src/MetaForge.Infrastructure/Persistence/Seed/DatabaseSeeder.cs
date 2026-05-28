@@ -68,6 +68,7 @@ public static class DatabaseSeeder
         await EnsureSampleCustomerAsync(context, logger);
         await EnsureSampleTransactionDataAsync(context, logger);
         await EnsureTabularSalesOrderUpgradeAsync(context, logger);
+        await EnsureSalesOrderGridActionsAsync(context, logger);
         await EnsureFormPermissionsAsync(context, logger);
         await EnsureMenusAsync(scope, logger);
     }
@@ -198,6 +199,39 @@ public static class DatabaseSeeder
             await context.SaveChangesAsync();
             logger.LogInformation("Added sample sales order charges.");
         }
+    }
+
+    private static async Task EnsureSalesOrderGridActionsAsync(MetaForgeDbContext context, ILogger logger)
+    {
+        var salesOrderForm = await context.ForgeForms
+            .Include(f => f.GridActions)
+            .FirstOrDefaultAsync(f => f.Code == "salesorder");
+
+        if (salesOrderForm == null)
+            return;
+
+        if (salesOrderForm.GridActions.Any(a => a.Code == "approve"))
+            return;
+
+        salesOrderForm.GridActions.Add(new ForgeFormAction
+        {
+            Code = "approve",
+            Label = "Approve",
+            Icon = "check",
+            Placement = GridActionPlacement.Row,
+            HandlerType = GridActionHandlerType.Api,
+            HandlerTarget = "/api/metaforge/crud/SalesOrder/{id}",
+            HttpMethod = "PUT",
+            RequestBody = """{"Status":"Approved"}""",
+            PermissionAction = PermissionAction.Approve,
+            ConfirmMessage = "Approve this sales order?",
+            ButtonStyle = "outline-success",
+            DisplayOrder = 0,
+            IsActive = true
+        });
+
+        await context.SaveChangesAsync();
+        logger.LogInformation("Added Approve row action to Sales Order grid.");
     }
 
     private static async Task EnsureCascadeLookupUpgradeAsync(MetaForgeDbContext context, ILogger logger)

@@ -432,17 +432,9 @@ const MasterDetailTabular = (function () {
     }
 
     function validateMasterForm() {
-        const fields = (screen.MasterForm?.Fields ?? []).filter(f => f.IsRequired ?? f.isRequired);
-        const data = DynamicForm.getData();
-        for (const field of fields) {
-            const name = field.PropertyName ?? field.propertyName;
-            const val = data[name];
-            if (isEmptyRequiredValue(val, name)) {
-                MetaForgeUi.showAlert(`${field.Label ?? field.label ?? name} is required.`, 'warning');
-                return false;
-            }
-        }
-        return true;
+        const fields = screen.MasterForm?.Fields ?? [];
+        const errors = DynamicForm.validateRequiredFields($('#masterForm'), fields, DynamicForm.getData());
+        return !errors;
     }
 
     function validateBeforeSave() {
@@ -453,13 +445,20 @@ const MasterDetailTabular = (function () {
             const state = getSectionState(key);
             const fields = getDetailFields(section).filter(f => f.IsRequired ?? f.isRequired);
             const label = section.TabLabel ?? section.tabLabel ?? key;
+            const $grid = $(`.detail-grid-body[data-section="${key}"]`);
+
+            MetaForgeDetailRows.clearRowFieldErrors($grid);
 
             for (let i = 0; i < state.rows.length; i++) {
                 for (const field of fields) {
                     const name = field.PropertyName ?? field.propertyName;
                     const val = state.rows[i][name];
                     if (isEmptyRequiredValue(val, name)) {
-                        MetaForgeUi.showAlert(`${label} row ${i + 1}: ${field.Label ?? field.label ?? name} is required.`, 'warning');
+                        MetaForgeDetailRows.showRowFieldError(
+                            $grid,
+                            i,
+                            name,
+                            `${field.Label ?? field.label ?? name} is required.`);
                         return false;
                     }
                 }
@@ -503,7 +502,11 @@ const MasterDetailTabular = (function () {
                 config.onSaved();
             }
         }).fail(function (xhr) {
-            MetaForgeUi.showAlert(xhr.responseJSON?.error ?? xhr.responseJSON?.title ?? xhr.responseText ?? xhr.statusText ?? 'Save failed.', 'danger');
+            if (!DynamicForm.handleAjaxValidationError($('#masterForm'), xhr)) {
+                MetaForgeUi.showAlert(
+                    xhr.responseJSON?.error ?? xhr.responseJSON?.title ?? xhr.responseText ?? xhr.statusText ?? 'Save failed.',
+                    'danger');
+            }
         }).always(() => {
             $btn.prop('disabled', false);
         });

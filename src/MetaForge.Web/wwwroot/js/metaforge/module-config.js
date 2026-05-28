@@ -4,6 +4,11 @@
 const FormBuilder = (function () {
     const CONTROL_TYPES = ['TextBox', 'TextArea', 'Number', 'Date', 'DateTime', 'Checkbox', 'Dropdown', 'Autocomplete', 'Radio', 'FileUpload', 'Hidden'];
     const RELATION_TYPES = ['OneToOne', 'OneToMany', 'ManyToOne'];
+    const GRID_ACTION_PLACEMENTS = ['Row', 'Toolbar'];
+    const GRID_HANDLER_TYPES = ['Api', 'Redirect', 'Script'];
+    const GRID_HTTP_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
+    const PERMISSION_ACTIONS = ['', 'View', 'Create', 'Edit', 'Delete', 'Export', 'Approve'];
+    const BUTTON_STYLES = ['outline-primary', 'outline-success', 'outline-warning', 'outline-danger', 'outline-secondary', 'primary', 'success', 'danger'];
 
     function notify(message, type) {
         if (typeof MetaForgeUi !== 'undefined') {
@@ -32,6 +37,10 @@ const FormBuilder = (function () {
         $('#groupName').val($app.data('default-group') || 'Master Data');
         $('#screenType').val($app.data('default-screen-type') || 'Master');
 
+        if (typeof ValidationRuleBuilder !== 'undefined') {
+            ValidationRuleBuilder.init();
+        }
+
         const screen = window.__formBuilderData?.screen;
         const legacy = window.__formBuilderData?.module;
 
@@ -54,6 +63,7 @@ const FormBuilder = (function () {
         $('#btnAddMasterField').on('click', () => addFieldRow('#masterFieldsTable', {}, refreshMasterPreview));
         $('#btnAddDetailField').on('click', () => addFieldRow('#detailFieldsTable', {}, refreshDetailPreview));
         $('#btnAddColumn').on('click', () => addColumnRow());
+        $('#btnAddGridAction').on('click', () => addGridActionRow());
         $('#btnAddRelation').on('click', () => addRelationRow());
         $('#btnSaveScreen').on('click', saveScreen);
 
@@ -165,6 +175,7 @@ const FormBuilder = (function () {
 
         renderFields('#masterFieldsTable', config.Fields ?? config.fields ?? [], refreshMasterPreview);
         renderColumns(config.GridColumns ?? config.gridColumns ?? []);
+        renderGridActions(config.GridActions ?? config.gridActions ?? []);
         renderRelations(config.Relations ?? config.relations ?? []);
         syncDetailFromRelations();
     }
@@ -295,8 +306,12 @@ const FormBuilder = (function () {
     function addFieldRow(tableSelector, field = {}, previewFn = refreshPreviews, triggerPreview = true) {
         const controlOptions = CONTROL_TYPES.map(c =>
             `<option value="${c}" ${(field.ControlType ?? field.controlType) === c ? 'selected' : ''}>${c}</option>`).join('');
+        const validationRule = field.ValidationRule ?? field.validationRule ?? '';
+        const validationCell = typeof ValidationRuleBuilder !== 'undefined'
+            ? ValidationRuleBuilder.renderValidationCell()
+            : `<td><input type="text" class="form-control form-control-sm field-validation" placeholder="MaxLength:50" /></td>`;
 
-        $(`${tableSelector} tbody`).append(`
+        const $row = $(`
             <tr>
                 <td class="col-order">
                     <div class="btn-group-vertical btn-group-sm">
@@ -314,11 +329,54 @@ const FormBuilder = (function () {
                 <td class="text-center"><input type="checkbox" class="form-check-input field-required" ${(field.IsRequired ?? field.isRequired) ? 'checked' : ''} /></td>
                 <td class="text-center"><input type="checkbox" class="form-check-input field-visible" ${(field.IsVisible ?? field.isVisible ?? true) ? 'checked' : ''} /></td>
                 <td class="text-center"><input type="checkbox" class="form-check-input field-readonly" ${(field.IsReadOnly ?? field.isReadOnly) ? 'checked' : ''} /></td>
-                <td><input type="text" class="form-control form-control-sm field-validation" value="${esc(field.ValidationRule ?? field.validationRule ?? '')}" placeholder="MaxLength:50" /></td>
+                ${validationCell}
                 <td><button type="button" class="btn btn-sm btn-outline-danger btn-icon btn-remove-row" title="Remove" aria-label="Remove"><i class="fa-solid fa-trash"></i></button></td>
             </tr>`);
 
+        $(`${tableSelector} tbody`).append($row);
+
+        if (typeof ValidationRuleBuilder !== 'undefined') {
+            ValidationRuleBuilder.setRowValidationRule($row, validationRule);
+        } else {
+            $row.find('.field-validation').val(validationRule);
+        }
+
         if (triggerPreview && previewFn) previewFn();
+    }
+
+    function renderGridActions(actions) {
+        const $tbody = $('#gridActionsTable tbody').empty();
+        actions.forEach(a => addGridActionRow(a));
+    }
+
+    function addGridActionRow(action = {}) {
+        const placementOptions = GRID_ACTION_PLACEMENTS.map(p =>
+            `<option value="${p}" ${(action.Placement ?? action.placement ?? 'Row') === p ? 'selected' : ''}>${p}</option>`).join('');
+        const handlerOptions = GRID_HANDLER_TYPES.map(h =>
+            `<option value="${h}" ${(action.HandlerType ?? action.handlerType ?? 'Api') === h ? 'selected' : ''}>${h}</option>`).join('');
+        const methodOptions = GRID_HTTP_METHODS.map(m =>
+            `<option value="${m}" ${(action.HttpMethod ?? action.httpMethod ?? 'POST') === m ? 'selected' : ''}>${m}</option>`).join('');
+        const permissionOptions = PERMISSION_ACTIONS.map(p =>
+            `<option value="${p}" ${(action.PermissionAction ?? action.permissionAction ?? '') === p ? 'selected' : ''}>${p || '(View)'}</option>`).join('');
+        const styleOptions = BUTTON_STYLES.map(s =>
+            `<option value="${s}" ${(action.ButtonStyle ?? action.buttonStyle ?? 'outline-primary') === s ? 'selected' : ''}>${s}</option>`).join('');
+
+        $('#gridActionsTable tbody').append(`
+            <tr>
+                <td><input type="text" class="form-control form-control-sm action-code" value="${esc(action.Code ?? action.code ?? '')}" placeholder="approve" /></td>
+                <td><input type="text" class="form-control form-control-sm action-label" value="${esc(action.Label ?? action.label ?? '')}" placeholder="Approve" /></td>
+                <td><input type="text" class="form-control form-control-sm action-icon" value="${esc(action.Icon ?? action.icon ?? '')}" placeholder="check" /></td>
+                <td><select class="form-select form-select-sm action-placement">${placementOptions}</select></td>
+                <td><select class="form-select form-select-sm action-handler">${handlerOptions}</select></td>
+                <td><input type="text" class="form-control form-control-sm action-target" value="${esc(action.HandlerTarget ?? action.handlerTarget ?? '')}" placeholder="/api/.../{id}" /></td>
+                <td><select class="form-select form-select-sm action-method">${methodOptions}</select></td>
+                <td><input type="text" class="form-control form-control-sm action-body" value="${esc(action.RequestBody ?? action.requestBody ?? '')}" placeholder='{"Status":"Approved"}' /></td>
+                <td><select class="form-select form-select-sm action-permission">${permissionOptions}</select></td>
+                <td><input type="text" class="form-control form-control-sm action-confirm" value="${esc(action.ConfirmMessage ?? action.confirmMessage ?? '')}" placeholder="optional" /></td>
+                <td><select class="form-select form-select-sm action-style">${styleOptions}</select></td>
+                <td class="text-center"><input type="checkbox" class="form-check-input action-active" ${(action.IsActive ?? action.isActive ?? true) ? 'checked' : ''} /></td>
+                <td><button type="button" class="btn btn-sm btn-outline-danger btn-icon btn-remove-row" title="Remove" aria-label="Remove"><i class="fa-solid fa-trash"></i></button></td>
+            </tr>`);
     }
 
     function addColumnRow(col = {}) {
@@ -366,7 +424,9 @@ const FormBuilder = (function () {
                 IsRequired: $(this).find('.field-required').is(':checked'),
                 IsVisible: $(this).find('.field-visible').is(':checked'),
                 IsReadOnly: $(this).find('.field-readonly').is(':checked'),
-                ValidationRule: $(this).find('.field-validation').val()?.trim() || null,
+                ValidationRule: typeof ValidationRuleBuilder !== 'undefined'
+                    ? ValidationRuleBuilder.getRowValidationRule($(this))
+                    : ($(this).find('.field-validation').val()?.trim() || null),
                 DisplayOrder: i
             });
         });
@@ -384,6 +444,28 @@ const FormBuilder = (function () {
                 IsSortable: $(this).find('.col-sortable').is(':checked'),
                 IsSearchable: $(this).find('.col-searchable').is(':checked'),
                 IsVisible: $(this).find('.col-visible').is(':checked'),
+                DisplayOrder: i
+            });
+        });
+
+        const gridActions = [];
+        $('#gridActionsTable tbody tr').each(function (i) {
+            const code = $(this).find('.action-code').val()?.trim();
+            const label = $(this).find('.action-label').val()?.trim();
+            if (!code || !label) return;
+            gridActions.push({
+                Code: code,
+                Label: label,
+                Icon: $(this).find('.action-icon').val()?.trim() || null,
+                Placement: $(this).find('.action-placement').val(),
+                HandlerType: $(this).find('.action-handler').val(),
+                HandlerTarget: $(this).find('.action-target').val()?.trim() || '',
+                HttpMethod: $(this).find('.action-method').val(),
+                RequestBody: $(this).find('.action-body').val()?.trim() || null,
+                PermissionAction: $(this).find('.action-permission').val() || null,
+                ConfirmMessage: $(this).find('.action-confirm').val()?.trim() || null,
+                ButtonStyle: $(this).find('.action-style').val(),
+                IsActive: $(this).find('.action-active').is(':checked'),
                 DisplayOrder: i
             });
         });
@@ -415,6 +497,7 @@ const FormBuilder = (function () {
             IsActive: $('#isActive').is(':checked'),
             Fields: collectFields('#masterFieldsTable'),
             GridColumns: gridColumns,
+            GridActions: gridActions,
             Relations: relations
         };
     }

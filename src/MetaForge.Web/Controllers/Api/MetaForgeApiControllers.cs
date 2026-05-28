@@ -71,15 +71,18 @@ public class GridApiController : ControllerBase
     private readonly IGridService _gridService;
     private readonly IGenericCrudService _crudService;
     private readonly IFormAuthorizationService _authorizationService;
+    private readonly IGridActionService _gridActionService;
 
     public GridApiController(
         IGridService gridService,
         IGenericCrudService crudService,
-        IFormAuthorizationService authorizationService)
+        IFormAuthorizationService authorizationService,
+        IGridActionService gridActionService)
     {
         _gridService = gridService;
         _crudService = crudService;
         _authorizationService = authorizationService;
+        _gridActionService = gridActionService;
     }
 
     [HttpGet("{formCode}")]
@@ -89,8 +92,23 @@ public class GridApiController : ControllerBase
         var grid = await _gridService.GetGridDefinitionAsync(formCode, cancellationToken);
         if (grid == null) return NotFound();
 
+        var permissions = await _authorizationService.GetFormPermissionsAsync(User, formCode, cancellationToken);
+        GridDefinitionFilter.ApplyPermissions(grid, permissions);
+
         Response.Headers.CacheControl = "private, max-age=300";
         return Ok(grid);
+    }
+
+    [HttpPost("{formCode}/actions/{actionCode}/{id?}")]
+    [RequireFormPermission(PermissionAction.View)]
+    public async Task<IActionResult> ExecuteAction(
+        string formCode,
+        string actionCode,
+        int? id,
+        CancellationToken cancellationToken)
+    {
+        await _gridActionService.ExecuteAsync(formCode, actionCode, id, User, cancellationToken);
+        return NoContent();
     }
 
     [HttpPost("data")]

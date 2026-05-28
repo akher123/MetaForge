@@ -27,6 +27,8 @@ public class FormConfigDto
 
     public List<FormGridColumnConfigDto> GridColumns { get; set; } = [];
 
+    public List<FormGridActionConfigDto> GridActions { get; set; } = [];
+
     public List<FormRelationConfigDto> Relations { get; set; } = [];
 }
 
@@ -74,6 +76,37 @@ public class FormGridColumnConfigDto
     public bool IsSearchable { get; set; } = true;
 
     public bool IsVisible { get; set; } = true;
+}
+
+public class FormGridActionConfigDto
+{
+    public int Id { get; set; }
+
+    public string Code { get; set; } = string.Empty;
+
+    public string Label { get; set; } = string.Empty;
+
+    public string? Icon { get; set; }
+
+    public string Placement { get; set; } = "Row";
+
+    public string HandlerType { get; set; } = "Api";
+
+    public string HandlerTarget { get; set; } = string.Empty;
+
+    public string HttpMethod { get; set; } = "POST";
+
+    public string? RequestBody { get; set; }
+
+    public string? PermissionAction { get; set; }
+
+    public string? ConfirmMessage { get; set; }
+
+    public string ButtonStyle { get; set; } = "outline-primary";
+
+    public int DisplayOrder { get; set; }
+
+    public bool IsActive { get; set; } = true;
 }
 
 public class FormRelationConfigDto

@@ -1,5 +1,5 @@
 /**
- * Dynamic Grid Engine - DataTables with server-side paging.
+ * Dynamic Grid Engine - DataTables with server-side paging and configurable actions.
  */
 const DynamicGrid = (function () {
     let table, gridDef, entityName, $table, permissions = {}, hasMasterDetail = false;
@@ -8,12 +8,16 @@ const DynamicGrid = (function () {
         return def?.Columns ?? def?.columns ?? [];
     }
 
+    function getActions(def) {
+        return def?.Actions ?? def?.actions ?? [];
+    }
+
     function getEntity(def, $el) {
         return def?.Entity ?? def?.entity ?? $el.data('entity') ?? '';
     }
 
     function getFormCode(def) {
-        return def?.FormCode ?? def?.moduleCode ?? '';
+        return def?.FormCode ?? def?.formCode ?? def?.moduleCode ?? '';
     }
 
     function getRowId(row) {
@@ -32,8 +36,20 @@ const DynamicGrid = (function () {
         return permissions?.CanDelete === true || permissions?.canDelete === true;
     }
 
-    function hasActions() {
+    function getRowActions() {
+        return getActions(gridDef).filter(a => (a.Placement ?? a.placement ?? 'Row') === 'Row');
+    }
+
+    function getToolbarActions() {
+        return getActions(gridDef).filter(a => (a.Placement ?? a.placement) === 'Toolbar');
+    }
+
+    function hasBuiltInActions() {
         return canEdit() || canDelete() || (hasMasterDetail && (canView() || canEdit()));
+    }
+
+    function hasActions() {
+        return hasBuiltInActions() || getRowActions().length > 0;
     }
 
     function init(selector, definition, perms, masterDetail) {
@@ -44,6 +60,7 @@ const DynamicGrid = (function () {
         entityName = getEntity(gridDef, $table);
         const columns = getColumns(gridDef);
 
+        renderToolbarActions();
         bindActionHandlers();
 
         table = $table.DataTable({
@@ -112,6 +129,26 @@ const DynamicGrid = (function () {
         });
     }
 
+    function renderToolbarActions() {
+        const $container = $('#moduleGridToolbarActions');
+        if (!$container.length) return;
+
+        const actions = getToolbarActions();
+        $container.empty();
+
+        actions.forEach(action => {
+            const code = action.Code ?? action.code;
+            const label = action.Label ?? action.label ?? code;
+            const style = action.ButtonStyle ?? action.buttonStyle ?? 'outline-primary';
+            const icon = action.Icon ?? action.icon;
+            const iconHtml = icon ? `<i class="fa-solid fa-${icon} me-1"></i>` : '';
+
+            $container.append(
+                `<button type="button" class="btn btn-${style} btn-grid-toolbar-action" data-action-code="${escAttr(code)}" title="${escAttr(label)}" aria-label="${escAttr(label)}">${iconHtml}${escHtml(label)}</button>`
+            );
+        });
+    }
+
     function bindActionHandlers() {
         if (canEdit() && !hasMasterDetail) {
             $table.off('click', '.btn-edit').on('click', '.btn-edit', function (e) {
@@ -167,10 +204,120 @@ const DynamicGrid = (function () {
                 });
             });
         }
+
+        $table.off('click', '.btn-grid-custom-action').on('click', '.btn-grid-custom-action', function (e) {
+            e.preventDefault();
+            const code = $(this).data('action-code');
+            const action = getRowActions().find(a => (a.Code ?? a.code) === code);
+            if (!action) return;
+
+            const rowIndex = $(this).data('row-index');
+            const rowData = table.row(rowIndex).data();
+            executeGridAction(action, rowData);
+        });
+
+        $(document).off('click', '#moduleGridToolbarActions .btn-grid-toolbar-action')
+            .on('click', '#moduleGridToolbarActions .btn-grid-toolbar-action', function (e) {
+                e.preventDefault();
+                const code = $(this).data('action-code');
+                const action = getToolbarActions().find(a => (a.Code ?? a.code) === code);
+                if (!action) return;
+                executeGridAction(action, null);
+            });
+    }
+
+    function buildActionContext(row) {
+        const id = row ? getRowId(row) : null;
+        const context = {
+            id,
+            formCode: getFormCode(gridDef),
+            entity: entityName
+        };
+
+        if (row) {
+            Object.keys(row).forEach(key => {
+                context[key] = row[key];
+            });
+        }
+
+        return context;
+    }
+
+    function resolveTemplate(template, context) {
+        return String(template ?? '').replace(/\{(\w+)\}/g, (_, key) => {
+            const value = context[key];
+            return value == null ? '' : String(value);
+        });
+    }
+
+    function executeGridAction(action, row) {
+        const context = buildActionContext(row);
+        const label = action.Label ?? action.label ?? action.Code ?? action.code ?? 'Action';
+
+        const run = () => {
+            const handlerType = action.HandlerType ?? action.handlerType ?? 'Api';
+            const target = resolveTemplate(action.HandlerTarget ?? action.handlerTarget, context);
+
+            if (!target) {
+                MetaForgeUi.showAlert('Action target is not configured.', 'warning');
+                return;
+            }
+
+            if (handlerType === 'Redirect') {
+                window.location.href = target;
+                return;
+            }
+
+            if (handlerType === 'Script') {
+                const handler = window.MetaForgeGridActionHandlers?.[target];
+                if (typeof handler !== 'function') {
+                    MetaForgeUi.showAlert(`Custom handler "${target}" is not registered.`, 'warning');
+                    return;
+                }
+                handler(context);
+                return;
+            }
+
+            const formCode = getFormCode(gridDef);
+            const actionCode = action.Code ?? action.code;
+            const recordId = context.id;
+            const executeUrl = recordId != null
+                ? `/api/metaforge/grid/${encodeURIComponent(formCode)}/actions/${encodeURIComponent(actionCode)}/${encodeURIComponent(recordId)}`
+                : `/api/metaforge/grid/${encodeURIComponent(formCode)}/actions/${encodeURIComponent(actionCode)}`;
+
+            $.ajax({
+                url: executeUrl,
+                method: 'POST',
+                metaforgeProgress: true
+            })
+                .done(function () {
+                    MetaForgeUi.showAlert(`${label} completed successfully.`, 'success', 3000);
+                    if (table) table.ajax.reload(null, false);
+                })
+                .fail(function (xhr) {
+                    MetaForgeUi.showAlert(
+                        xhr.responseJSON?.error ?? xhr.responseJSON?.title ?? xhr.responseText ?? xhr.statusText ?? `${label} failed.`,
+                        'danger'
+                    );
+                });
+        };
+
+        const confirmMessage = action.ConfirmMessage ?? action.confirmMessage;
+        if (confirmMessage) {
+            MetaForgeUi.confirmDelete({
+                title: label,
+                message: confirmMessage,
+                detail: ''
+            }).then(confirmed => {
+                if (confirmed) run();
+            });
+            return;
+        }
+
+        run();
     }
 
     function buildColumns(columns) {
-        const module = getFormCode(gridDef);
         const entity = entityName;
 
         function escapeHtml(value) {
@@ -196,13 +343,14 @@ const DynamicGrid = (function () {
         });
 
         if (hasActions()) {
+            const customRowActions = getRowActions();
             cols.push({
                 data: null,
                 orderable: false,
                 searchable: false,
-                render: (data, type, row) => {
+                render: (data, type, row, meta) => {
                     const id = getRowId(row);
-                    if (id == null) return '<span class="text-muted">—</span>';
+                    if (id == null && customRowActions.length === 0) return '<span class="text-muted">—</span>';
 
                     const buttons = [];
                     if (hasMasterDetail && (canEdit() || canView())) {
@@ -215,6 +363,11 @@ const DynamicGrid = (function () {
                     if (canDelete()) {
                         buttons.push(`<button type="button" class="btn btn-sm btn-outline-danger btn-icon btn-action-delete btn-delete" data-id="${id}" data-entity="${entity}" title="Delete" aria-label="Delete">${MetaForgeIcons.delete}</button>`);
                     }
+
+                    customRowActions.forEach(action => {
+                        buttons.push(renderCustomActionButton(action, meta.row));
+                    });
+
                     return buttons.join(' ');
                 }
             });
@@ -223,9 +376,34 @@ const DynamicGrid = (function () {
         return cols;
     }
 
+    function renderCustomActionButton(action, rowIndex) {
+        const code = action.Code ?? action.code;
+        const label = action.Label ?? action.label ?? code;
+        const style = action.ButtonStyle ?? action.buttonStyle ?? 'outline-primary';
+        const icon = action.Icon ?? action.icon;
+        const iconHtml = icon ? MetaForgeIcons.icon(icon) : MetaForgeIcons.apply;
+
+        return `<button type="button" class="btn btn-sm btn-${style} btn-icon btn-grid-custom-action" data-action-code="${escAttr(code)}" data-row-index="${rowIndex}" title="${escAttr(label)}" aria-label="${escAttr(label)}">${iconHtml}</button>`;
+    }
+
+    function escAttr(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/"/g, '&quot;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+    }
+
+    function escHtml(value) {
+        return escAttr(value);
+    }
+
     function reload() {
         if (table) table.ajax.reload(null, false);
     }
 
     return { init, reload };
 })();
+
+/** Register custom Script-type grid action handlers: MetaForgeGridActionHandlers.myHandler = (ctx) => {} */
+window.MetaForgeGridActionHandlers = window.MetaForgeGridActionHandlers || {};

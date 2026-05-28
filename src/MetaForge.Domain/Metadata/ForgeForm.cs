@@ -28,4 +28,6 @@ public class ForgeForm
     public ICollection<ForgeRelation> Relations { get; set; } = [];
 
     public ICollection<ForgeGridColumn> GridColumns { get; set; } = [];
+
+    public ICollection<ForgeFormAction> GridActions { get; set; } = [];
 }

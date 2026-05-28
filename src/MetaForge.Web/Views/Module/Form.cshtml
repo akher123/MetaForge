@@ -54,7 +54,10 @@
             if (recordId) {
                 DynamicForm.load(recordId);
             }
-            $('#btnSave').on('click', () => DynamicForm.save().then(() => window.location = '/Modules/@formCode'));
+            $('#btnSave').on('click', () => {
+                DynamicForm.save()
+                    .then(() => window.location = '/Modules/@formCode');
+            });
         });
     </script>
 }

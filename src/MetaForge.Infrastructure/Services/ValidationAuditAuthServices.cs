@@ -1,9 +1,9 @@
 using System.Linq.Expressions;
 using System.Text.Json;
-using System.Text.RegularExpressions;
 using System.Security.Claims;
 using MetaForge.Domain.Enums;
 using MetaForge.Infrastructure.Dynamic;
+using MetaForge.Infrastructure.Validation;
 using MetaForge.Shared.Constants;
 using FluentValidation;
 using FluentValidation.Results;
@@ -73,10 +73,10 @@ public class DynamicValidationService : IDynamicValidationService
                     failures.Add(new ValidationFailure(field.PropertyName, $"{field.Label} reference is invalid."));
             }
 
-            if (string.IsNullOrWhiteSpace(field.ValidationRule) || string.IsNullOrWhiteSpace(strValue))
+            if (string.IsNullOrWhiteSpace(field.ValidationRule))
                 continue;
 
-            ApplyRule(field.PropertyName, field.Label, field.ValidationRule, strValue, failures);
+            FieldValidationRuleEngine.ApplyRules(field.PropertyName, field.Label, field.ValidationRule, data, failures);
         }
 
         if (failures.Count > 0)
@@ -106,38 +106,6 @@ public class DynamicValidationService : IDynamicValidationService
         return await task.ConfigureAwait(false);
     }
 
-    private static void ApplyRule(string property, string label, string rule, string value, List<ValidationFailure> failures)
-    {
-        var parts = rule.Split(':', 2, StringSplitOptions.TrimEntries);
-        var ruleName = parts[0];
-        var ruleValue = parts.Length > 1 ? parts[1] : null;
-
-        switch (ruleName.ToLowerInvariant())
-        {
-            case "maxlength" when int.TryParse(ruleValue, out var maxLen) && value.Length > maxLen:
-                failures.Add(new ValidationFailure(property, $"{label} must not exceed {maxLen} characters."));
-                break;
-            case "minlength" when int.TryParse(ruleValue, out var minLen) && value.Length < minLen:
-                failures.Add(new ValidationFailure(property, $"{label} must be at least {minLen} characters."));
-                break;
-            case "range" when ruleValue != null:
-                var rangeParts = ruleValue.Split('-');
-                if (rangeParts.Length == 2 && decimal.TryParse(value, out var num)
-                    && decimal.TryParse(rangeParts[0], out var min)
-                    && decimal.TryParse(rangeParts[1], out var max)
-                    && (num < min || num > max))
-                {
-                    failures.Add(new ValidationFailure(property, $"{label} must be between {min} and {max}."));
-                }
-                break;
-            case "regex" when ruleValue != null && !Regex.IsMatch(value, ruleValue):
-                failures.Add(new ValidationFailure(property, $"{label} format is invalid."));
-                break;
-            case "email" when !value.Contains('@'):
-                failures.Add(new ValidationFailure(property, $"{label} must be a valid email."));
-                break;
-        }
-    }
 }
 
 /// <summary>

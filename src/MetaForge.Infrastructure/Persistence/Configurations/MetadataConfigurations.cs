@@ -19,6 +19,7 @@ public class ForgeFormConfiguration : IEntityTypeConfiguration<ForgeForm>
         builder.HasMany(x => x.Fields).WithOne(x => x.Form).HasForeignKey(x => x.FormId);
         builder.HasMany(x => x.Relations).WithOne(x => x.Form).HasForeignKey(x => x.FormId);
         builder.HasMany(x => x.GridColumns).WithOne(x => x.Form).HasForeignKey(x => x.FormId);
+        builder.HasMany(x => x.GridActions).WithOne(x => x.Form).HasForeignKey(x => x.FormId);
     }
 }
 
@@ -58,6 +59,27 @@ public class ForgeGridColumnConfiguration : IEntityTypeConfiguration<ForgeGridCo
         builder.HasKey(x => x.Id);
         builder.Property(x => x.PropertyName).HasMaxLength(200).IsRequired();
         builder.Property(x => x.Label).HasMaxLength(200).IsRequired();
+    }
+}
+
+public class ForgeFormActionConfiguration : IEntityTypeConfiguration<ForgeFormAction>
+{
+    public void Configure(EntityTypeBuilder<ForgeFormAction> builder)
+    {
+        builder.ToTable("ForgeFormActions");
+        builder.HasKey(x => x.Id);
+        builder.Property(x => x.Code).HasMaxLength(100).IsRequired();
+        builder.Property(x => x.Label).HasMaxLength(200).IsRequired();
+        builder.Property(x => x.Icon).HasMaxLength(100);
+        builder.Property(x => x.Placement).HasMaxLength(50).IsRequired();
+        builder.Property(x => x.HandlerType).HasMaxLength(50).IsRequired();
+        builder.Property(x => x.HandlerTarget).HasMaxLength(500).IsRequired();
+        builder.Property(x => x.HttpMethod).HasMaxLength(10).IsRequired();
+        builder.Property(x => x.RequestBody).HasMaxLength(2000);
+        builder.Property(x => x.PermissionAction).HasMaxLength(50);
+        builder.Property(x => x.ConfirmMessage).HasMaxLength(500);
+        builder.Property(x => x.ButtonStyle).HasMaxLength(50).IsRequired();
+        builder.HasIndex(x => new { x.FormId, x.Code }).IsUnique();
     }
 }
 

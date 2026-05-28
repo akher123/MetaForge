@@ -28,6 +28,8 @@ const DynamicForm = (function () {
             $form.addClass(opts.layoutClass);
         }
         render();
+        clearFieldErrors($form);
+        bindFieldErrorClear($form);
         if (opts.initLookups !== false && typeof MetaForgeLookups !== 'undefined') {
             return MetaForgeLookups.initFormLookups($form, getFields());
         }
@@ -90,27 +92,185 @@ const DynamicForm = (function () {
         const controlType = field.ControlType ?? field.controlType ?? 'TextBox';
         const lookupEntity = field.LookupEntity ?? field.lookupEntity;
         const cascadeAttrs = typeof MetaForgeLookups !== 'undefined' ? MetaForgeLookups.cascadeAttrs(field) : '';
+        let controlHtml;
 
         switch (controlType) {
             case 'TextArea':
-                return `<textarea class="form-control admin-form-control" name="${name}" ${readonly} ${required} rows="3"></textarea>`;
+                controlHtml = `<textarea class="form-control admin-form-control" name="${name}" ${readonly} ${required} rows="3"></textarea>`;
+                break;
             case 'Number':
-                return `<input type="number" step="any" class="form-control admin-form-control" name="${name}" ${readonly} ${required} />`;
+                controlHtml = `<input type="number" step="any" class="form-control admin-form-control" name="${name}" ${readonly} ${required} />`;
+                break;
             case 'Date':
-                return `<input type="date" class="form-control admin-form-control" name="${name}" ${readonly} ${required} />`;
+                controlHtml = `<input type="date" class="form-control admin-form-control" name="${name}" ${readonly} ${required} />`;
+                break;
             case 'DateTime':
-                return `<input type="datetime-local" class="form-control admin-form-control" name="${name}" ${readonly} ${required} />`;
+                controlHtml = `<input type="datetime-local" class="form-control admin-form-control" name="${name}" ${readonly} ${required} />`;
+                break;
             case 'Checkbox':
-                return `<div class="form-check mt-1"><input type="checkbox" class="form-check-input" name="${name}" ${readonly} ${disabled} /></div>`;
+                controlHtml = `<div class="form-check mt-1"><input type="checkbox" class="form-check-input" name="${name}" ${readonly} ${disabled} /></div>`;
+                break;
             case 'Dropdown':
-                return `<select class="form-select admin-form-control lookup-select" name="${name}" data-lookup="${lookupEntity || (name || '').replace(/Id$/, '')}" ${cascadeAttrs} ${required} ${disabled}></select>`;
+                controlHtml = `<select class="form-select admin-form-control lookup-select" name="${name}" data-lookup="${lookupEntity || (name || '').replace(/Id$/, '')}" ${cascadeAttrs} ${required} ${disabled}></select>`;
+                break;
             case 'Autocomplete':
-                return `<select class="form-select admin-form-control lookup-autocomplete" name="${name}" data-lookup="${lookupEntity || (name || '').replace(/Id$/, '')}" ${cascadeAttrs} ${required} ${disabled}></select>`;
+                controlHtml = `<select class="form-select admin-form-control lookup-autocomplete" name="${name}" data-lookup="${lookupEntity || (name || '').replace(/Id$/, '')}" ${cascadeAttrs} ${required} ${disabled}></select>`;
+                break;
             case 'Hidden':
                 return `<input type="hidden" name="${name}" />`;
             default:
-                return `<input type="text" class="form-control admin-form-control" name="${name}" ${readonly} ${required} />`;
+                controlHtml = `<input type="text" class="form-control admin-form-control" name="${name}" ${readonly} ${required} />`;
         }
+
+        return wrapControlHtml(controlHtml, name);
+    }
+
+    function wrapControlHtml(controlHtml, name) {
+        return `
+            <div class="field-control-wrap" data-field-wrap="${name}">
+                ${controlHtml}
+                <div class="invalid-feedback" data-field-error="${name}"></div>
+            </div>`;
+    }
+
+    function findFieldWrap($scope, fieldName) {
+        return $scope.find(`[data-field-wrap="${fieldName}"]`).first();
+    }
+
+    function findFieldInput($scope, fieldName) {
+        const $wrap = findFieldWrap($scope, fieldName);
+        if ($wrap.length) {
+            const $input = $wrap.find('.form-control, .form-select, .form-check-input').first();
+            if ($input.length) return $input;
+        }
+
+        return $scope.find(`[name="${fieldName}"]`).first();
+    }
+
+    function clearFieldErrors($scope) {
+        const $root = $scope ? $($scope) : $form;
+        if (!$root.length) return;
+
+        $root.find('.is-invalid').removeClass('is-invalid');
+        $root.find('.field-control-wrap.is-invalid').removeClass('is-invalid');
+        $root.find('[data-field-error]').text('').hide();
+        $root.find('.detail-field-wrap .is-invalid').removeClass('is-invalid');
+    }
+
+    function showFieldError($scope, fieldName, message) {
+        const $root = $scope ? $($scope) : $form;
+        const $wrap = findFieldWrap($root, fieldName);
+        const $input = findFieldInput($root, fieldName);
+        const $feedback = $wrap.find(`[data-field-error="${fieldName}"]`);
+
+        if ($input.length) {
+            $input.addClass('is-invalid');
+        }
+        if ($wrap.length) {
+            $wrap.addClass('is-invalid');
+        }
+        if ($feedback.length) {
+            $feedback.text(message).show();
+        }
+
+        if ($input.hasClass('lookup-select') || $input.hasClass('lookup-autocomplete')) {
+            $input.next('.select2-container').find('.select2-selection').addClass('is-invalid');
+        }
+    }
+
+    function showFieldErrors($scope, fieldErrors) {
+        clearFieldErrors($scope);
+        if (!fieldErrors) return false;
+
+        let count = 0;
+        Object.keys(fieldErrors).forEach(function (fieldName) {
+            const message = fieldErrors[fieldName];
+            const text = Array.isArray(message) ? message[0] : message;
+            if (!text) return;
+            showFieldError($scope, fieldName, text);
+            count++;
+        });
+
+        if (count > 0) {
+            const $first = ($scope ? $($scope) : $form).find('.is-invalid').first();
+            if ($first.length) {
+                $first.trigger('focus');
+                $first[0]?.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
+            }
+        }
+
+        return count > 0;
+    }
+
+    function parseAjaxFieldErrors(xhr) {
+        const json = xhr?.responseJSON;
+        const fields = {};
+
+        if (json?.fieldErrors && typeof json.fieldErrors === 'object') {
+            Object.keys(json.fieldErrors).forEach(function (key) {
+                const value = json.fieldErrors[key];
+                fields[key] = Array.isArray(value) ? value[0] : value;
+            });
+        }
+
+        return {
+            general: json?.error ?? json?.title ?? xhr?.statusText ?? 'Save failed.',
+            fields: fields
+        };
+    }
+
+    function handleAjaxValidationError($scope, xhr) {
+        const parsed = parseAjaxFieldErrors(xhr);
+        if (Object.keys(parsed.fields).length > 0) {
+            showFieldErrors($scope, parsed.fields);
+            return true;
+        }
+
+        return false;
+    }
+
+    function validateRequiredFields($scope, fields, data) {
+        clearFieldErrors($scope);
+        const errors = {};
+
+        (fields || []).forEach(function (field) {
+            if (!(field.IsRequired ?? field.isRequired)) return;
+
+            const name = field.PropertyName ?? field.propertyName;
+            const label = field.Label ?? field.label ?? name;
+            const val = data[name];
+            const controlType = field.ControlType ?? field.controlType ?? 'TextBox';
+            const isLookup = controlType === 'Dropdown' || controlType === 'Autocomplete'
+                || (name.endsWith('Id') && name !== 'Id');
+
+            if (isLookup) {
+                const num = parseInt(val, 10);
+                if (!num || num <= 0) errors[name] = `${label} is required.`;
+            } else if (controlType === 'Checkbox') {
+                if (val !== true && val !== 'true' && val !== 1 && val !== '1') {
+                    errors[name] = `${label} is required.`;
+                }
+            } else if (val == null || String(val).trim() === '') {
+                errors[name] = `${label} is required.`;
+            }
+        });
+
+        return showFieldErrors($scope, errors) ? errors : null;
+    }
+
+    function bindFieldErrorClear($scope) {
+        const $root = $scope ? $($scope) : $form;
+        $root.off('.fieldValidationClear');
+        $root.on('input.fieldValidationClear change.fieldValidationClear', '.form-control, .form-select, .form-check-input', function () {
+            const name = $(this).attr('name');
+            if (!name) return;
+
+            const $wrap = findFieldWrap($root, name);
+            $(this).removeClass('is-invalid');
+            $wrap.removeClass('is-invalid');
+            $wrap.find(`[data-field-error="${name}"]`).text('').hide();
+            $(this).next('.select2-container').find('.select2-selection').removeClass('is-invalid');
+        });
     }
 
     function groupBySection(fields) {
@@ -258,16 +418,22 @@ const DynamicForm = (function () {
         const method = recordId ? 'PUT' : 'POST';
         const url = recordId ? `/api/metaforge/crud/${entity}/${recordId}` : `/api/metaforge/crud/${entity}`;
 
+        clearFieldErrors($form);
+
         return $.ajax({ url, method, contentType: 'application/json', data: JSON.stringify(data) })
             .then(result => {
                 if (!recordId && (result.Id ?? result.id)) recordId = result.Id ?? result.id;
                 if (typeof DynamicGrid !== 'undefined') DynamicGrid.reload();
                 return result;
+            })
+            .fail(function (xhr) {
+                handleAjaxValidationError($form, xhr);
             });
     }
 
     function showNew() {
         recordId = null;
+        clearFieldErrors($form);
         if ($form[0]?.reset) {
             $form[0].reset();
         }
@@ -279,6 +445,7 @@ const DynamicForm = (function () {
 
     function reset() {
         recordId = null;
+        clearFieldErrors($form);
         if ($form[0]?.reset) {
             $form[0].reset();
         }
@@ -302,6 +469,12 @@ const DynamicForm = (function () {
         getData,
         setData,
         setDataWhenReady,
-        refreshLookups
+        refreshLookups,
+        clearFieldErrors,
+        showFieldError,
+        showFieldErrors,
+        handleAjaxValidationError,
+        validateRequiredFields,
+        parseAjaxFieldErrors
     };
 })();

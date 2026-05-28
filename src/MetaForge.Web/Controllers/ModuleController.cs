@@ -36,6 +36,9 @@ public class ModuleController : Controller
             || form.Relations.Any(r => r.RelationType == RelationType.OneToMany);
         var permissions = await _authorizationService.GetFormPermissionsAsync(User, formCode, cancellationToken);
 
+        if (grid != null)
+            GridDefinitionFilter.ApplyPermissions(grid, permissions);
+
         ViewBag.FormCode = formCode;
         ViewBag.IsTabularMasterDetail = isTabular;
         ViewBag.HasMasterDetail = hasMasterDetail;

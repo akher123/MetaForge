@@ -186,6 +186,11 @@ public class GridService : IGridService
                 .Where(c => c.IsVisible)
                 .OrderBy(c => c.DisplayOrder)
                 .Select(c => MapColumn(c, form))
+                .ToList(),
+            Actions = form.GridActions
+                .Where(a => a.IsActive)
+                .OrderBy(a => a.DisplayOrder)
+                .Select(MapAction)
                 .ToList()
         };
 
@@ -215,6 +220,21 @@ public class GridService : IGridService
             LookupFilterField = field?.LookupFilterField
         };
     }
+
+    internal static GridActionDefinition MapAction(Domain.Metadata.ForgeFormAction action) => new()
+    {
+        Code = action.Code,
+        Label = action.Label,
+        Icon = action.Icon,
+        Placement = action.Placement,
+        HandlerType = action.HandlerType,
+        HandlerTarget = action.HandlerTarget,
+        HttpMethod = action.HttpMethod,
+        RequestBody = action.RequestBody,
+        PermissionAction = action.PermissionAction,
+        ConfirmMessage = action.ConfirmMessage,
+        ButtonStyle = action.ButtonStyle
+    };
 
     public async Task<byte[]> ExportExcelAsync(string formCode, GridQueryRequest request, CancellationToken cancellationToken = default)
     {

@@ -1,5 +1,6 @@
 global using MetaForge.Application.DTOs;
 global using MetaForge.Application.Interfaces;
+global using MetaForge.Application.Validation;
 global using MetaForge.Domain.Enums;
 global using MetaForge.Shared.Constants;
 global using MetaForge.Web.Authorization;

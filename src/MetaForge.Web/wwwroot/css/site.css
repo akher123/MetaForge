@@ -1293,6 +1293,28 @@ html.sidebar-collapsed .sidebar-tree-children {
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18);
 }
 
+.field-control-wrap.is-invalid .invalid-feedback,
+.detail-field-wrap.is-invalid .invalid-feedback {
+  display: block;
+}
+
+.field-control-wrap .invalid-feedback,
+.detail-field-wrap .invalid-feedback {
+  display: none;
+  font-size: 0.78rem;
+  margin-top: 0.25rem;
+}
+
+.admin-form-field .form-control.is-invalid,
+.admin-form-field .form-select.is-invalid,
+.detail-field-wrap .detail-input.is-invalid {
+  border-color: var(--bs-form-invalid-border-color, #dc3545);
+}
+
+.select2-container .select2-selection.is-invalid {
+  border-color: var(--bs-form-invalid-border-color, #dc3545) !important;
+}
+
 /* ── Master-detail forms ──────────────────────────────────────────────── */
 
 .master-detail-form {
@@ -2671,6 +2693,89 @@ code {
 .form-builder-field-table .col-order .btn {
   padding: 0.1rem 0.25rem;
   font-size: 0.65rem;
+}
+
+.form-builder-field-table .field-validation-col {
+  min-width: 7.5rem;
+  white-space: nowrap;
+}
+
+.validation-rule-hint {
+  font-size: 0.82rem;
+  color: var(--dv-text-secondary);
+}
+
+.validation-rule-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 8.5rem;
+}
+
+.validation-rule-summary {
+  font-size: 0.72rem;
+  line-height: 1.3;
+  color: var(--dv-text-secondary);
+  word-break: break-word;
+}
+
+.validation-rule-cell .btn-edit-validation {
+  align-self: flex-start;
+  padding: 0.15rem 0.45rem;
+}
+
+.validation-rule-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.validation-rule-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--dv-border);
+  border-radius: var(--bs-border-radius);
+  background: var(--dv-surface-alt);
+}
+
+.validation-rule-item-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.validation-rule-item-type {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--dv-indigo-700);
+}
+
+.validation-rule-item-summary,
+.validation-rule-item-message {
+  font-size: 0.72rem;
+  color: var(--dv-text-secondary);
+}
+
+.validation-rule-empty {
+  padding: 0.75rem;
+  border: 1px dashed var(--dv-border);
+  border-radius: var(--bs-border-radius);
+  text-align: center;
+  font-size: 0.85rem;
+}
+
+.validation-rule-field-context {
+  font-size: 0.9rem;
+  color: var(--dv-text-secondary);
+}
+
+.form-builder-field-table .field-validation-cell,
+.form-builder-field-table td:has(.validation-rule-cell) {
+  min-width: 9rem;
 }
 
 .form-builder-preview-panel {

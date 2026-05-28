@@ -608,6 +608,82 @@ namespace MetaForge.Infrastructure.Persistence.Migrations
                     b.ToTable("ForgeGridColumns", (string)null);
                 });
 
+            modelBuilder.Entity("MetaForge.Domain.Metadata.ForgeFormAction", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ButtonStyle")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("ConfirmMessage")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("int");
+
+                    b.Property<int>("FormId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("HandlerTarget")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("HandlerType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("HttpMethod")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<string>("Icon")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Label")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("PermissionAction")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Placement")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("RequestBody")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FormId", "Code")
+                        .IsUnique();
+
+                    b.ToTable("ForgeFormActions", (string)null);
+                });
+
             modelBuilder.Entity("MetaForge.Domain.Metadata.ForgeMenu", b =>
                 {
                     b.Property<int>("Id")
@@ -978,6 +1054,17 @@ namespace MetaForge.Infrastructure.Persistence.Migrations
                     b.Navigation("Form");
                 });
 
+            modelBuilder.Entity("MetaForge.Domain.Metadata.ForgeFormAction", b =>
+                {
+                    b.HasOne("MetaForge.Domain.Metadata.ForgeForm", "Form")
+                        .WithMany("GridActions")
+                        .HasForeignKey("FormId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Form");
+                });
+
             modelBuilder.Entity("MetaForge.Domain.Metadata.ForgeMenu", b =>
                 {
                     b.HasOne("MetaForge.Domain.Metadata.ForgeForm", "Form")
@@ -1066,6 +1153,8 @@ namespace MetaForge.Infrastructure.Persistence.Migrations
                     b.Navigation("Fields");
 
                     b.Navigation("GridColumns");
+
+                    b.Navigation("GridActions");
 
                     b.Navigation("Relations");
                 });

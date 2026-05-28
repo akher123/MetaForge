@@ -115,26 +115,71 @@ const MetaForgeDetailRows = (function () {
         const val = value ?? '';
         const dataAttrs = buildDataAttrs(opts.dataAttrs || {}, index, name);
         const cascadeAttrs = typeof MetaForgeLookups !== 'undefined' ? MetaForgeLookups.cascadeAttrs(field) : '';
+        let controlHtml;
 
         switch (controlType) {
             case 'TextArea':
-                return `<textarea class="form-control form-control-sm detail-input admin-form-control" ${dataAttrs} rows="2" ${readonly} ${required}>${escapeHtml(val)}</textarea>`;
+                controlHtml = `<textarea class="form-control form-control-sm detail-input admin-form-control" ${dataAttrs} rows="2" ${readonly} ${required}>${escapeHtml(val)}</textarea>`;
+                break;
             case 'Number':
-                return `<input type="number" step="any" class="form-control form-control-sm detail-input admin-form-control detail-number" ${dataAttrs} value="${escapeAttr(val)}" ${readonly} ${required} />`;
+                controlHtml = `<input type="number" step="any" class="form-control form-control-sm detail-input admin-form-control detail-number" ${dataAttrs} value="${escapeAttr(val)}" ${readonly} ${required} />`;
+                break;
             case 'Date':
-                return `<input type="date" class="form-control form-control-sm detail-input admin-form-control" ${dataAttrs} value="${escapeAttr(formatDateValue(val))}" ${readonly} ${required} />`;
+                controlHtml = `<input type="date" class="form-control form-control-sm detail-input admin-form-control" ${dataAttrs} value="${escapeAttr(formatDateValue(val))}" ${readonly} ${required} />`;
+                break;
             case 'DateTime':
-                return `<input type="datetime-local" class="form-control form-control-sm detail-input admin-form-control" ${dataAttrs} value="${escapeAttr(formatDateTimeValue(val))}" ${readonly} ${required} />`;
+                controlHtml = `<input type="datetime-local" class="form-control form-control-sm detail-input admin-form-control" ${dataAttrs} value="${escapeAttr(formatDateTimeValue(val))}" ${readonly} ${required} />`;
+                break;
             case 'Checkbox':
-                return `<div class="form-check"><input type="checkbox" class="form-check-input detail-input" ${dataAttrs} ${val ? 'checked' : ''} ${disabled} /></div>`;
+                controlHtml = `<div class="form-check"><input type="checkbox" class="form-check-input detail-input" ${dataAttrs} ${val ? 'checked' : ''} ${disabled} /></div>`;
+                break;
             case 'Dropdown':
-                return `<select class="form-select form-select-sm lookup-select detail-input admin-form-control" ${dataAttrs} data-lookup="${lookupEntity}" ${cascadeAttrs} ${disabled} ${required}></select>`;
+                controlHtml = `<select class="form-select form-select-sm lookup-select detail-input admin-form-control" ${dataAttrs} data-lookup="${lookupEntity}" ${cascadeAttrs} ${disabled} ${required}></select>`;
+                break;
             case 'Autocomplete':
-                return `<select class="form-select form-select-sm lookup-autocomplete detail-input admin-form-control" ${dataAttrs} data-lookup="${lookupEntity}" ${cascadeAttrs} ${disabled} ${required}></select>`;
+                controlHtml = `<select class="form-select form-select-sm lookup-autocomplete detail-input admin-form-control" ${dataAttrs} data-lookup="${lookupEntity}" ${cascadeAttrs} ${disabled} ${required}></select>`;
+                break;
             case 'Hidden':
                 return `<input type="hidden" class="detail-input" ${dataAttrs} value="${escapeAttr(val)}" />`;
             default:
-                return `<input type="text" class="form-control form-control-sm detail-input admin-form-control" ${dataAttrs} value="${escapeAttr(val)}" ${readonly} ${required} />`;
+                controlHtml = `<input type="text" class="form-control form-control-sm detail-input admin-form-control" ${dataAttrs} value="${escapeAttr(val)}" ${readonly} ${required} />`;
+        }
+
+        return wrapInlineControlHtml(controlHtml, name, index);
+    }
+
+    function wrapInlineControlHtml(controlHtml, fieldName, index) {
+        return `
+            <div class="detail-field-wrap" data-field-wrap="${escapeAttr(fieldName)}" data-index="${index}">
+                ${controlHtml}
+                <div class="invalid-feedback d-block" data-field-error="${escapeAttr(fieldName)}"></div>
+            </div>`;
+    }
+
+    function clearRowFieldErrors($container) {
+        const $root = $($container);
+        $root.find('.detail-input.is-invalid').removeClass('is-invalid');
+        $root.find('.detail-field-wrap.is-invalid').removeClass('is-invalid');
+        $root.find('[data-field-error]').text('').hide();
+        $root.find('.select2-selection.is-invalid').removeClass('is-invalid');
+    }
+
+    function showRowFieldError($container, index, fieldName, message) {
+        const $root = $($container);
+        const $wrap = $root.find(`.detail-field-wrap[data-field-wrap="${fieldName}"][data-index="${index}"]`).first();
+        const $input = $wrap.find('.detail-input').first();
+
+        if ($input.length) {
+            $input.addClass('is-invalid');
+            $input[0]?.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
+            $input.trigger('focus');
+        }
+
+        $wrap.addClass('is-invalid');
+        $wrap.find(`[data-field-error="${fieldName}"]`).text(message).show();
+
+        if ($input.hasClass('lookup-select') || $input.hasClass('lookup-autocomplete')) {
+            $input.next('.select2-container').find('.select2-selection').addClass('is-invalid');
         }
     }
 
@@ -282,6 +327,8 @@ const MetaForgeDetailRows = (function () {
         buildDisplayCell,
         buildInlineControl,
         buildActionCell,
+        clearRowFieldErrors,
+        showRowFieldError,
         syncDisplayFromInput,
         resolveDisplayLabels,
         escapeHtml,

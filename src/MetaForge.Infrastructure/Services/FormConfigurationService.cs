@@ -1,3 +1,6 @@
+using MetaForge.Application.Validation;
+using MetaForge.Infrastructure.Validation;
+
 namespace MetaForge.Infrastructure.Services;
 
 /// <summary>
@@ -127,7 +130,12 @@ public class FormConfigurationService : IFormConfigurationService
                     IsVisible = true,
                     DisplayOrder = i,
                     LookupEntity = p.IsForeignKey ? p.Name.Replace("Id", "", StringComparison.Ordinal) : null,
-                    ValidationRule = p.Name.Contains("Email", StringComparison.OrdinalIgnoreCase) ? "Email" : null
+                    ValidationRule = p.Name.Contains("Email", StringComparison.OrdinalIgnoreCase)
+                        ? FieldValidationRuleEngine.Serialize(new FieldValidationRuleSet
+                        {
+                            Rules = [new FieldValidationRuleDefinition { Type = ValidationRuleTypes.Email }]
+                        })
+                        : null
                 }).ToList(),
             GridColumns = metadata.Properties
                 .Where(p => p.IsKey || !p.IsForeignKey || p.Name.EndsWith("Id"))
@@ -177,6 +185,7 @@ public class FormConfigurationService : IFormConfigurationService
             module.Fields.Clear();
             module.Relations.Clear();
             module.GridColumns.Clear();
+            module.GridActions.Clear();
         }
         else
         {
@@ -193,7 +202,7 @@ public class FormConfigurationService : IFormConfigurationService
         module.DisplayOrder = config.DisplayOrder;
         module.IsActive = config.IsActive;
 
-        module.Fields = config.Fields.Select((f, i) => new ForgeField
+        foreach (var field in config.Fields.Select((f, i) => new ForgeField
         {
             PropertyName = f.PropertyName.Trim(),
             Label = f.Label.Trim(),
@@ -202,14 +211,17 @@ public class FormConfigurationService : IFormConfigurationService
             IsVisible = f.IsVisible,
             IsReadOnly = f.IsReadOnly,
             DisplayOrder = f.DisplayOrder >= 0 ? f.DisplayOrder : i,
-            ValidationRule = f.ValidationRule,
+            ValidationRule = NormalizeValidationRule(f.ValidationRule),
             LookupEntity = f.LookupEntity,
             LookupParentField = f.LookupParentField,
             LookupFilterField = f.LookupFilterField,
             SectionName = f.SectionName
-        }).ToList();
+        }))
+        {
+            module.Fields.Add(field);
+        }
 
-        module.GridColumns = config.GridColumns.Select((c, i) => new ForgeGridColumn
+        foreach (var column in config.GridColumns.Select((c, i) => new ForgeGridColumn
         {
             PropertyName = c.PropertyName.Trim(),
             Label = c.Label.Trim(),
@@ -217,9 +229,35 @@ public class FormConfigurationService : IFormConfigurationService
             IsSortable = c.IsSortable,
             IsSearchable = c.IsSearchable,
             IsVisible = c.IsVisible
-        }).ToList();
+        }))
+        {
+            module.GridColumns.Add(column);
+        }
 
-        module.Relations = config.Relations.Select((r, i) => new ForgeRelation
+        foreach (var action in config.GridActions.Select((a, i) => new ForgeFormAction
+        {
+            Code = a.Code.Trim().ToLowerInvariant(),
+            Label = a.Label.Trim(),
+            Icon = string.IsNullOrWhiteSpace(a.Icon) ? null : a.Icon.Trim(),
+            Placement = NormalizePlacement(a.Placement),
+            HandlerType = NormalizeHandlerType(a.HandlerType),
+            HandlerTarget = a.HandlerTarget.Trim(),
+            HttpMethod = NormalizeHttpMethod(a.HttpMethod),
+            RequestBody = string.IsNullOrWhiteSpace(a.RequestBody) ? null : a.RequestBody.Trim(),
+            PermissionAction = string.IsNullOrWhiteSpace(a.PermissionAction) ? null : a.PermissionAction.Trim(),
+            ConfirmMessage = string.IsNullOrWhiteSpace(a.ConfirmMessage) ? null : a.ConfirmMessage.Trim(),
+            ButtonStyle = string.IsNullOrWhiteSpace(a.ButtonStyle) ? "outline-primary" : a.ButtonStyle.Trim(),
+            DisplayOrder = a.DisplayOrder >= 0 ? a.DisplayOrder : i,
+            IsActive = a.IsActive
+        }))
+        {
+            if (string.IsNullOrWhiteSpace(action.Code) || string.IsNullOrWhiteSpace(action.Label))
+                continue;
+
+            module.GridActions.Add(action);
+        }
+
+        foreach (var relation in config.Relations.Select((r, i) => new ForgeRelation
         {
             RelationType = r.RelationType,
             ParentEntity = r.ParentEntity.Trim(),
@@ -228,7 +266,10 @@ public class FormConfigurationService : IFormConfigurationService
             NavigationProperty = r.NavigationProperty,
             TabLabel = string.IsNullOrWhiteSpace(r.TabLabel) ? null : r.TabLabel.Trim(),
             DisplayOrder = r.DisplayOrder >= 0 ? r.DisplayOrder : i
-        }).ToList();
+        }))
+        {
+            module.Relations.Add(relation);
+        }
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         await _formMetadataService.InvalidateCacheAsync(module.Code, module.EntityName, cancellationToken);
@@ -406,6 +447,23 @@ public class FormConfigurationService : IFormConfigurationService
             IsSearchable = c.IsSearchable,
             IsVisible = c.IsVisible
         }).ToList(),
+        GridActions = module.GridActions.OrderBy(a => a.DisplayOrder).Select(a => new FormGridActionConfigDto
+        {
+            Id = a.Id,
+            Code = a.Code,
+            Label = a.Label,
+            Icon = a.Icon,
+            Placement = a.Placement,
+            HandlerType = a.HandlerType,
+            HandlerTarget = a.HandlerTarget,
+            HttpMethod = a.HttpMethod,
+            RequestBody = a.RequestBody,
+            PermissionAction = a.PermissionAction,
+            ConfirmMessage = a.ConfirmMessage,
+            ButtonStyle = a.ButtonStyle,
+            DisplayOrder = a.DisplayOrder,
+            IsActive = a.IsActive
+        }).ToList(),
         Relations = module.Relations.Select(r => new FormRelationConfigDto
         {
             Id = r.Id,
@@ -424,6 +482,14 @@ public class FormConfigurationService : IFormConfigurationService
 
     private static string SplitPascalCase(string value) =>
         string.Concat(value.Select((c, i) => i > 0 && char.IsUpper(c) ? " " + c : c.ToString()));
+
+    private static string? NormalizeValidationRule(string? validationRule)
+    {
+        if (string.IsNullOrWhiteSpace(validationRule))
+            return null;
+
+        return validationRule.Trim();
+    }
 
     private static void ApplyDetailFormDefaults(FormConfigDto detail, string foreignKey)
     {
@@ -454,4 +520,24 @@ public class FormConfigurationService : IFormConfigurationService
 
     private static FormType ParseFormType(string? formType) =>
         Enum.TryParse<FormType>(formType, true, out var parsed) ? parsed : FormType.Master;
+
+    private static string NormalizePlacement(string? placement) =>
+        string.Equals(placement, GridActionPlacement.Toolbar, StringComparison.OrdinalIgnoreCase)
+            ? GridActionPlacement.Toolbar
+            : GridActionPlacement.Row;
+
+    private static string NormalizeHandlerType(string? handlerType)
+    {
+        if (string.Equals(handlerType, GridActionHandlerType.Redirect, StringComparison.OrdinalIgnoreCase))
+            return GridActionHandlerType.Redirect;
+        if (string.Equals(handlerType, GridActionHandlerType.Script, StringComparison.OrdinalIgnoreCase))
+            return GridActionHandlerType.Script;
+        return GridActionHandlerType.Api;
+    }
+
+    private static string NormalizeHttpMethod(string? httpMethod)
+    {
+        var method = (httpMethod ?? "POST").Trim().ToUpperInvariant();
+        return method is "GET" or "POST" or "PUT" or "PATCH" or "DELETE" ? method : "POST";
+    }
 }
