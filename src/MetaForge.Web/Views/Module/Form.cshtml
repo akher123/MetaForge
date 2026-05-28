@@ -27,7 +27,7 @@
 
     <div class="card admin-card module-form-card">
         <div class="card-header">
-            <i class="fa-solid fa-pen-to-square me-2"></i>@(isEdit ? "Edit Record" : "New Record")
+            <i class="fa-solid fa-pen-to-square me-2"></i>@(isEdit ? $"Edit {form?.FormName}" : $"New {form?.FormName}")
         </div>
         <div class="card-body">
             <div class="module-form-shell">

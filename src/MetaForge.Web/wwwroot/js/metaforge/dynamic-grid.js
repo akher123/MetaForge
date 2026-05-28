@@ -20,6 +20,10 @@ const DynamicGrid = (function () {
         return def?.FormCode ?? def?.formCode ?? def?.moduleCode ?? '';
     }
 
+    function getFormName(def) {
+        return def?.FormName ?? def?.formName ?? 'Record';
+    }
+
     function getRowId(row) {
         return row?.Id ?? row?.id ?? null;
     }
@@ -159,7 +163,7 @@ const DynamicGrid = (function () {
                     return;
                 }
                 DynamicForm.load(id).then(() => {
-                    $('#recordFormModalTitle').text('Edit Record');
+                    $('#recordFormModalTitle').text(`Edit ${getFormName(gridDef)}`);
                     bootstrap.Modal.getOrCreateInstance(document.getElementById('recordFormModal')).show();
                 }).fail(function (xhr) {
                     alert('Failed to load record: ' + (xhr.responseJSON?.error ?? xhr.statusText));

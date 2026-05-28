@@ -36,6 +36,30 @@ const MetaForgeUi = (function () {
         }
     }
 
+    function resolveConfirmVariant(options) {
+        if (options.variant) {
+            return options.variant;
+        }
+
+        const text = `${options.title || ''} ${options.message || ''}`.toLowerCase();
+        return /delete|remove|discard/.test(text) ? 'danger' : 'warning';
+    }
+
+    function applyConfirmVariant(variant) {
+        const contentEl = document.getElementById('confirmDeleteModalContent');
+        const iconEl = document.getElementById('confirmDeleteModalIcon');
+
+        if (contentEl) {
+            contentEl.classList.remove('confirm-delete-content--danger', 'confirm-delete-content--warning');
+            contentEl.classList.add(`confirm-delete-content--${variant}`);
+        }
+
+        if (iconEl) {
+            const iconClass = variant === 'danger' ? 'fa-trash-can' : 'fa-circle-question';
+            iconEl.innerHTML = `<i class="fa-solid ${iconClass}"></i>`;
+        }
+    }
+
     function confirmDelete(options) {
         options = options || {};
 
@@ -49,6 +73,12 @@ const MetaForgeUi = (function () {
             const titleEl = document.getElementById('confirmDeleteModalTitle');
             const messageEl = document.getElementById('confirmDeleteModalMessage');
             const detailEl = document.getElementById('confirmDeleteModalDetail');
+            const confirmBtn = document.getElementById('confirmDeleteModalConfirm');
+            const cancelBtn = document.getElementById('confirmDeleteModalCancel');
+            const variant = resolveConfirmVariant(options);
+            const detail = options.detail ?? 'This action cannot be undone.';
+            const confirmLabel = options.confirmLabel || 'Yes';
+            const cancelLabel = options.cancelLabel || 'No';
 
             if (titleEl) {
                 titleEl.textContent = options.title || 'Confirm Delete';
@@ -59,9 +89,21 @@ const MetaForgeUi = (function () {
             }
 
             if (detailEl) {
-                detailEl.textContent = options.detail || 'This action cannot be undone.';
+                detailEl.textContent = detail;
+                detailEl.classList.toggle('is-empty', !detail);
             }
 
+            if (confirmBtn) {
+                confirmBtn.setAttribute('aria-label', confirmLabel);
+                confirmBtn.setAttribute('title', confirmLabel);
+            }
+
+            if (cancelBtn) {
+                cancelBtn.setAttribute('aria-label', cancelLabel);
+                cancelBtn.setAttribute('title', cancelLabel);
+            }
+
+            applyConfirmVariant(variant);
             deleteModal.show();
         });
     }

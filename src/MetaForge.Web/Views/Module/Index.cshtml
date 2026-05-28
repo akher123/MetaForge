@@ -58,7 +58,7 @@
             <div class="modal-dialog modal-lg modal-dialog-scrollable">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title" id="recordFormModalTitle">New Record</h5>
+                        <h5 class="modal-title" id="recordFormModalTitle">New @form?.FormName</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
@@ -125,8 +125,13 @@
             const gridDef = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(grid));
             const permissions = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(perms));
             const formCode = '@formCode';
+            const formName = formDef?.FormName ?? formDef?.formName ?? 'Record';
             const hasMasterDetail = @(hasMasterDetail ? "true" : "false");
             const isTabularMasterDetail = @(isTabularMasterDetail ? "true" : "false");
+
+            function setRecordModalTitle(isEdit) {
+                $('#recordFormModalTitle').text(isEdit ? `Edit ${formName}` : `New ${formName}`);
+            }
 
             DynamicGrid.init('#dynamicGrid', gridDef, permissions, hasMasterDetail);
 
@@ -139,7 +144,7 @@
 
             $('#btnAdd').on('click', function () {
                 DynamicForm.showNew();
-                $('#recordFormModalTitle').text('New Record');
+                setRecordModalTitle(false);
                 recordModal.show();
             });
 
@@ -148,7 +153,7 @@
                     .then(() => {
                         recordModal.hide();
                         DynamicForm.reset();
-                        $('#recordFormModalTitle').text('New Record');
+                        setRecordModalTitle(false);
                     });
             });
 

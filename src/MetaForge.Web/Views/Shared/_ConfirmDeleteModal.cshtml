@@ -1,11 +1,11 @@
 <div class="modal fade admin-modal confirm-delete-modal" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalTitle" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered confirm-delete-dialog">
-        <div class="modal-content confirm-delete-content">
+        <div class="modal-content confirm-delete-content confirm-delete-content--danger" id="confirmDeleteModalContent">
             <button type="button" class="btn-close confirm-delete-close" data-bs-dismiss="modal" aria-label="Close"></button>
             <div class="modal-body confirm-delete-body">
                 <div class="confirm-delete-icon-wrap" aria-hidden="true">
                     <span class="confirm-delete-icon-ring"></span>
-                    <span class="confirm-delete-icon">
+                    <span class="confirm-delete-icon" id="confirmDeleteModalIcon">
                         <i class="fa-solid fa-trash-can"></i>
                     </span>
                 </div>
@@ -14,11 +14,11 @@
                 <p class="confirm-delete-detail" id="confirmDeleteModalDetail">This action cannot be undone.</p>
             </div>
             <div class="modal-footer confirm-delete-footer">
-                <button type="button" class="btn btn-light confirm-delete-cancel" data-bs-dismiss="modal">
-                    <i class="fa-solid fa-xmark me-1"></i>Cancel
+                <button type="button" class="btn confirm-delete-action confirm-delete-action--no" id="confirmDeleteModalCancel" data-bs-dismiss="modal" aria-label="No" title="No">
+                    <i class="fa-solid fa-xmark"></i>
                 </button>
-                <button type="button" class="btn btn-danger confirm-delete-confirm" id="confirmDeleteModalConfirm">
-                    <i class="fa-solid fa-trash-can me-1"></i>Delete
+                <button type="button" class="btn confirm-delete-action confirm-delete-action--yes" id="confirmDeleteModalConfirm" aria-label="Yes" title="Yes">
+                    <i class="fa-solid fa-check"></i>
                 </button>
             </div>
         </div>
