@@ -43,4 +43,20 @@ internal static class SchemaUpgradeHelper
         await context.Database.ExecuteSqlRawAsync(sql, cancellationToken);
         logger.LogInformation("Ensured ForgeFormActions table exists.");
     }
+
+    public static async Task EnsureForgeFieldConditionalRuleColumnAsync(
+        MetaForgeDbContext context,
+        ILogger logger,
+        CancellationToken cancellationToken = default)
+    {
+        const string sql = """
+            IF COL_LENGTH('ForgeFields', 'ConditionalRule') IS NULL
+            BEGIN
+                ALTER TABLE [ForgeFields] ADD [ConditionalRule] nvarchar(max) NULL;
+            END
+            """;
+
+        await context.Database.ExecuteSqlRawAsync(sql, cancellationToken);
+        logger.LogInformation("Ensured ForgeFields.ConditionalRule column exists.");
+    }
 }

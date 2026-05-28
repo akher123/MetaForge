@@ -140,6 +140,12 @@
                                 <i class="fa-solid fa-wand-magic-sparkles me-1"></i>Auto-Build
                             </button>
                         }
+                        else
+                        {
+                            <button type="button" id="btnSyncFromEntity" class="btn btn-outline-info w-100" title="Merge new entity properties into this form">
+                                <i class="fa-solid fa-rotate me-1"></i>Sync from Entity
+                            </button>
+                        }
                     </div>
                 </div>
             </div>
@@ -207,6 +213,7 @@
                                         <th title="Visible">Vis</th>
                                         <th title="Read Only">RO</th>
                                         <th class="field-validation-col" title="Click Rules to open the validation rule builder">Validation <i class="fa-solid fa-shield-halved text-primary"></i></th>
+                                        <th class="field-conditional-col" title="Click Rules to configure show/hide, enable/disable, require/optional">Conditional <i class="fa-solid fa-code-branch text-info"></i></th>
                                         <th></th>
                                     </tr>
                                 </thead>
@@ -254,6 +261,7 @@
                                         <th title="Visible">Vis</th>
                                         <th title="Read Only">RO</th>
                                         <th class="field-validation-col" title="Click Rules to open the validation rule builder">Validation <i class="fa-solid fa-shield-halved text-primary"></i></th>
+                                        <th class="field-conditional-col" title="Click Rules to configure show/hide, enable/disable, require/optional">Conditional <i class="fa-solid fa-code-branch text-info"></i></th>
                                         <th></th>
                                     </tr>
                                 </thead>
@@ -370,6 +378,34 @@
         Use <strong>Autocomplete</strong> for large lookup lists — loads 10 items at a time and fetches more as you type or scroll.
         Optional <strong>Filter Field</strong> overrides the lookup property name.
         Click the <i class="fa-solid fa-shield-halved"></i> button in the <strong>Validation</strong> column to configure rules visually (length, range, email, regex, cross-field compare).
+        Use the <i class="fa-solid fa-code-branch"></i> button in the <strong>Conditional</strong> column to show, hide, enable, disable, or require fields based on other field values.
+        In edit mode, use <strong>Sync from Entity</strong> to merge new EF Core properties into the form while keeping existing validation and conditional rules.
+    </div>
+
+    <div class="form-builder-help-card mb-3">
+        <strong><i class="fa-solid fa-code-branch me-1 text-info"></i>Conditional rules reference</strong>
+        <div class="row g-3 mt-1 small">
+            <div class="col-md-6">
+                <strong>Actions</strong> (applied to the field you are editing)
+                <ul class="mb-0 ps-3">
+                    <li><strong>Show</strong> — make visible when condition matches</li>
+                    <li><strong>Hide</strong> — hide when condition matches</li>
+                    <li><strong>Enable</strong> — allow editing when condition matches</li>
+                    <li><strong>Disable</strong> — read-only when condition matches</li>
+                    <li><strong>Require</strong> — mark required when condition matches</li>
+                    <li><strong>Make optional</strong> — remove required when condition matches</li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <strong>Operators</strong> (compare the <em>When field</em> value)
+                <ul class="mb-0 ps-3">
+                    <li><strong>Equals / Does not equal</strong> — text or number match</li>
+                    <li><strong>Is empty / Is not empty</strong> — no value vs has value</li>
+                    <li><strong>Contains</strong> — text includes value</li>
+                    <li><strong>Greater/Less than (or equal)</strong> — numeric compare</li>
+                </ul>
+            </div>
+        </div>
     </div>
 
     <div class="form-builder-save-bar d-flex flex-wrap gap-2 mb-5">
@@ -391,7 +427,10 @@
         };
     </script>
     <script src="~/js/metaforge/lookup-cascade.js" asp-append-version="true"></script>
+    <script src="~/js/metaforge/field-conditional-engine.js" asp-append-version="true"></script>
     <script src="~/js/metaforge/dynamic-form.js" asp-append-version="true"></script>
     <script src="~/js/metaforge/validation-rule-builder.js" asp-append-version="true"></script>
+    <script src="~/js/metaforge/conditional-rule-builder.js" asp-append-version="true"></script>
+    <script src="~/js/metaforge/entity-schema-sync.js" asp-append-version="true"></script>
     <script src="~/js/metaforge/module-config.js" asp-append-version="true"></script>
 }

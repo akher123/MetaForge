@@ -39,13 +39,17 @@ public class DynamicValidationService : IDynamicValidationService
 
         foreach (var field in form.Fields)
         {
+            var effective = FieldConditionalRuleEngine.EvaluateEffectiveState(field, data);
+            if (!effective.IsVisible)
+                continue;
+
             data.TryGetValue(field.PropertyName, out var value);
             var strValue = DynamicEntityMapper.ToStringValue(value);
             var isLookupField = !string.IsNullOrWhiteSpace(field.LookupEntity)
                 || (field.PropertyName.EndsWith("Id", StringComparison.Ordinal)
                     && !field.PropertyName.Equals("Id", StringComparison.OrdinalIgnoreCase));
 
-            if (field.IsRequired && isLookupField)
+            if (effective.IsRequired && isLookupField)
             {
                 var lookupId = DynamicEntityMapper.ToInt32(value);
                 if (lookupId <= 0)
@@ -61,7 +65,7 @@ public class DynamicValidationService : IDynamicValidationService
                     continue;
                 }
             }
-            else if (field.IsRequired && string.IsNullOrWhiteSpace(strValue))
+            else if (effective.IsRequired && string.IsNullOrWhiteSpace(strValue))
             {
                 failures.Add(new ValidationFailure(field.PropertyName, $"{field.Label} is required."));
                 continue;

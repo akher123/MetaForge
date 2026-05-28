@@ -52,6 +52,8 @@ public class FormFieldConfigDto
 
     public string? ValidationRule { get; set; }
 
+    public string? ConditionalRule { get; set; }
+
     public string? LookupEntity { get; set; }
 
     public string? LookupParentField { get; set; }

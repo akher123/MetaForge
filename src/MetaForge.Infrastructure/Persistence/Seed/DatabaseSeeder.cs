@@ -1,6 +1,8 @@
+using MetaForge.Application.Validation;
 using MetaForge.Domain.Business;
 using MetaForge.Domain.Security;
 using MetaForge.Infrastructure.Services;
+using MetaForge.Infrastructure.Validation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -69,6 +71,7 @@ public static class DatabaseSeeder
         await EnsureSampleTransactionDataAsync(context, logger);
         await EnsureTabularSalesOrderUpgradeAsync(context, logger);
         await EnsureSalesOrderGridActionsAsync(context, logger);
+        await EnsureSalesOrderConditionalRulesAsync(context, logger);
         await EnsureFormPermissionsAsync(context, logger);
         await EnsureMenusAsync(scope, logger);
     }
@@ -725,6 +728,7 @@ public static class DatabaseSeeder
                     ("CustomerId", ControlType.Autocomplete, true, null, "Customer"),
                     ("Status", ControlType.TextBox, false, null, null)
                 ],
+                fieldOptions: SalesOrderFieldOptions(),
                 grid: ["OrderNo", "OrderDate", "CustomerId", "Status"],
                 relations:
                 [
@@ -776,7 +780,8 @@ public static class DatabaseSeeder
         (string Property, string Control, bool Required, string? Validation, string? Lookup)[] fields,
         string[] grid,
         List<ForgeRelation>? relations = null,
-        Dictionary<string, (string CascadeFrom, string? FilterField)>? cascadeFields = null)
+        Dictionary<string, (string CascadeFrom, string? FilterField)>? cascadeFields = null,
+        Dictionary<string, FormFieldOption>? fieldOptions = null)
     {
         return new ForgeForm
         {
@@ -798,18 +803,25 @@ public static class DatabaseSeeder
                     filterField = cascade.FilterField;
                 }
 
+                FormFieldOption? options = null;
+                if (fieldOptions != null)
+                    fieldOptions.TryGetValue(f.Property, out options);
+
                 return new ForgeField
                 {
                     PropertyName = f.Property,
-                    Label = f.Lookup ?? f.Property,
+                    Label = options?.Label ?? f.Lookup ?? f.Property,
                     ControlType = f.Control,
                     IsRequired = f.Required,
-                    IsVisible = true,
+                    IsVisible = options?.Visible ?? true,
+                    IsReadOnly = options?.ReadOnly ?? false,
                     DisplayOrder = i,
                     ValidationRule = f.Validation ?? (f.Required ? "Required" : null),
+                    ConditionalRule = options?.ConditionalRule,
                     LookupEntity = f.Lookup,
                     LookupParentField = cascadeFrom,
-                    LookupFilterField = filterField
+                    LookupFilterField = filterField,
+                    SectionName = options?.SectionName
                 };
             }).ToList(),
             GridColumns = grid.Select((c, i) =>
@@ -891,4 +903,104 @@ public static class DatabaseSeeder
             });
         }
     }
+
+    private sealed record FormFieldOption(
+        string? ConditionalRule = null,
+        bool? Visible = null,
+        bool? ReadOnly = null,
+        string? Label = null,
+        string? SectionName = null);
+
+    private static Dictionary<string, FormFieldOption> SalesOrderFieldOptions()
+    {
+        var disableWhenApproved = SerializeConditionalRules(
+            ConditionalRule(ConditionalRuleActions.Disable, "Status", ConditionalRuleOperators.Equal, "Approved"));
+
+        var disableWhenApprovedOrClosed = SerializeConditionalRules(
+            ConditionalRule(ConditionalRuleActions.Disable, "Status", ConditionalRuleOperators.Equal, "Approved"),
+            ConditionalRule(ConditionalRuleActions.Disable, "Status", ConditionalRuleOperators.Equal, "Closed"));
+
+        return new Dictionary<string, FormFieldOption>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["OrderNo"] = new FormFieldOption(
+                ConditionalRule: disableWhenApprovedOrClosed,
+                Label: "Order No",
+                SectionName: "Header"),
+            ["OrderDate"] = new FormFieldOption(
+                ConditionalRule: disableWhenApprovedOrClosed,
+                Label: "Order Date",
+                SectionName: "Header"),
+            ["CustomerId"] = new FormFieldOption(
+                ConditionalRule: disableWhenApprovedOrClosed,
+                Label: "Customer",
+                SectionName: "Header"),
+            ["Status"] = new FormFieldOption(
+                ConditionalRule: disableWhenApproved,
+                Label: "Status",
+                SectionName: "Header")
+        };
+    }
+
+    private static async Task EnsureSalesOrderConditionalRulesAsync(MetaForgeDbContext context, ILogger logger)
+    {
+        var salesOrderForm = await context.ForgeForms
+            .Include(f => f.Fields)
+            .FirstOrDefaultAsync(f => f.Code == "salesorder");
+
+        if (salesOrderForm == null)
+            return;
+
+        var orderNo = salesOrderForm.Fields.FirstOrDefault(f => f.PropertyName == "OrderNo");
+        if (orderNo != null && !string.IsNullOrWhiteSpace(orderNo.ConditionalRule))
+            return;
+
+        var options = SalesOrderFieldOptions();
+        var changed = false;
+
+        foreach (var field in salesOrderForm.Fields)
+        {
+            if (!options.TryGetValue(field.PropertyName, out var option))
+                continue;
+
+            if (!string.IsNullOrWhiteSpace(option.ConditionalRule))
+            {
+                field.ConditionalRule = option.ConditionalRule;
+                changed = true;
+            }
+
+            if (option.Label != null && field.Label != option.Label)
+            {
+                field.Label = option.Label;
+                changed = true;
+            }
+
+            if (option.SectionName != null && field.SectionName != option.SectionName)
+            {
+                field.SectionName = option.SectionName;
+                changed = true;
+            }
+        }
+
+        if (!changed)
+            return;
+
+        await context.SaveChangesAsync();
+        logger.LogInformation("Applied conditional field rules to Sales Order form.");
+    }
+
+    private static FieldConditionalRuleDefinition ConditionalRule(
+        string action,
+        string sourceField,
+        string op,
+        string? value = null) =>
+        new()
+        {
+            Action = action,
+            SourceField = sourceField,
+            Operator = op,
+            Value = value
+        };
+
+    private static string SerializeConditionalRules(params FieldConditionalRuleDefinition[] rules) =>
+        FieldConditionalRuleEngine.Serialize(new FieldConditionalRuleSet { Rules = rules.ToList() });
 }

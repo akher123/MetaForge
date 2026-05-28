@@ -508,6 +508,9 @@ namespace MetaForge.Infrastructure.Persistence.Migrations
                     b.Property<string>("SectionName")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("ConditionalRule")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("ValidationRule")
                         .HasColumnType("nvarchar(max)");
 

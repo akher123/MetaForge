@@ -22,4 +22,8 @@ public interface IFormConfigurationService
     Task<int> SaveScreenAsync(FormBuilderSaveDto screen, CancellationToken cancellationToken = default);
 
     Task DeleteFormAsync(int id, CancellationToken cancellationToken = default);
+
+    Task<FormSchemaSyncPreviewDto> GetSchemaSyncPreviewAsync(int formId, CancellationToken cancellationToken = default);
+
+    Task<FormSchemaSyncResultDto> ApplySchemaSyncAsync(int formId, FormSchemaSyncApplyDto request, CancellationToken cancellationToken = default);
 }

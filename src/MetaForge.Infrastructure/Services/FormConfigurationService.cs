@@ -162,6 +162,46 @@ public class FormConfigurationService : IFormConfigurationService
         return Task.FromResult(draft);
     }
 
+    public async Task<FormSchemaSyncPreviewDto> GetSchemaSyncPreviewAsync(int formId, CancellationToken cancellationToken = default)
+    {
+        var form = await GetFormAsync(formId, cancellationToken)
+            ?? throw new NotFoundException($"Form {formId} was not found.");
+
+        var metadata = _discoveryService.Discover(form.EntityName)
+            ?? throw new NotFoundException($"Entity '{form.EntityName}' was not found.");
+
+        var draft = await BuildDraftAsync(form.EntityName, form.GroupName, cancellationToken);
+        draft.FormType = form.FormType;
+
+        return FormSchemaSyncPlanner.BuildPreview(form, metadata, draft);
+    }
+
+    public async Task<FormSchemaSyncResultDto> ApplySchemaSyncAsync(
+        int formId,
+        FormSchemaSyncApplyDto request,
+        CancellationToken cancellationToken = default)
+    {
+        var preview = await GetSchemaSyncPreviewAsync(formId, cancellationToken);
+        var form = await GetFormAsync(formId, cancellationToken)
+            ?? throw new NotFoundException($"Form {formId} was not found.");
+
+        if (request.AcceptedKeys.Count == 0)
+            throw new BusinessException("Select at least one change to apply.");
+
+        var merged = FormSchemaSyncPlanner.Apply(form, preview, request.AcceptedKeys);
+        await SaveFormAsync(merged, cancellationToken);
+
+        var updated = await GetFormAsync(formId, cancellationToken)
+            ?? throw new NotFoundException($"Form {formId} was not found after sync.");
+
+        return new FormSchemaSyncResultDto
+        {
+            FormId = formId,
+            AppliedChangeCount = request.AcceptedKeys.Count,
+            Form = updated
+        };
+    }
+
     public async Task<int> SaveFormAsync(FormConfigDto config, CancellationToken cancellationToken = default)
     {
         EnsureGridColumns(config);
@@ -212,6 +252,7 @@ public class FormConfigurationService : IFormConfigurationService
             IsReadOnly = f.IsReadOnly,
             DisplayOrder = f.DisplayOrder >= 0 ? f.DisplayOrder : i,
             ValidationRule = NormalizeValidationRule(f.ValidationRule),
+            ConditionalRule = NormalizeValidationRule(f.ConditionalRule),
             LookupEntity = f.LookupEntity,
             LookupParentField = f.LookupParentField,
             LookupFilterField = f.LookupFilterField,
@@ -432,6 +473,7 @@ public class FormConfigurationService : IFormConfigurationService
             IsReadOnly = f.IsReadOnly,
             DisplayOrder = f.DisplayOrder,
             ValidationRule = f.ValidationRule,
+            ConditionalRule = f.ConditionalRule,
             LookupEntity = f.LookupEntity,
             LookupParentField = f.LookupParentField,
             LookupFilterField = f.LookupFilterField,

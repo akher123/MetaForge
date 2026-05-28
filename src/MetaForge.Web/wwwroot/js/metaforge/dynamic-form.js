@@ -3,9 +3,10 @@
  */
 const DynamicForm = (function () {
     let $form, formDef, recordId = null;
+    let activeDefinition = null;
 
     function getFields(definition) {
-        const source = definition ?? formDef;
+        const source = definition ?? activeDefinition ?? formDef;
         return source?.Fields ?? source?.fields ?? [];
     }
 
@@ -23,6 +24,7 @@ const DynamicForm = (function () {
         const opts = options || {};
         $form = $(selector);
         formDef = definition;
+        activeDefinition = definition;
         recordId = null;
         if (opts.layoutClass) {
             $form.addClass(opts.layoutClass);
@@ -30,8 +32,12 @@ const DynamicForm = (function () {
         render();
         clearFieldErrors($form);
         bindFieldErrorClear($form);
+        bindConditionalLogic($form);
+        applyAllConditionalStates($form);
         if (opts.initLookups !== false && typeof MetaForgeLookups !== 'undefined') {
-            return MetaForgeLookups.initFormLookups($form, getFields());
+            return MetaForgeLookups.initFormLookups($form, getFields()).then(function () {
+                applyAllConditionalStates($form);
+            });
         }
         return $.when();
     }
@@ -40,7 +46,9 @@ const DynamicForm = (function () {
         const opts = options || {};
         const $target = $(selector);
         const fields = getFields(definition);
+        const previousDefinition = activeDefinition;
 
+        activeDefinition = definition;
         destroyLookups($target);
         $target.empty();
 
@@ -49,12 +57,18 @@ const DynamicForm = (function () {
         }
 
         appendFields($target, fields);
+        bindConditionalLogic($target);
+        applyAllConditionalStates($target);
 
         if (opts.initLookups === false || typeof MetaForgeLookups === 'undefined') {
+            activeDefinition = previousDefinition;
             return $.when();
         }
 
-        return MetaForgeLookups.initFormLookups($target, fields, opts.data || {});
+        return MetaForgeLookups.initFormLookups($target, fields, opts.data || {}).then(function () {
+            applyAllConditionalStates($target);
+            activeDefinition = previousDefinition;
+        });
     }
 
     function render() {
@@ -72,12 +86,18 @@ const DynamicForm = (function () {
             }
 
             sections[sectionName].forEach(field => {
-                const isVisible = field.IsVisible ?? field.isVisible ?? true;
-                if (!isVisible) return;
+                const name = field.PropertyName ?? field.propertyName;
+                const controlType = field.ControlType ?? field.controlType ?? 'TextBox';
                 const isRequired = field.IsRequired ?? field.isRequired;
                 const label = field.Label ?? field.label;
-                const col = $('<div class="admin-form-field"></div>');
-                col.append(`<label class="admin-form-label">${label}${isRequired ? ' <span class="required-mark">*</span>' : ''}</label>`);
+
+                if (controlType === 'Hidden') {
+                    $container.append(buildControl(field));
+                    return;
+                }
+
+                const col = $(`<div class="admin-form-field" data-field-container="${name}"></div>`);
+                col.append(`<label class="admin-form-label" data-field-label="${name}">${label}${isRequired ? ' <span class="required-mark">*</span>' : ''}</label>`);
                 col.append(buildControl(field));
                 $container.append(col);
             });
@@ -131,6 +151,87 @@ const DynamicForm = (function () {
                 ${controlHtml}
                 <div class="invalid-feedback" data-field-error="${name}"></div>
             </div>`;
+    }
+
+    function findFieldContainer($scope, fieldName) {
+        const $byData = $scope.find(`[data-field-container="${fieldName}"]`).first();
+        if ($byData.length) return $byData;
+
+        const $wrap = findFieldWrap($scope, fieldName);
+        return $wrap.closest('.admin-form-field');
+    }
+
+    function collectFormData($scope) {
+        const data = {};
+        $scope.find('[name]').each(function () {
+            const $el = $(this);
+            const name = $el.attr('name');
+            data[name] = readFieldValue($el, getField(name));
+        });
+        return data;
+    }
+
+    function applyFieldConditionalState($scope, field) {
+        if (typeof FieldConditionalEngine === 'undefined') return;
+
+        const name = field.PropertyName ?? field.propertyName;
+        const controlType = field.ControlType ?? field.controlType ?? 'TextBox';
+        if (controlType === 'Hidden') return;
+
+        const data = collectFormData($scope);
+        const state = FieldConditionalEngine.evaluateEffectiveState(field, data);
+        const $container = findFieldContainer($scope, name);
+        const $input = findFieldInput($scope, name);
+        const $label = $scope.find(`[data-field-label="${name}"]`).first();
+
+        if ($container.length) {
+            $container.toggleClass('d-none', !state.visible);
+        }
+
+        if ($input.length) {
+            $input.prop('required', state.required && state.visible);
+
+            if ($input.is('select')) {
+                $input.prop('disabled', false);
+                const $s2 = $input.next('.select2-container');
+                if (state.readOnly) {
+                    $input.attr('tabindex', '-1');
+                    $s2.addClass('pe-none field-readonly-select');
+                } else {
+                    $input.removeAttr('tabindex');
+                    $s2.removeClass('pe-none field-readonly-select');
+                }
+            } else if ($input.hasClass('form-check-input')) {
+                $input.prop('disabled', state.readOnly);
+            } else {
+                $input.prop('readonly', state.readOnly);
+                $input.prop('disabled', false);
+            }
+        }
+
+        if ($label.length) {
+            const label = field.Label ?? field.label ?? name;
+            $label.html(`${label}${state.required && state.visible ? ' <span class="required-mark">*</span>' : ''}`);
+        }
+    }
+
+    function applyAllConditionalStates($scope) {
+        if (typeof FieldConditionalEngine === 'undefined') return;
+
+        const $root = $scope ? $($scope) : $form;
+        if (!$root.length) return;
+
+        getFields().forEach(function (field) {
+            applyFieldConditionalState($root, field);
+        });
+    }
+
+    function bindConditionalLogic($scope) {
+        const $root = $scope ? $($scope) : $form;
+        $root.off('.conditionalLogic');
+        $root.on('input.conditionalLogic change.conditionalLogic', '.form-control, .form-select, .form-check-input', function () {
+            applyAllConditionalStates($root);
+        });
     }
 
     function findFieldWrap($scope, fieldName) {
@@ -232,14 +333,25 @@ const DynamicForm = (function () {
     function validateRequiredFields($scope, fields, data) {
         clearFieldErrors($scope);
         const errors = {};
+        const formData = data || collectFormData($scope ? $($scope) : $form);
 
         (fields || []).forEach(function (field) {
-            if (!(field.IsRequired ?? field.isRequired)) return;
-
             const name = field.PropertyName ?? field.propertyName;
             const label = field.Label ?? field.label ?? name;
-            const val = data[name];
             const controlType = field.ControlType ?? field.controlType ?? 'TextBox';
+
+            let isRequired = field.IsRequired ?? field.isRequired;
+            let isVisible = field.IsVisible ?? field.isVisible ?? true;
+
+            if (typeof FieldConditionalEngine !== 'undefined') {
+                const state = FieldConditionalEngine.evaluateEffectiveState(field, formData);
+                isRequired = state.required;
+                isVisible = state.visible;
+            }
+
+            if (!isRequired || !isVisible || controlType === 'Hidden') return;
+
+            const val = formData[name];
             const isLookup = controlType === 'Dropdown' || controlType === 'Autocomplete'
                 || (name.endsWith('Id') && name !== 'Id');
 
@@ -400,10 +512,13 @@ const DynamicForm = (function () {
 
         if (typeof MetaForgeLookups === 'undefined') {
             applySelectValues(data);
+            applyAllConditionalStates($form);
             return $.when();
         }
 
-        return MetaForgeLookups.initFormLookups($form, getFields(), data || {});
+        return MetaForgeLookups.initFormLookups($form, getFields(), data || {}).then(function () {
+            applyAllConditionalStates($form);
+        });
     }
 
     function load(id) {
@@ -437,8 +552,11 @@ const DynamicForm = (function () {
         if ($form[0]?.reset) {
             $form[0].reset();
         }
+        applyAllConditionalStates($form);
         if (typeof MetaForgeLookups !== 'undefined') {
-            return MetaForgeLookups.initFormLookups($form, getFields());
+            return MetaForgeLookups.initFormLookups($form, getFields()).then(function () {
+                applyAllConditionalStates($form);
+            });
         }
         return $.when();
     }
@@ -475,6 +593,7 @@ const DynamicForm = (function () {
         showFieldErrors,
         handleAjaxValidationError,
         validateRequiredFields,
+        applyAllConditionalStates,
         parseAjaxFieldErrors
     };
 })();

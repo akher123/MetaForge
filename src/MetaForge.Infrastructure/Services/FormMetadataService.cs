@@ -35,7 +35,7 @@ public class FormMetadataService : IFormMetadataService
         FormName = form.Name,
         FormType = form.FormType.ToString(),
         EntityName = form.EntityName,
-        Fields = form.Fields.Where(f => f.IsVisible).Select(f => new FieldDefinition
+        Fields = form.Fields.Select(f => new FieldDefinition
         {
             PropertyName = f.PropertyName,
             Label = f.Label,
@@ -45,6 +45,7 @@ public class FormMetadataService : IFormMetadataService
             IsReadOnly = f.IsReadOnly,
             DisplayOrder = f.DisplayOrder,
             ValidationRule = f.ValidationRule,
+            ConditionalRule = f.ConditionalRule,
             LookupEntity = f.LookupEntity,
             LookupParentField = f.LookupParentField,
             LookupFilterField = f.LookupFilterField,

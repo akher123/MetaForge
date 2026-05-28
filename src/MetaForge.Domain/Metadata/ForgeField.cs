@@ -25,6 +25,9 @@ public class ForgeField
 
     public string? ValidationRule { get; set; }
 
+    /// <summary>JSON rules for show/hide, enable/disable, require/optional based on other field values.</summary>
+    public string? ConditionalRule { get; set; }
+
     public string? LookupEntity { get; set; }
 
     /// <summary>Parent dropdown property name that drives this lookup filter.</summary>

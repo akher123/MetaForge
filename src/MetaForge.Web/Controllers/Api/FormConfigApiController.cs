@@ -14,6 +14,30 @@ public class FormConfigApiController : ControllerBase
     public async Task<IActionResult> GetAll(CancellationToken cancellationToken) =>
         Ok(await _configService.GetAllFormsAsync(cancellationToken));
 
+    [HttpGet("validation-rules")]
+    [RequirePermissionCode(ConfigPermissions.View)]
+    public IActionResult GetValidationRuleCatalog() =>
+        Ok(ValidationRuleCatalog.GetAll());
+
+    [HttpGet("conditional-rules")]
+    [RequirePermissionCode(ConfigPermissions.View)]
+    public IActionResult GetConditionalRuleCatalog() =>
+        Ok(new
+        {
+            actions = ConditionalRuleCatalog.GetActions(),
+            operators = ConditionalRuleCatalog.GetOperators()
+        });
+
+    [HttpGet("sync-preview/{id:int}")]
+    [RequirePermissionCode(ConfigPermissions.View)]
+    public async Task<IActionResult> GetSchemaSyncPreview(int id, CancellationToken cancellationToken) =>
+        Ok(await _configService.GetSchemaSyncPreviewAsync(id, cancellationToken));
+
+    [HttpPost("sync/{id:int}")]
+    [RequirePermissionCode(ConfigPermissions.Manage)]
+    public async Task<IActionResult> ApplySchemaSync(int id, [FromBody] FormSchemaSyncApplyDto request, CancellationToken cancellationToken) =>
+        Ok(await _configService.ApplySchemaSyncAsync(id, request, cancellationToken));
+
     [HttpGet("{id:int}")]
     [RequirePermissionCode(ConfigPermissions.View)]
     public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
@@ -44,11 +68,6 @@ public class FormConfigApiController : ControllerBase
     [RequirePermissionCode(ConfigPermissions.Manage)]
     public async Task<IActionResult> BuildDraft(string entityName, [FromQuery] string groupName = "Master Data", CancellationToken cancellationToken = default) =>
         Ok(await _configService.BuildDraftAsync(entityName, groupName, cancellationToken));
-
-    [HttpGet("validation-rules")]
-    [RequirePermissionCode(ConfigPermissions.View)]
-    public IActionResult GetValidationRuleCatalog() =>
-        Ok(ValidationRuleCatalog.GetAll());
 
     [HttpPost]
     [RequirePermissionCode(ConfigPermissions.Manage)]

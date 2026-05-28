@@ -41,6 +41,14 @@ const FormBuilder = (function () {
             ValidationRuleBuilder.init();
         }
 
+        if (typeof ConditionalRuleBuilder !== 'undefined') {
+            ConditionalRuleBuilder.init();
+        }
+
+        if (typeof EntitySchemaSync !== 'undefined') {
+            EntitySchemaSync.init({ onApplied: handleSchemaSyncApplied });
+        }
+
         const screen = window.__formBuilderData?.screen;
         const legacy = window.__formBuilderData?.module;
 
@@ -66,6 +74,7 @@ const FormBuilder = (function () {
         $('#btnAddGridAction').on('click', () => addGridActionRow());
         $('#btnAddRelation').on('click', () => addRelationRow());
         $('#btnSaveScreen').on('click', saveScreen);
+        $('#btnSyncFromEntity').on('click', openSchemaSync);
 
         $(document).on('click', '.btn-remove-row', function () {
             const $table = $(this).closest('table');
@@ -307,9 +316,13 @@ const FormBuilder = (function () {
         const controlOptions = CONTROL_TYPES.map(c =>
             `<option value="${c}" ${(field.ControlType ?? field.controlType) === c ? 'selected' : ''}>${c}</option>`).join('');
         const validationRule = field.ValidationRule ?? field.validationRule ?? '';
+        const conditionalRule = field.ConditionalRule ?? field.conditionalRule ?? '';
         const validationCell = typeof ValidationRuleBuilder !== 'undefined'
             ? ValidationRuleBuilder.renderValidationCell()
             : `<td><input type="text" class="form-control form-control-sm field-validation" placeholder="MaxLength:50" /></td>`;
+        const conditionalCell = typeof ConditionalRuleBuilder !== 'undefined'
+            ? ConditionalRuleBuilder.renderConditionalCell()
+            : `<td><input type="hidden" class="field-conditional" /></td>`;
 
         const $row = $(`
             <tr>
@@ -330,6 +343,7 @@ const FormBuilder = (function () {
                 <td class="text-center"><input type="checkbox" class="form-check-input field-visible" ${(field.IsVisible ?? field.isVisible ?? true) ? 'checked' : ''} /></td>
                 <td class="text-center"><input type="checkbox" class="form-check-input field-readonly" ${(field.IsReadOnly ?? field.isReadOnly) ? 'checked' : ''} /></td>
                 ${validationCell}
+                ${conditionalCell}
                 <td><button type="button" class="btn btn-sm btn-outline-danger btn-icon btn-remove-row" title="Remove" aria-label="Remove"><i class="fa-solid fa-trash"></i></button></td>
             </tr>`);
 
@@ -339,6 +353,12 @@ const FormBuilder = (function () {
             ValidationRuleBuilder.setRowValidationRule($row, validationRule);
         } else {
             $row.find('.field-validation').val(validationRule);
+        }
+
+        if (typeof ConditionalRuleBuilder !== 'undefined') {
+            ConditionalRuleBuilder.setRowConditionalRule($row, conditionalRule);
+        } else {
+            $row.find('.field-conditional').val(conditionalRule);
         }
 
         if (triggerPreview && previewFn) previewFn();
@@ -427,6 +447,9 @@ const FormBuilder = (function () {
                 ValidationRule: typeof ValidationRuleBuilder !== 'undefined'
                     ? ValidationRuleBuilder.getRowValidationRule($(this))
                     : ($(this).find('.field-validation').val()?.trim() || null),
+                ConditionalRule: typeof ConditionalRuleBuilder !== 'undefined'
+                    ? ConditionalRuleBuilder.getRowConditionalRule($(this))
+                    : ($(this).find('.field-conditional').val()?.trim() || null),
                 DisplayOrder: i
             });
         });
@@ -636,6 +659,54 @@ const FormBuilder = (function () {
 
     function splitPascalCase(value) {
         return value.replace(/([A-Z])/g, ' $1').trim();
+    }
+
+    function getActiveSyncTarget() {
+        const activeTab = $('.form-builder-tabs .nav-link.active').attr('id');
+        if (activeTab === 'tab-detail-btn') {
+            if (!state.detailId || state.detailId <= 0) {
+                return { formId: 0, label: 'Detail form' };
+            }
+            return {
+                formId: state.detailId,
+                label: `${state.detailEntity || 'Detail'} form`
+            };
+        }
+
+        return {
+            formId: state.masterId,
+            label: `${$('#moduleName').val()?.trim() || 'Master'} (${$('#entityName').val()?.trim() || 'entity'})`
+        };
+    }
+
+    function openSchemaSync() {
+        const target = getActiveSyncTarget();
+        if (!target.formId || target.formId <= 0) {
+            notify('Save the form first, or switch to the master tab to sync the header form.', 'warning');
+            return;
+        }
+
+        if (typeof EntitySchemaSync !== 'undefined') {
+            EntitySchemaSync.open(target.formId, target.label);
+        }
+    }
+
+    function handleSchemaSyncApplied(result) {
+        const form = result?.Form ?? result?.form;
+        if (!form) return;
+
+        const formId = form.Id ?? form.id ?? 0;
+        const entityName = form.EntityName ?? form.entityName ?? '';
+
+        if (formId === state.detailId || (state.detailEntity && entityName === state.detailEntity)) {
+            state.detailId = formId;
+            loadDetailConfig(form);
+        } else {
+            state.masterId = formId;
+            loadMasterConfig(form);
+        }
+
+        refreshPreviews();
     }
 
     return { init };

@@ -27,5 +27,6 @@ public static class DatabaseMigrator
         }
 
         await SchemaUpgradeHelper.EnsureForgeFormActionsTableAsync(context, logger, cancellationToken);
+        await SchemaUpgradeHelper.EnsureForgeFieldConditionalRuleColumnAsync(context, logger, cancellationToken);
     }
 }

@@ -37,6 +37,7 @@ public class SalesOrderConfiguration : IEntityTypeConfiguration<SalesOrder>
         builder.ToTable("SalesOrders");
         builder.HasKey(x => x.Id);
         builder.Property(x => x.OrderNo).HasMaxLength(50).IsRequired();
+        builder.Property(x => x.Address).HasMaxLength(300);
         builder.HasOne(x => x.Customer).WithMany().HasForeignKey(x => x.CustomerId);
         builder.HasMany(x => x.Items).WithOne(x => x.SalesOrder).HasForeignKey(x => x.SalesOrderId);
         builder.HasMany(x => x.Charges).WithOne(x => x.SalesOrder).HasForeignKey(x => x.SalesOrderId);
