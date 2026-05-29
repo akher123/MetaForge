@@ -33,13 +33,7 @@
     };
 }
 
-<div id="menuIndexApp">
-    <div class="module-grid-card-header page-breadcrumb-bar">
-        <div class="module-grid-breadcrumb">
-            @await Component.InvokeAsync("Breadcrumb")
-        </div>
-    </div>
-
+<div id="menuIndexApp" class="app-page-fill admin-hub-page menu-page">
     <div class="row g-3 mb-4 menu-stat-grid security-stat-grid">
         <div class="col-6 col-xl-3">
             <div class="stat-card stat-primary h-100">
@@ -79,12 +73,15 @@
         </div>
     </div>
 
-    <div class="card admin-card admin-grid-card">
+    <div class="card admin-card admin-grid-card module-grid-card">
         @if (menuList.Count == 0)
         {
             <div class="card-header module-grid-card-header d-flex align-items-center flex-wrap gap-2">
-                <span class="fw-semibold"><i class="fa-solid fa-sitemap me-2"></i>Navigation Tree</span>
+                <div class="module-grid-breadcrumb">
+                    @await Component.InvokeAsync("Breadcrumb")
+                </div>
                 <div class="d-flex flex-wrap align-items-center gap-2 module-grid-toolbar">
+                    <span class="fw-semibold"><i class="fa-solid fa-sitemap me-2"></i>Navigation Tree</span>
                     <span class="text-muted small">0 item(s)</span>
                     <a class="btn btn-sm btn-primary" href="/Menu/Create" title="New Menu Item" aria-label="New Menu Item">
                         <i class="fa-solid fa-plus me-1"></i>New Menu Item
@@ -94,9 +91,12 @@
         }
         else
         {
-            <div class="menu-tree-toolbar module-grid-card-header">
-                <span class="fw-semibold"><i class="fa-solid fa-sitemap me-2"></i>Navigation Tree</span>
+            <div class="menu-tree-toolbar module-grid-card-header d-flex align-items-center flex-wrap gap-2">
+                <div class="module-grid-breadcrumb">
+                    @await Component.InvokeAsync("Breadcrumb")
+                </div>
                 <div class="d-flex flex-wrap align-items-center gap-2 module-grid-toolbar">
+                    <span class="fw-semibold"><i class="fa-solid fa-sitemap me-2"></i>Navigation Tree</span>
                     <span class="text-muted small">@menuList.Count item(s)</span>
                     <a class="btn btn-sm btn-primary" href="/Menu/Create" title="New Menu Item" aria-label="New Menu Item">
                         <i class="fa-solid fa-plus me-1"></i>New Menu Item

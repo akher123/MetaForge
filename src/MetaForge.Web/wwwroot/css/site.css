@@ -3449,6 +3449,26 @@ code {
   display: flex;
   flex-direction: column;
   gap: 0.875rem;
+  background: var(--dv-surface);
+  border: 1px solid var(--dv-border);
+  border-radius: var(--bs-border-radius-lg);
+  box-shadow: var(--dv-shadow-sm);
+  padding: 0.75rem 1rem 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.security-page-header-zone > .page-breadcrumb-bar {
+  margin-bottom: 0.75rem;
+  padding: 0 0 0.75rem;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  border-bottom: 1px solid var(--dv-border);
+}
+
+.security-page-header-zone .security-subnav {
+  padding-bottom: 0.35rem;
 }
 
 .security-page-body {
@@ -4366,13 +4386,27 @@ code {
 
 .page-breadcrumb-bar {
   width: 100%;
-  padding-bottom: 0.75rem;
+  padding: 0.75rem 1.15rem;
   margin-bottom: 1.25rem;
-  border-bottom: 1px solid var(--dv-border);
+  background: var(--dv-surface);
+  border: 1px solid var(--dv-border);
+  border-radius: var(--bs-border-radius-lg);
+  box-shadow: var(--dv-shadow-sm);
 }
 
-.security-page-header-zone > .page-breadcrumb-bar {
-  margin-bottom: 0;
+/* Admin hub pages — align with module master / master-detail surfaces */
+.admin-hub-page,
+.security-page.app-page-fill {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  gap: 0;
+  padding-bottom: 1.25rem;
+}
+
+.form-builder-page .module-page-header--breadcrumb,
+.menu-page .module-page-header--breadcrumb {
+  border-left: 4px solid var(--dv-indigo-600);
 }
 
 .admin-card > .card-header.module-grid-card-header,

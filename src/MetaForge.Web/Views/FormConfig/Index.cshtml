@@ -25,13 +25,7 @@
     };
 }
 
-<div id="formBuilderIndexApp">
-    <div class="module-grid-card-header page-breadcrumb-bar">
-        <div class="module-grid-breadcrumb">
-            @await Component.InvokeAsync("Breadcrumb")
-        </div>
-    </div>
-
+<div id="formBuilderIndexApp" class="app-page-fill admin-hub-page form-builder-page">
     <div class="row g-3 mb-4 form-builder-stat-grid security-stat-grid">
         <div class="col-6 col-xl-3">
             <div class="stat-card stat-primary h-100">
@@ -98,10 +92,13 @@
         </div>
     </div>
 
-    <div class="card admin-card admin-grid-card">
+    <div class="card admin-card admin-grid-card module-grid-card">
         <div class="card-header module-grid-card-header d-flex align-items-center flex-wrap gap-2">
-            <span class="fw-semibold"><i class="fa-solid fa-table-columns me-2"></i>Configured Screens</span>
+            <div class="module-grid-breadcrumb">
+                @await Component.InvokeAsync("Breadcrumb")
+            </div>
             <div class="d-flex flex-wrap align-items-center gap-2 module-grid-toolbar">
+                <span class="fw-semibold"><i class="fa-solid fa-table-columns me-2"></i>Configured Screens</span>
                 <span class="text-muted small">@formList.Count screen(s)</span>
                 <a class="btn btn-sm btn-primary" href="/FormBuilder/Create" title="New Form" aria-label="New Form">
                     <i class="fa-solid fa-plus me-1"></i>New Form

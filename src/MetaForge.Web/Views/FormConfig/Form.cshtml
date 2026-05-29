@@ -9,12 +9,12 @@
 }
 
 <div id="formBuilderApp"
-     class="form-builder-app"
+     class="form-builder-app module-page form-builder-page"
      data-is-edit="@isEdit.ToString().ToLower()"
      data-default-group="@defaultGroup"
      data-default-screen-type="@defaultScreenType">
 
-    <div class="module-grid-card-header page-breadcrumb-bar">
+    <div class="page-header module-page-header module-page-header--breadcrumb mb-4">
         <div class="module-grid-breadcrumb">
             @await Component.InvokeAsync("Breadcrumb", new { currentPage = isEdit ? "Edit" : "Create" })
         </div>

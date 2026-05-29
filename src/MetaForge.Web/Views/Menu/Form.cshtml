@@ -9,8 +9,8 @@
     var menuAction = string.IsNullOrEmpty(entry.Action) ? "Index" : entry.Action;
 }
 
-<div id="menuFormApp" data-is-edit="@isEdit.ToString().ToLower()">
-    <div class="module-grid-card-header page-breadcrumb-bar">
+<div id="menuFormApp" class="module-page menu-page" data-is-edit="@isEdit.ToString().ToLower()">
+    <div class="page-header module-page-header module-page-header--breadcrumb mb-4">
         <div class="module-grid-breadcrumb">
             @await Component.InvokeAsync("Breadcrumb", new { currentPage = isEdit ? "Edit" : "Create" })
         </div>

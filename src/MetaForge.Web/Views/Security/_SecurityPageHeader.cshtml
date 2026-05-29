@@ -2,9 +2,9 @@
     var currentPage = ViewBag.BreadcrumbPage as string;
 }
 
-<div class="security-page">
+<div class="security-page app-page-fill admin-hub-page">
     <div class="security-page-header-zone">
-        <div class="module-grid-card-header page-breadcrumb-bar">
+        <div class="module-grid-card-header page-breadcrumb-bar d-flex align-items-center flex-wrap gap-2">
             <div class="module-grid-breadcrumb">
                 @if (!string.IsNullOrEmpty(currentPage))
                 {
