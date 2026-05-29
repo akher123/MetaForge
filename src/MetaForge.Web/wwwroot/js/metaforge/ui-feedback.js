@@ -108,6 +108,23 @@ const MetaForgeUi = (function () {
         });
     }
 
+    /**
+     * Primary label for toast copy — e.g. "Sales Order" → "Order", "Customer" → "Customer".
+     */
+    function entityLabelFromFormName(formName) {
+        const name = String(formName ?? '').trim();
+        if (!name) return 'Record';
+
+        const words = name.split(/\s+/).filter(Boolean);
+        if (words.length <= 1) return name;
+
+        return words[words.length - 1];
+    }
+
+    function formatSavedMessage(formName) {
+        return `${entityLabelFromFormName(formName)} saved successfully.`;
+    }
+
     function showAlert(message, type, autoDismissMs) {
         type = type || 'danger';
         autoDismissMs = autoDismissMs ?? 6000;
@@ -155,7 +172,16 @@ const MetaForgeUi = (function () {
         MetaForgeProgress.finishPageLoad();
     }
 
-    return { init, confirmDelete, showAlert, startProgress, doneProgress, finishPageLoad };
+    return {
+        init,
+        confirmDelete,
+        showAlert,
+        entityLabelFromFormName,
+        formatSavedMessage,
+        startProgress,
+        doneProgress,
+        finishPageLoad
+    };
 })();
 
 $(function () {

@@ -6,6 +6,8 @@ namespace MetaForge.Domain.Enums;
 public enum FormType
 {
     Master,
+    /// <summary>Single-entity form with fields grouped in tabs (ERP-style sections).</summary>
+    Tabbed,
     MasterDetail,
     MasterDetailTabular,
     Detail

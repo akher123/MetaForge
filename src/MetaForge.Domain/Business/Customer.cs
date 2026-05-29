@@ -11,7 +11,13 @@ public class Customer : BaseEntity
 
     public string? Email { get; set; }
 
+    public string? Phone { get; set; }
+
     public string Status { get; set; } = "Active";
+
+    public decimal? CreditLimit { get; set; }
+
+    public string? PaymentTerms { get; set; }
 
     public int? CountryId { get; set; }
 

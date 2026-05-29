@@ -129,6 +129,7 @@ const FormBuilder = (function () {
         if (state.screenType === 'MasterDetail' || state.screenType === 'MasterDetailTabular') {
             syncDetailFromRelations();
         }
+        refreshMasterPreview();
     }
 
     function bindScreenTypeOptions() {
@@ -150,8 +151,10 @@ const FormBuilder = (function () {
     function updateScreenTypeUi() {
         const screenType = $('#screenType').val();
         const isMasterDetail = screenType === 'MasterDetail' || screenType === 'MasterDetailTabular';
+        const isTabbed = screenType === 'Tabbed';
         $('#tab-detail-nav').toggleClass('d-none', !isMasterDetail);
         $('#detailEntityInfo').toggleClass('d-none', !isMasterDetail || !state.detailEntity);
+        $('#tabbedSectionHint').toggleClass('d-none', !isTabbed);
         syncScreenTypeCards();
 
         if (isMasterDetail) {
@@ -635,10 +638,16 @@ const FormBuilder = (function () {
 
     function refreshMasterPreview() {
         const fields = collectFields('#masterFieldsTable');
+        const screenType = $('#screenType').val();
         DynamicForm.renderPreview('#masterFormPreview', {
             FormName: $('#moduleName').val() || 'Master Form',
+            FormType: screenType === 'Tabbed' ? 'Tabbed' : 'Master',
             Fields: fields
-        }, { layoutClass: 'admin-form-preview-layout' });
+        }, {
+            layoutClass: 'admin-form-preview-layout',
+            layout: screenType === 'Tabbed' ? 'tabs' : 'sections',
+            previewMode: true
+        });
     }
 
     function refreshDetailPreview() {

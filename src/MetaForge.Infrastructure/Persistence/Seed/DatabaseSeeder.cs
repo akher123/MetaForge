@@ -69,7 +69,9 @@ public static class DatabaseSeeder
         await EnsurePagedLookupUpgradeAsync(context, logger);
         await EnsureSampleCustomerAsync(context, logger);
         await EnsureSampleTransactionDataAsync(context, logger);
+        await EnsureTabbedCustomerUpgradeAsync(context, logger);
         await EnsureTabularSalesOrderUpgradeAsync(context, logger);
+        await EnsureSalesOrderAddressFieldAsync(context, logger);
         await EnsureSalesOrderGridActionsAsync(context, logger);
         await EnsureSalesOrderConditionalRulesAsync(context, logger);
         await EnsureFormPermissionsAsync(context, logger);
@@ -110,6 +112,242 @@ public static class DatabaseSeeder
 
         await context.SaveChangesAsync();
         logger.LogInformation("Assigned security stamps to {Count} user(s).", users.Count);
+    }
+
+    private static async Task EnsureTabbedCustomerUpgradeAsync(MetaForgeDbContext context, ILogger logger)
+    {
+        var customerForm = await context.ForgeForms
+            .Include(f => f.Fields)
+            .Include(f => f.GridColumns)
+            .FirstOrDefaultAsync(f => f.Code == "customer");
+
+        if (customerForm == null)
+            return;
+
+        var changed = false;
+
+        if (customerForm.FormType != FormType.Tabbed)
+        {
+            customerForm.FormType = FormType.Tabbed;
+            changed = true;
+        }
+
+        var fieldOptions = CustomerFieldOptions();
+        var displayOrder = customerForm.Fields.Count;
+
+        foreach (var (propertyName, option) in fieldOptions)
+        {
+            var field = customerForm.Fields.FirstOrDefault(f => f.PropertyName == propertyName);
+            if (field == null)
+            {
+                var seedField = CustomerSeedFields().FirstOrDefault(f => f.Property == propertyName);
+                if (string.IsNullOrEmpty(seedField.Property))
+                    continue;
+
+                customerForm.Fields.Add(new ForgeField
+                {
+                    PropertyName = propertyName,
+                    Label = option.Label ?? propertyName,
+                    ControlType = seedField.Control,
+                    IsRequired = seedField.Required,
+                    IsVisible = true,
+                    DisplayOrder = displayOrder++,
+                    ValidationRule = seedField.Validation,
+                    LookupEntity = seedField.Lookup,
+                    LookupParentField = propertyName == "RegionId" ? "CountryId" : null,
+                    SectionName = option.SectionName
+                });
+                changed = true;
+                continue;
+            }
+
+            if (option.Label != null && field.Label != option.Label)
+            {
+                field.Label = option.Label;
+                changed = true;
+            }
+
+            if (option.SectionName != null && field.SectionName != option.SectionName)
+            {
+                field.SectionName = option.SectionName;
+                changed = true;
+            }
+        }
+
+        foreach (var columnName in new[] { "Phone", "CreditLimit" })
+        {
+            if (customerForm.GridColumns.Any(c => c.PropertyName == columnName))
+                continue;
+
+            var label = columnName switch
+            {
+                "Phone" => "Phone",
+                "CreditLimit" => "Credit Limit",
+                _ => columnName
+            };
+
+            customerForm.GridColumns.Add(new ForgeGridColumn
+            {
+                PropertyName = columnName,
+                Label = label,
+                DisplayOrder = customerForm.GridColumns.Count,
+                IsSortable = true,
+                IsSearchable = columnName == "Phone"
+            });
+            changed = true;
+        }
+
+        await BackfillCustomerErpFieldsAsync(context, logger);
+
+        if (!changed)
+            return;
+
+        await context.SaveChangesAsync();
+        logger.LogInformation("Upgraded Customer form to Tabbed layout with ERP-style sections.");
+    }
+
+    private static async Task BackfillCustomerErpFieldsAsync(MetaForgeDbContext context, ILogger logger)
+    {
+        var customers = await context.Customers.ToListAsync();
+        if (customers.Count == 0)
+            return;
+
+        var updated = 0;
+        foreach (var customer in customers)
+        {
+            var changed = false;
+
+            if (string.IsNullOrWhiteSpace(customer.Phone))
+            {
+                customer.Phone = customer.Code switch
+                {
+                    "C001" => "+1 206 555 0100",
+                    "C002" => "+1 212 555 0199",
+                    _ => "+1 800 555 0100"
+                };
+                changed = true;
+            }
+
+            if (customer.CreditLimit is null or <= 0)
+            {
+                customer.CreditLimit = customer.Code switch
+                {
+                    "C001" => 50_000m,
+                    "C002" => 25_000m,
+                    _ => 10_000m
+                };
+                changed = true;
+            }
+
+            if (string.IsNullOrWhiteSpace(customer.PaymentTerms))
+            {
+                customer.PaymentTerms = customer.Code switch
+                {
+                    "C001" => "Net 30",
+                    "C002" => "Net 15",
+                    _ => "Net 30"
+                };
+                changed = true;
+            }
+
+            if (changed)
+                updated++;
+        }
+
+        if (updated == 0)
+            return;
+
+        await context.SaveChangesAsync();
+        logger.LogInformation("Backfilled phone, credit limit, and payment terms on {Count} customer(s).", updated);
+    }
+
+    private static (string Property, string Control, bool Required, string? Validation, string? Lookup)[] CustomerSeedFields() =>
+    [
+        ("Code", ControlType.TextBox, true, null, null),
+        ("Name", ControlType.TextBox, true, null, null),
+        ("Status", ControlType.TextBox, false, null, null),
+        ("Email", ControlType.TextBox, false, "Email", null),
+        ("Phone", ControlType.TextBox, false, null, null),
+        ("CountryId", ControlType.Dropdown, false, null, "Country"),
+        ("RegionId", ControlType.Dropdown, false, null, "Region"),
+        ("CreditLimit", ControlType.Number, false, null, null),
+        ("PaymentTerms", ControlType.TextBox, false, null, null)
+    ];
+
+    private static Dictionary<string, FormFieldOption> CustomerFieldOptions() =>
+        new(StringComparer.OrdinalIgnoreCase)
+        {
+            ["Code"] = new(Label: "Customer Code", SectionName: "General"),
+            ["Name"] = new(Label: "Name", SectionName: "General"),
+            ["Status"] = new(Label: "Status", SectionName: "General"),
+            ["Email"] = new(Label: "Email", SectionName: "Contacts"),
+            ["Phone"] = new(Label: "Phone", SectionName: "Contacts"),
+            ["CountryId"] = new(Label: "Country", SectionName: "Location"),
+            ["RegionId"] = new(Label: "Region", SectionName: "Location"),
+            ["CreditLimit"] = new(Label: "Credit Limit", SectionName: "Accounting"),
+            ["PaymentTerms"] = new(Label: "Payment Terms", SectionName: "Accounting")
+        };
+
+    private static async Task EnsureSalesOrderAddressFieldAsync(MetaForgeDbContext context, ILogger logger)
+    {
+        var salesOrderForm = await context.ForgeForms
+            .Include(f => f.Fields)
+            .FirstOrDefaultAsync(f => f.Code == "salesorder");
+
+        if (salesOrderForm == null)
+            return;
+
+        var changed = false;
+        var options = SalesOrderFieldOptions();
+        var addressField = salesOrderForm.Fields.FirstOrDefault(f =>
+            f.PropertyName.Equals("Address", StringComparison.OrdinalIgnoreCase));
+
+        if (addressField == null)
+        {
+            salesOrderForm.Fields.Add(new ForgeField
+            {
+                PropertyName = "Address",
+                Label = "Ship-To Address",
+                ControlType = ControlType.TextArea,
+                IsRequired = false,
+                IsVisible = true,
+                DisplayOrder = salesOrderForm.Fields.Count,
+                SectionName = "Shipping"
+            });
+            changed = true;
+        }
+        else if (options.TryGetValue("Address", out var addressOption))
+        {
+            if (addressOption.Label != null && addressField.Label != addressOption.Label)
+            {
+                addressField.Label = addressOption.Label;
+                changed = true;
+            }
+
+            if (addressOption.SectionName != null && addressField.SectionName != addressOption.SectionName)
+            {
+                addressField.SectionName = addressOption.SectionName;
+                changed = true;
+            }
+
+            if (!string.Equals(addressField.ControlType, ControlType.TextArea, StringComparison.OrdinalIgnoreCase))
+            {
+                addressField.ControlType = ControlType.TextArea;
+                changed = true;
+            }
+
+            if (!addressField.IsVisible)
+            {
+                addressField.IsVisible = true;
+                changed = true;
+            }
+        }
+
+        if (!changed)
+            return;
+
+        await context.SaveChangesAsync();
+        logger.LogInformation("Ensured Sales Order Address field is configured for form preview and runtime.");
     }
 
     private static async Task EnsureTabularSalesOrderUpgradeAsync(MetaForgeDbContext context, ILogger logger)
@@ -535,9 +773,6 @@ public static class DatabaseSeeder
 
     private static async Task EnsureSampleCustomerAsync(MetaForgeDbContext context, ILogger logger)
     {
-        if (await context.Customers.AnyAsync())
-            return;
-
         if (!await context.Countries.AnyAsync())
             return;
 
@@ -549,20 +784,56 @@ public static class DatabaseSeeder
             .Select(r => (int?)r.Id)
             .FirstOrDefaultAsync();
 
-        context.Customers.Add(new Customer
+        var added = 0;
+
+        if (!await context.Customers.AnyAsync(c => c.Code == "C001"))
         {
-            Code = "C001",
-            Name = "Contoso Ltd",
-            Email = "info@contoso.com",
+            context.Customers.Add(
+                CreateSampleCustomer("C001", "Contoso Ltd", "info@contoso.com", "+1 206 555 0100",
+                    countryId, regionId, 50_000m, "Net 30",
+                    new Address { Street = "123 Main St", City = "Seattle", CountryId = countryId }));
+            added++;
+        }
+
+        if (!await context.Customers.AnyAsync(c => c.Code == "C002"))
+        {
+            context.Customers.Add(
+                CreateSampleCustomer("C002", "Fabrikam Inc", "contact@fabrikam.com", "+1 212 555 0199",
+                    countryId, regionId, 25_000m, "Net 15",
+                    new Address { Street = "456 Park Ave", City = "New York", CountryId = countryId }));
+            added++;
+        }
+
+        if (added == 0)
+            return;
+
+        await context.SaveChangesAsync();
+        logger.LogInformation("Added {Count} sample customer(s) for tabbed form and transaction screens.", added);
+    }
+
+    private static Customer CreateSampleCustomer(
+        string code,
+        string name,
+        string email,
+        string phone,
+        int countryId,
+        int? regionId,
+        decimal creditLimit,
+        string paymentTerms,
+        Address address) =>
+        new()
+        {
+            Code = code,
+            Name = name,
+            Email = email,
+            Phone = phone,
             Status = "Active",
             CountryId = countryId,
             RegionId = regionId,
-            Address = new Address { Street = "123 Main St", City = "Seattle", CountryId = countryId }
-        });
-
-        await context.SaveChangesAsync();
-        logger.LogInformation("Added sample customer for transaction screens.");
-    }
+            CreditLimit = creditLimit,
+            PaymentTerms = paymentTerms,
+            Address = address
+        };
 
     private static async Task EnsureSampleTransactionDataAsync(MetaForgeDbContext context, ILogger logger)
     {
@@ -652,12 +923,29 @@ public static class DatabaseSeeder
             Code = "C001",
             Name = "Contoso Ltd",
             Email = "info@contoso.com",
+            Phone = "+1 206 555 0100",
             Status = "Active",
             Country = us,
             Region = usWest,
+            CreditLimit = 50_000m,
+            PaymentTerms = "Net 30",
             Address = new Address { Street = "123 Main St", City = "Seattle", Country = us }
         };
         context.Customers.Add(customer);
+
+        context.Customers.Add(new Customer
+        {
+            Code = "C002",
+            Name = "Fabrikam Inc",
+            Email = "contact@fabrikam.com",
+            Phone = "+1 212 555 0199",
+            Status = "Active",
+            Country = us,
+            Region = usEast,
+            CreditLimit = 25_000m,
+            PaymentTerms = "Net 15",
+            Address = new Address { Street = "456 Park Ave", City = "New York", Country = us }
+        });
 
         context.SalesOrders.Add(new SalesOrder
         {
@@ -685,32 +973,25 @@ public static class DatabaseSeeder
                 fields: [("Code", ControlType.TextBox, true, null, null), ("Name", ControlType.TextBox, true, null, null), ("IsActive", ControlType.Checkbox, false, null, null)],
                 grid: ["Code", "Name", "IsActive"]),
 
-            BuildForm("customer", "Customer", "Customer", "Customers", "Master Data", 2, FormType.Master,
+            BuildForm("customer", "Customer", "Customer", "Customers", "Master Data", 2, FormType.Tabbed,
                 fields:
                 [
                     ("Code", ControlType.TextBox, true, null, null),
                     ("Name", ControlType.TextBox, true, null, null),
-                    ("Email", ControlType.TextBox, false, "Email", null),
                     ("Status", ControlType.TextBox, false, null, null),
+                    ("Email", ControlType.TextBox, false, "Email", null),
+                    ("Phone", ControlType.TextBox, false, null, null),
                     ("CountryId", ControlType.Dropdown, false, null, "Country"),
-                    ("RegionId", ControlType.Dropdown, false, null, "Region")
+                    ("RegionId", ControlType.Dropdown, false, null, "Region"),
+                    ("CreditLimit", ControlType.Number, false, null, null),
+                    ("PaymentTerms", ControlType.TextBox, false, null, null)
                 ],
-                grid: ["Code", "Name", "Email", "CountryId", "RegionId"],
-                relations:
-                [
-                    new ForgeRelation
-                    {
-                        RelationType = RelationType.OneToOne,
-                        ParentEntity = "Customer",
-                        ChildEntity = "Address",
-                        ForeignKey = "CustomerId",
-                        NavigationProperty = "Address"
-                    }
-                ],
+                grid: ["Code", "Name", "Email", "Phone", "CountryId", "Status", "CreditLimit"],
                 cascadeFields: new Dictionary<string, (string CascadeFrom, string? FilterField)>
                 {
                     ["RegionId"] = ("CountryId", null)
-                }),
+                },
+                fieldOptions: CustomerFieldOptions()),
 
             BuildForm("product", "Product", "Product", "Products", "Master Data", 3, FormType.Master,
                 fields: [("Code", ControlType.TextBox, true, null, null), ("Name", ControlType.TextBox, true, null, null), ("UnitPrice", ControlType.Number, true, null, null), ("IsActive", ControlType.Checkbox, false, null, null)],
@@ -726,7 +1007,8 @@ public static class DatabaseSeeder
                     ("OrderNo", ControlType.TextBox, true, null, null),
                     ("OrderDate", ControlType.DateTime, true, null, null),
                     ("CustomerId", ControlType.Autocomplete, true, null, "Customer"),
-                    ("Status", ControlType.TextBox, false, null, null)
+                    ("Status", ControlType.TextBox, false, null, null),
+                    ("Address", ControlType.TextArea, false, null, null)
                 ],
                 fieldOptions: SalesOrderFieldOptions(),
                 grid: ["OrderNo", "OrderDate", "CustomerId", "Status"],
@@ -834,7 +1116,7 @@ public static class DatabaseSeeder
                     Label = hasField ? (field.Lookup ?? field.Property) : c,
                     DisplayOrder = i,
                     IsSortable = true,
-                    IsSearchable = c is "Code" or "Name" or "Email" or "OrderNo"
+                    IsSearchable = c is "Code" or "Name" or "Email" or "Phone" or "OrderNo"
                 };
             }).ToList(),
             Relations = relations ?? []
@@ -937,7 +1219,10 @@ public static class DatabaseSeeder
             ["Status"] = new FormFieldOption(
                 ConditionalRule: disableWhenApproved,
                 Label: "Status",
-                SectionName: "Header")
+                SectionName: "Header"),
+            ["Address"] = new FormFieldOption(
+                Label: "Ship-To Address",
+                SectionName: "Shipping")
         };
     }
 

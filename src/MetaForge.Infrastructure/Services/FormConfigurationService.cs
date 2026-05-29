@@ -79,11 +79,7 @@ public class FormConfigurationService : IFormConfigurationService
 
         return new FormBuilderScreenDto
         {
-            ScreenType = master.FormType.Equals(FormType.MasterDetailTabular.ToString(), StringComparison.OrdinalIgnoreCase)
-                ? "MasterDetailTabular"
-                : master.Relations.Any(r => r.RelationType.Equals(RelationType.OneToMany, StringComparison.OrdinalIgnoreCase))
-                    ? "MasterDetail"
-                    : "Master",
+            ScreenType = ResolveScreenType(master),
             Master = master,
             Detail = detail
         };
@@ -332,12 +328,15 @@ public class FormConfigurationService : IFormConfigurationService
 
         var isMasterDetail = screen.ScreenType.Equals("MasterDetail", StringComparison.OrdinalIgnoreCase);
         var isTabular = screen.ScreenType.Equals("MasterDetailTabular", StringComparison.OrdinalIgnoreCase);
+        var isTabbed = screen.ScreenType.Equals("Tabbed", StringComparison.OrdinalIgnoreCase);
 
         screen.Master.FormType = isTabular
             ? FormType.MasterDetailTabular.ToString()
             : isMasterDetail
                 ? FormType.MasterDetail.ToString()
-                : FormType.Master.ToString();
+                : isTabbed
+                    ? FormType.Tabbed.ToString()
+                    : FormType.Master.ToString();
 
         if ((isMasterDetail || isTabular) && screen.Detail != null)
         {
@@ -558,6 +557,20 @@ public class FormConfigurationService : IFormConfigurationService
         if (propertyName.Contains("Description", StringComparison.OrdinalIgnoreCase) || propertyName.Contains("Notes", StringComparison.OrdinalIgnoreCase))
             return ControlType.TextArea;
         return ControlType.TextBox;
+    }
+
+    private static string ResolveScreenType(FormConfigDto master)
+    {
+        if (master.FormType.Equals(FormType.MasterDetailTabular.ToString(), StringComparison.OrdinalIgnoreCase))
+            return "MasterDetailTabular";
+
+        if (master.FormType.Equals(FormType.Tabbed.ToString(), StringComparison.OrdinalIgnoreCase))
+            return "Tabbed";
+
+        if (master.Relations.Any(r => r.RelationType.Equals(RelationType.OneToMany, StringComparison.OrdinalIgnoreCase)))
+            return "MasterDetail";
+
+        return "Master";
     }
 
     private static FormType ParseFormType(string? formType) =>

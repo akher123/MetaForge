@@ -472,7 +472,8 @@ const MasterDetail = (function () {
             contentType: 'application/json',
             data: JSON.stringify(payload)
         }).then(() => {
-            alert('Saved successfully.');
+            const formName = screen.MasterForm?.FormName ?? screen.masterForm?.formName;
+            MetaForgeUi.showAlert(MetaForgeUi.formatSavedMessage(formName), 'success', 3000);
             if (config.onSaved) {
                 if (listModal) listModal.hide();
                 config.onSaved();

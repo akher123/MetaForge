@@ -31,6 +31,7 @@ public class ModuleController : Controller
 
         var grid = await _gridService.GetGridDefinitionAsync(formCode, cancellationToken);
         var isTabular = string.Equals(form.FormType, FormType.MasterDetailTabular.ToString(), StringComparison.OrdinalIgnoreCase);
+        var isTabbed = string.Equals(form.FormType, FormType.Tabbed.ToString(), StringComparison.OrdinalIgnoreCase);
         var hasMasterDetail = isTabular
             || string.Equals(form.FormType, FormType.MasterDetail.ToString(), StringComparison.OrdinalIgnoreCase)
             || form.Relations.Any(r => r.RelationType == RelationType.OneToMany);
@@ -41,6 +42,7 @@ public class ModuleController : Controller
 
         ViewBag.FormCode = formCode;
         ViewBag.IsTabularMasterDetail = isTabular;
+        ViewBag.IsTabbedForm = isTabbed;
         ViewBag.HasMasterDetail = hasMasterDetail;
         ViewBag.Form = form;
         ViewBag.Grid = grid;

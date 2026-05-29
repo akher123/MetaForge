@@ -71,6 +71,7 @@ All dynamic screens are driven by database-backed metadata:
 | Type | Use case |
 |---|---|
 | **Master** | Standard list + form CRUD (e.g. Customer, Product) |
+| **Tabbed** | Single-entity form with fields grouped in tabs via `SectionName` (seeded example: **Customer** → General, Contacts, Location, Accounting) |
 | **MasterDetail** | Header with a single inline detail grid (e.g. order + line items) |
 | **MasterDetailTabular** | Header with multiple child grids in tabs (e.g. Sales Order → Line Items + Charges) |
 | **Detail** | Child entity form used by master-detail screens (not shown as a standalone module) |
@@ -141,18 +142,20 @@ Open the app in your browser (typically `https://localhost:5001` or the URL show
 |---|---|---|
 | `admin` | `admin` | Administrator (full access) |
 
-### Database commands
+### Database
+
+MetaForge uses **SQL Server** (LocalDB or a full instance). Point `ConnectionStrings:DefaultConnection` in `src/MetaForge.Web/appsettings.json` at your server. The database is created automatically when migrations run (on startup or via the commands below).
 
 On startup, MetaForge applies pending **EF Core migrations** automatically, then runs idempotent data seed/upgrades.
 
 ```bash
+# Apply migrations and seed sample data (no web server)
+dotnet run --project src/MetaForge.Web -- --seed-only
+
 # Reset and reseed the database (drops all data, reapplies migrations)
 dotnet run --project src/MetaForge.Web -- --reset-db
 
-# Seed / upgrade data only (migrate + seed, then exit — no web server)
-dotnet run --project src/MetaForge.Web -- --seed-only
-
-# Apply migrations manually (CI/production)
+# Apply migrations manually
 dotnet ef database update --project src/MetaForge.Infrastructure --startup-project src/MetaForge.Web
 
 # Add a migration after changing entities or EF configurations
@@ -171,10 +174,12 @@ The seed includes a small ERP dataset:
 
 | Group | Modules | Sample entities |
 |---|---|---|
-| **Master Data** | Country, Customer, Product, Supplier | Countries, regions, customers with cascade lookups |
+| **Master Data** | Country, Customer, Product, Supplier | Countries, regions, two sample customers (Contoso, Fabrikam) |
 | **Transaction** | Sales Order (tabular master-detail) | Sales orders with line items and charges |
 
-**Sales Order** demonstrates `MasterDetailTabular`: one header form with **Line Items** and **Charges** tabs. **Customer** demonstrates cascade lookups (Region filtered by Country).
+**Customer** demonstrates `Tabbed`: fields grouped into **General**, **Contacts**, **Location**, and **Accounting** tabs, with Region cascade-filtered by Country. Sample records: `C001` Contoso Ltd and `C002` Fabrikam Inc.
+
+**Sales Order** demonstrates `MasterDetailTabular`: one header form with **Line Items** and **Charges** tabs.
 
 ---
 

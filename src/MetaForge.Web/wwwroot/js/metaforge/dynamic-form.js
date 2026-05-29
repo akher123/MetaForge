@@ -4,6 +4,7 @@
 const DynamicForm = (function () {
     let $form, formDef, recordId = null;
     let activeDefinition = null;
+    let layoutMode = 'sections';
 
     function getFields(definition) {
         const source = definition ?? activeDefinition ?? formDef;
@@ -20,22 +21,38 @@ const DynamicForm = (function () {
         }
     }
 
+    function resolveLayoutMode(definition, opts) {
+        if (opts?.layout) return opts.layout;
+        const formType = definition?.FormType ?? definition?.formType ?? '';
+        return formType === 'Tabbed' ? 'tabs' : 'sections';
+    }
+
+    function applyLayoutClass($target, mode) {
+        $target.toggleClass('dynamic-form--tabbed', mode === 'tabs');
+    }
+
+    function applyPreviewModeClass($target, enabled) {
+        $target.toggleClass('dynamic-form-preview-mode--expanded', !!enabled);
+    }
+
     function init(selector, definition, options) {
         const opts = options || {};
         $form = $(selector);
         formDef = definition;
         activeDefinition = definition;
         recordId = null;
+        layoutMode = resolveLayoutMode(definition, opts);
         if (opts.layoutClass) {
             $form.addClass(opts.layoutClass);
         }
+        applyLayoutClass($form, layoutMode);
         render();
         clearFieldErrors($form);
         bindFieldErrorClear($form);
         bindConditionalLogic($form);
         applyAllConditionalStates($form);
         if (opts.initLookups !== false && typeof MetaForgeLookups !== 'undefined') {
-            return MetaForgeLookups.initFormLookups($form, getFields()).then(function () {
+            return initLookupsForScope($form, getFields(), null).then(function () {
                 applyAllConditionalStates($form);
             });
         }
@@ -47,18 +64,22 @@ const DynamicForm = (function () {
         const $target = $(selector);
         const fields = getFields(definition);
         const previousDefinition = activeDefinition;
+        const isPreviewMode = opts.previewMode !== false;
 
         activeDefinition = definition;
         destroyLookups($target);
         $target.empty();
 
+        const previewLayout = resolveLayoutMode(definition, opts);
         if (opts.layoutClass) {
             $target.addClass(opts.layoutClass);
         }
+        applyLayoutClass($target, previewLayout);
+        applyPreviewModeClass($target, isPreviewMode && previewLayout === 'tabs');
 
-        appendFields($target, fields);
+        appendFields($target, fields, previewLayout);
         bindConditionalLogic($target);
-        applyAllConditionalStates($target);
+        applyPreviewFieldStates($target, isPreviewMode);
 
         if (opts.initLookups === false || typeof MetaForgeLookups === 'undefined') {
             activeDefinition = previousDefinition;
@@ -66,7 +87,7 @@ const DynamicForm = (function () {
         }
 
         return MetaForgeLookups.initFormLookups($target, fields, opts.data || {}).then(function () {
-            applyAllConditionalStates($target);
+            applyPreviewFieldStates($target, isPreviewMode);
             activeDefinition = previousDefinition;
         });
     }
@@ -77,31 +98,235 @@ const DynamicForm = (function () {
         appendFields($form, getFields());
     }
 
-    function appendFields($container, fields) {
+    function escapeHtml(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    function escapeSelectorId(value) {
+        if (typeof CSS !== 'undefined' && typeof CSS.escape === 'function') {
+            return CSS.escape(value);
+        }
+        return String(value).replace(/([!"#$%&'()*+,./:;<=>?@[\\\]^`{|}~])/g, '\\$1');
+    }
+
+    function sectionTabId(sectionKey) {
+        const slug = sectionKey === 'default' ? 'general' : sectionKey.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+        return `form-tab-${slug}`;
+    }
+
+    function sectionDisplayLabel(sectionKey) {
+        return sectionKey === 'default' ? 'General' : sectionKey;
+    }
+
+    /** ERP-style tab metadata keyed by normalized section name. */
+    const TAB_SECTION_META = {
+        general: {
+            icon: 'fa-circle-info',
+            description: 'Primary identification, codes, and status.'
+        },
+        contacts: {
+            icon: 'fa-address-book',
+            description: 'Email, phone, and communication details.'
+        },
+        location: {
+            icon: 'fa-location-dot',
+            description: 'Country, region, and address information.'
+        },
+        accounting: {
+            icon: 'fa-calculator',
+            description: 'Credit limits, payment terms, and finance settings.'
+        },
+        header: {
+            icon: 'fa-file-lines',
+            description: 'Document header and key dates.'
+        },
+        shipping: {
+            icon: 'fa-truck',
+            description: 'Delivery address and shipment details.'
+        },
+        notes: {
+            icon: 'fa-note-sticky',
+            description: 'Comments and internal remarks.'
+        },
+        default: {
+            icon: 'fa-layer-group',
+            description: 'Core fields for this record.'
+        }
+    };
+
+    function normalizeSectionKey(sectionKey) {
+        if (sectionKey === 'default') return 'general';
+        return String(sectionKey ?? '')
+            .trim()
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '');
+    }
+
+    function getSectionMeta(sectionKey) {
+        const normalized = normalizeSectionKey(sectionKey);
+        return TAB_SECTION_META[normalized] ?? {
+            icon: 'fa-folder-open',
+            description: `Fields grouped under ${sectionDisplayLabel(sectionKey)}.`
+        };
+    }
+
+    function sortFieldsByDisplayOrder(fields) {
+        return [...fields].sort((a, b) =>
+            (a.DisplayOrder ?? a.displayOrder ?? 0) - (b.DisplayOrder ?? b.displayOrder ?? 0));
+    }
+
+    function isFullWidthField(field) {
+        const controlType = field.ControlType ?? field.controlType ?? 'TextBox';
+        return controlType === 'TextArea' || controlType === 'Checkbox';
+    }
+
+    function appendFieldColumn($container, field) {
+        const name = field.PropertyName ?? field.propertyName;
+        const controlType = field.ControlType ?? field.controlType ?? 'TextBox';
+        const isRequired = field.IsRequired ?? field.isRequired;
+        const label = field.Label ?? field.label;
+
+        if (controlType === 'Hidden') {
+            $container.append(buildControl(field));
+            return;
+        }
+
+        const fullWidthClass = isFullWidthField(field) ? ' admin-form-field--full' : '';
+        const col = $(`<div class="admin-form-field${fullWidthClass}" data-field-container="${name}"></div>`);
+        col.append(`<label class="admin-form-label" data-field-label="${name}">${label}${isRequired ? ' <span class="required-mark">*</span>' : ''}</label>`);
+        col.append(buildControl(field));
+        $container.append(col);
+    }
+
+    function appendFieldsAsSections($container, fields) {
         const sections = groupBySection(fields);
 
-        Object.keys(sections).forEach(sectionName => {
+        getOrderedSectionKeys(sections).forEach(sectionName => {
             if (sectionName !== 'default') {
-                $container.append(`<div class="admin-form-section-title">${sectionName}</div>`);
+                $container.append(`<div class="admin-form-section-title">${escapeHtml(sectionDisplayLabel(sectionName))}</div>`);
             }
 
-            sections[sectionName].forEach(field => {
+            sections[sectionName].forEach(field => appendFieldColumn($container, field));
+        });
+    }
+
+    function appendFieldsAsTabs($container, fields) {
+        const sections = groupBySection(fields);
+        const sectionKeys = getOrderedSectionKeys(sections);
+        const $shell = $('<div class="dynamic-form-tabbed-shell"></div>');
+        const $nav = $('<ul class="nav nav-tabs dynamic-form-tabs" role="tablist"></ul>');
+        const $content = $('<div class="tab-content dynamic-form-tab-content"></div>');
+
+        sectionKeys.forEach((sectionName, index) => {
+            const tabId = sectionTabId(sectionName);
+            const label = sectionDisplayLabel(sectionName);
+            const meta = getSectionMeta(sectionName);
+            const sectionFields = sortFieldsByDisplayOrder(sections[sectionName]);
+            const fieldCount = sectionFields.length;
+            const active = index === 0 ? 'active' : '';
+            const selected = index === 0 ? 'true' : 'false';
+            const paneState = index === 0 ? 'show active' : '';
+
+            $nav.append(`
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link ${active}" id="${tabId}-tab" data-bs-toggle="tab"
+                        data-bs-target="#${tabId}" type="button" role="tab"
+                        aria-controls="${tabId}" aria-selected="${selected}"
+                        data-form-tab-key="${escapeHtml(sectionName)}">
+                        <span class="dynamic-form-tab-link-inner">
+                            <i class="fa-solid ${meta.icon} dynamic-form-tab-icon" aria-hidden="true"></i>
+                            <span class="dynamic-form-tab-label">${escapeHtml(label)}</span>
+                            <span class="dynamic-form-tab-count" title="${fieldCount} field(s)">${fieldCount}</span>
+                        </span>
+                    </button>
+                </li>`);
+
+            const $pane = $(`
+                <div class="tab-pane fade ${paneState}" id="${tabId}" role="tabpanel"
+                    aria-labelledby="${tabId}-tab" data-form-tab-pane="${escapeHtml(sectionName)}"></div>`);
+
+            const $header = $(`
+                <div class="dynamic-form-tab-pane-header">
+                    <h6 class="dynamic-form-tab-pane-title">
+                        <i class="fa-solid ${meta.icon}" aria-hidden="true"></i>
+                        ${escapeHtml(label)}
+                    </h6>
+                    <p class="dynamic-form-tab-pane-desc">${escapeHtml(meta.description)}</p>
+                </div>`);
+
+            const $body = $('<div class="dynamic-form-tab-fields"></div>');
+            sectionFields.forEach(field => appendFieldColumn($body, field));
+            $pane.append($header).append($body);
+            $content.append($pane);
+        });
+
+        $shell.append($('<div class="dynamic-form-tabs-toolbar"></div>').append($nav)).append($content);
+        $container.append($shell);
+        bindTabLookupLazyLoad($container);
+    }
+
+    function appendFields($container, fields, layout) {
+        const mode = layout ?? layoutMode;
+        const hiddenFields = [];
+        const visibleFields = [];
+
+        fields.forEach(field => {
+            const controlType = field.ControlType ?? field.controlType ?? 'TextBox';
+            const isVisible = field.IsVisible ?? field.isVisible;
+            if (controlType === 'Hidden' || isVisible === false) {
+                hiddenFields.push(field);
+            } else {
+                visibleFields.push(field);
+            }
+        });
+
+        hiddenFields.forEach(field => $container.append(buildControl(field)));
+
+        if (mode === 'tabs') {
+            appendFieldsAsTabs($container, visibleFields);
+        } else {
+            appendFieldsAsSections($container, visibleFields);
+        }
+    }
+
+    function getLookupInitScope($scope) {
+        if (layoutMode !== 'tabs') return $scope;
+        const $pane = $scope.find('.tab-pane.active').first();
+        return $pane.length ? $pane : $scope;
+    }
+
+    function initLookupsForScope($scope, fields, data) {
+        const target = getLookupInitScope($scope);
+        return MetaForgeLookups.initFormLookups(target, fields, data || {});
+    }
+
+    function bindTabLookupLazyLoad($container) {
+        $container.find('[data-bs-toggle="tab"]').off('shown.bs.tab.dynamicForm').on('shown.bs.tab.dynamicForm', function (e) {
+            const paneSelector = $(e.target).attr('data-bs-target');
+            const $pane = $(paneSelector);
+            if (!$pane.length || $pane.data('lookupsInitialized') || typeof MetaForgeLookups === 'undefined') {
+                return;
+            }
+
+            $pane.data('lookupsInitialized', true);
+            const paneFields = getFields().filter(field => {
                 const name = field.PropertyName ?? field.propertyName;
-                const controlType = field.ControlType ?? field.controlType ?? 'TextBox';
-                const isRequired = field.IsRequired ?? field.isRequired;
-                const label = field.Label ?? field.label;
+                return $pane.find(`[name="${name}"]`).length > 0;
+            });
 
-                if (controlType === 'Hidden') {
-                    $container.append(buildControl(field));
-                    return;
-                }
-
-                const col = $(`<div class="admin-form-field" data-field-container="${name}"></div>`);
-                col.append(`<label class="admin-form-label" data-field-label="${name}">${label}${isRequired ? ' <span class="required-mark">*</span>' : ''}</label>`);
-                col.append(buildControl(field));
-                $container.append(col);
+            MetaForgeLookups.initFormLookups($pane, paneFields).always(function () {
+                applyAllConditionalStates($pane);
             });
         });
+
+        const $firstPane = $container.find('.tab-pane.active').first();
+        if ($firstPane.length) {
+            $firstPane.data('lookupsInitialized', true);
+        }
     }
 
     function buildControl(field) {
@@ -169,6 +394,28 @@ const DynamicForm = (function () {
             data[name] = readFieldValue($el, getField(name));
         });
         return data;
+    }
+
+    function applyPreviewFieldStates($scope, isPreviewMode) {
+        if (!isPreviewMode) {
+            applyAllConditionalStates($scope);
+            return;
+        }
+
+        const $root = $scope ? $($scope) : $form;
+        if (!$root.length) return;
+
+        getFields().forEach(function (field) {
+            const name = field.PropertyName ?? field.propertyName;
+            const controlType = field.ControlType ?? field.controlType ?? 'TextBox';
+            if (controlType === 'Hidden') return;
+
+            const configuredVisible = field.IsVisible ?? field.isVisible ?? true;
+            const $container = findFieldContainer($root, name);
+            if ($container.length) {
+                $container.toggleClass('d-none', !configuredVisible);
+            }
+        });
     }
 
     function applyFieldConditionalState($scope, field) {
@@ -256,6 +503,7 @@ const DynamicForm = (function () {
         $root.find('.field-control-wrap.is-invalid').removeClass('is-invalid');
         $root.find('[data-field-error]').text('').hide();
         $root.find('.detail-field-wrap .is-invalid').removeClass('is-invalid');
+        $root.find('.dynamic-form-tabs .nav-link').removeClass('has-validation-error');
     }
 
     function showFieldError($scope, fieldName, message) {
@@ -279,21 +527,58 @@ const DynamicForm = (function () {
         }
     }
 
+    function markTabsWithValidationErrors($scope, fieldErrors) {
+        if (layoutMode !== 'tabs') return;
+
+        const $root = $scope ? $($scope) : $form;
+        $root.find('.dynamic-form-tabs .nav-link').removeClass('has-validation-error');
+
+        Object.keys(fieldErrors || {}).forEach(function (fieldName) {
+            const $pane = findFieldInput($root, fieldName).closest('[data-form-tab-pane]');
+            if (!$pane.length) return;
+
+            const paneKey = $pane.attr('data-form-tab-pane') || 'default';
+            const tabId = `${sectionTabId(paneKey)}-tab`;
+            $root.find(`#${escapeSelectorId(tabId)}`).addClass('has-validation-error');
+        });
+    }
+
+    function activateTabForField($scope, fieldName) {
+        if (layoutMode !== 'tabs') return;
+
+        const $root = $scope ? $($scope) : $form;
+        const $pane = findFieldInput($root, fieldName).closest('.tab-pane');
+        if (!$pane.length) return;
+
+        const paneId = $pane.attr('id');
+        if (!paneId) return;
+
+        const $tabBtn = $root.find(`[data-bs-target="#${escapeSelectorId(paneId)}"]`);
+        if ($tabBtn.length && typeof bootstrap !== 'undefined') {
+            bootstrap.Tab.getOrCreateInstance($tabBtn[0]).show();
+        }
+    }
+
     function showFieldErrors($scope, fieldErrors) {
         clearFieldErrors($scope);
         if (!fieldErrors) return false;
 
         let count = 0;
+        let firstFieldName = null;
         Object.keys(fieldErrors).forEach(function (fieldName) {
             const message = fieldErrors[fieldName];
             const text = Array.isArray(message) ? message[0] : message;
             if (!text) return;
             showFieldError($scope, fieldName, text);
+            if (!firstFieldName) firstFieldName = fieldName;
             count++;
         });
 
-        if (count > 0) {
-            const $first = ($scope ? $($scope) : $form).find('.is-invalid').first();
+        markTabsWithValidationErrors($scope, fieldErrors);
+
+        if (count > 0 && firstFieldName) {
+            activateTabForField($scope, firstFieldName);
+            const $first = findFieldInput($scope ? $($scope) : $form, firstFieldName);
             if ($first.length) {
                 $first.trigger('focus');
                 $first[0]?.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
@@ -388,11 +673,28 @@ const DynamicForm = (function () {
     function groupBySection(fields) {
         const groups = {};
         fields.forEach(f => {
-            const key = f.SectionName ?? f.sectionName ?? 'default';
+            const key = (f.SectionName ?? f.sectionName ?? '').trim() || 'default';
             if (!groups[key]) groups[key] = [];
             groups[key].push(f);
         });
+        Object.keys(groups).forEach(key => {
+            groups[key] = sortFieldsByDisplayOrder(groups[key]);
+        });
         return groups;
+    }
+
+    function sectionSortOrder(fields) {
+        return Math.min(...fields.map(f => f.DisplayOrder ?? f.displayOrder ?? 0));
+    }
+
+    function getOrderedSectionKeys(sections) {
+        const keys = Object.keys(sections);
+        keys.sort((a, b) => {
+            if (a === 'default') return -1;
+            if (b === 'default') return 1;
+            return sectionSortOrder(sections[a]) - sectionSortOrder(sections[b]);
+        });
+        return keys;
     }
 
     function readFieldValue($el, field) {
@@ -516,7 +818,7 @@ const DynamicForm = (function () {
             return $.when();
         }
 
-        return MetaForgeLookups.initFormLookups($form, getFields(), data || {}).then(function () {
+        return initLookupsForScope($form, getFields(), data || {}).then(function () {
             applyAllConditionalStates($form);
         });
     }
@@ -554,7 +856,7 @@ const DynamicForm = (function () {
         }
         applyAllConditionalStates($form);
         if (typeof MetaForgeLookups !== 'undefined') {
-            return MetaForgeLookups.initFormLookups($form, getFields()).then(function () {
+            return initLookupsForScope($form, getFields()).then(function () {
                 applyAllConditionalStates($form);
             });
         }
@@ -572,7 +874,12 @@ const DynamicForm = (function () {
 
     function refreshLookups(data) {
         if (typeof MetaForgeLookups !== 'undefined') {
-            return MetaForgeLookups.initFormLookups($form, getFields(), data || {});
+            $form.find('[data-form-tab-pane]').removeData('lookupsInitialized');
+            const $firstPane = $form.find('.tab-pane.active').first();
+            if ($firstPane.length) {
+                $firstPane.data('lookupsInitialized', true);
+            }
+            return initLookupsForScope($form, getFields(), data || {});
         }
         return $.when();
     }

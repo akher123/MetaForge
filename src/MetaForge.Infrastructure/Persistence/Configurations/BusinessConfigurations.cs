@@ -12,6 +12,9 @@ public class CustomerConfiguration : IEntityTypeConfiguration<Customer>
         builder.Property(x => x.Code).HasMaxLength(50).IsRequired();
         builder.Property(x => x.Name).HasMaxLength(200).IsRequired();
         builder.Property(x => x.Email).HasMaxLength(200);
+        builder.Property(x => x.Phone).HasMaxLength(50);
+        builder.Property(x => x.CreditLimit).HasPrecision(18, 2);
+        builder.Property(x => x.PaymentTerms).HasMaxLength(100);
         builder.HasOne(x => x.Country).WithMany().HasForeignKey(x => x.CountryId);
         builder.HasOne(x => x.Region).WithMany().HasForeignKey(x => x.RegionId);
         builder.HasOne(x => x.Address).WithOne(x => x.Customer).HasForeignKey<Address>(x => x.CustomerId);

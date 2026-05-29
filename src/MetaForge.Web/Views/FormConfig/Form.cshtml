@@ -60,6 +60,7 @@
                         <label class="form-label">Screen Type *</label>
                         <select id="screenType" class="d-none" aria-hidden="true">
                             <option value="Master">Master Form</option>
+                            <option value="Tabbed">Tabbed Form</option>
                             <option value="MasterDetail">Master + Detail</option>
                             <option value="MasterDetailTabular">Master + Tabular Details</option>
                         </select>
@@ -69,6 +70,12 @@
                                 <span class="form-builder-type-option-icon type-master"><i class="fa-solid fa-table"></i></span>
                                 <span class="form-builder-type-option-label">Master Form</span>
                                 <span class="form-builder-type-option-desc">Single entity list and edit screen.</span>
+                            </label>
+                            <label class="form-builder-type-option" data-type="Tabbed">
+                                <input type="radio" name="screenTypeOption" value="Tabbed" />
+                                <span class="form-builder-type-option-icon type-tabbed"><i class="fa-solid fa-folder-tree"></i></span>
+                                <span class="form-builder-type-option-label">Tabbed Form</span>
+                                <span class="form-builder-type-option-desc">Single entity with fields grouped in tabs (ERP-style).</span>
                             </label>
                             <label class="form-builder-type-option @(defaultScreenType == "MasterDetail" ? "is-selected" : "")" data-type="MasterDetail">
                                 <input type="radio" name="screenTypeOption" value="MasterDetail" @(defaultScreenType == "MasterDetail" ? "checked" : null) />
@@ -191,6 +198,12 @@
                             <button type="button" id="btnAddMasterField" class="btn btn-sm btn-outline-primary">
                                 <i class="fa-solid fa-plus me-1"></i>Add Field
                             </button>
+                        </div>
+                        <div id="tabbedSectionHint" class="form-builder-info-banner mx-0 mb-0 rounded-0 border-start-0 border-end-0 border-top-0 d-none">
+                            <i class="fa-solid fa-folder-tree me-2 text-primary"></i>
+                            <strong>Tabbed form convention:</strong> use the <strong>Section</strong> column to assign each field to a tab.
+                            Recommended section names: <code>General</code>, <code>Contacts</code>, <code>Location</code>, <code>Accounting</code>.
+                            Leave section empty to place fields under <strong>General</strong>. Tab order follows the lowest field display order in each section.
                         </div>
                         <div class="validation-rule-hint alert alert-light border py-2 px-3 mx-0 mb-0 rounded-0 border-start-0 border-end-0">
                             <i class="fa-solid fa-shield-halved me-2 text-primary"></i>

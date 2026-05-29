@@ -6,15 +6,22 @@
     var perms = ViewBag.Permissions as MetaForge.Application.DTOs.FormPermissionsDto;
     var hasMasterDetail = ViewBag.HasMasterDetail == true;
     var isTabularMasterDetail = ViewBag.IsTabularMasterDetail == true;
+    var isTabbedForm = ViewBag.IsTabbedForm == true;
     var openMasterDetailId = ViewBag.OpenMasterDetailId as int?;
     var openMasterDetailNew = ViewBag.OpenMasterDetailNew == true;
     var rowCustomActions = grid?.Actions?.Where(a => string.Equals(a.Placement, "Row", StringComparison.OrdinalIgnoreCase)).ToList() ?? [];
     var showActionsColumn = perms?.CanEdit == true || perms?.CanDelete == true || (hasMasterDetail && perms?.CanView == true) || rowCustomActions.Count > 0;
-    var pageModeClass = hasMasterDetail ? "module-page--transaction" : "module-page--master";
+    var pageModeClass = hasMasterDetail
+        ? "module-page--transaction"
+        : isTabbedForm
+            ? "module-page--tabbed"
+            : "module-page--master";
     var pageIcon = hasMasterDetail ? "fa-file-invoice" : "fa-database";
     var pageSubtitle = hasMasterDetail
         ? "Create and manage transaction documents with header and line items"
-        : "Browse, create, and maintain master data records";
+        : isTabbedForm
+            ? "Structured tabs group related fields — General, Contacts, Location, Accounting, and custom sections"
+            : "Browse, create, and maintain master data records";
 }
 
 <div class="app-page-fill module-page @pageModeClass">
@@ -54,14 +61,21 @@
 
     @if (!hasMasterDetail && (perms?.CanCreate == true || perms?.CanEdit == true))
     {
-        <div class="modal fade admin-modal module-record-modal" id="recordFormModal" tabindex="-1" aria-labelledby="recordFormModalTitle" aria-hidden="true">
-            <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal fade admin-modal module-record-modal @(isTabbedForm ? "module-record-modal--tabbed" : "")" id="recordFormModal" tabindex="-1" aria-labelledby="recordFormModalTitle" aria-hidden="true">
+            <div class="modal-dialog @(isTabbedForm ? "modal-xl" : "modal-lg") modal-dialog-scrollable">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title" id="recordFormModalTitle">New @form?.FormName</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
+                        @if (isTabbedForm)
+                        {
+                            <p class="module-tabbed-form-hint small text-muted mb-2 mb-md-3">
+                                <i class="fa-solid fa-folder-tree me-1" aria-hidden="true"></i>
+                                Use the tabs below to move between sections. Required fields are marked with <span class="required-mark">*</span>.
+                            </p>
+                        }
                         <div class="module-form-shell">
                             <form id="dynamicForm" class="master-detail-form" data-module="@formCode" data-entity="@form?.EntityName"></form>
                         </div>
@@ -128,6 +142,7 @@
             const formName = formDef?.FormName ?? formDef?.formName ?? 'Record';
             const hasMasterDetail = @(hasMasterDetail ? "true" : "false");
             const isTabularMasterDetail = @(isTabularMasterDetail ? "true" : "false");
+            const isTabbedForm = @(isTabbedForm ? "true" : "false");
 
             function setRecordModalTitle(isEdit) {
                 $('#recordFormModalTitle').text(isEdit ? `Edit ${formName}` : `New ${formName}`);
@@ -140,7 +155,10 @@
                 <text>
             const recordModal = new bootstrap.Modal('#recordFormModal');
 
-            DynamicForm.init('#dynamicForm', formDef, { layoutClass: 'master-detail-form' });
+            DynamicForm.init('#dynamicForm', formDef, {
+                layoutClass: 'master-detail-form',
+                layout: isTabbedForm ? 'tabs' : 'sections'
+            });
 
             $('#btnAdd').on('click', function () {
                 DynamicForm.showNew();

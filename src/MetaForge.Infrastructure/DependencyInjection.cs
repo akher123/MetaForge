@@ -15,9 +15,7 @@ public static class DependencyInjection
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddDbContext<MetaForgeDbContext>(options =>
-            options.UseSqlServer(
-                configuration.GetConnectionString("DefaultConnection"),
-                sql => sql.MigrationsAssembly(typeof(MetaForgeDbContext).Assembly.FullName)));
+            DatabaseConfiguration.ConfigureDbContext(options, configuration));
 
         services.Configure<MetadataCacheOptions>(configuration.GetSection(MetadataCacheOptions.SectionName));
         services.AddMemoryCache();
