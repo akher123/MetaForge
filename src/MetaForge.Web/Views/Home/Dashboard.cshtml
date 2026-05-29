@@ -1,69 +1,215 @@
+@using MetaForge.Application.DTOs
 @{
     ViewData["Title"] = "Dashboard";
-    var menu = ViewBag.Menu as IReadOnlyList<MetaForge.Application.DTOs.MenuGroupDto>;
+    var menu = ViewBag.Menu as IReadOnlyList<MenuGroupDto>;
     var canViewConfig = ViewBag.CanViewConfig == true;
     var canManageConfig = ViewBag.CanManageConfig == true;
     var canViewSecurity = ViewBag.CanViewSecurity == true;
+
+    var menuList = menu?.ToList() ?? new List<MenuGroupDto>();
+    var totalModules = menuList.Sum(g => g.Items.Count);
+    var groupCount = menuList.Count;
+    var userName = User.Identity?.IsAuthenticated == true ? User.Identity!.Name : null;
+
+    string GroupIcon(string name) => name switch
+    {
+        var n when n.Contains("Master", StringComparison.OrdinalIgnoreCase) => "fa-database",
+        var n when n.Contains("Transaction", StringComparison.OrdinalIgnoreCase) => "fa-file-invoice",
+        var n when n.Contains("Report", StringComparison.OrdinalIgnoreCase) => "fa-chart-line",
+        var n when n.Contains("Setting", StringComparison.OrdinalIgnoreCase) => "fa-gear",
+        _ => "fa-folder-open"
+    };
+
+    string GroupAccentClass(string name) => name switch
+    {
+        var n when n.Contains("Master", StringComparison.OrdinalIgnoreCase) => "dashboard-group-master",
+        var n when n.Contains("Transaction", StringComparison.OrdinalIgnoreCase) => "dashboard-group-transaction",
+        var n when n.Contains("Report", StringComparison.OrdinalIgnoreCase) => "dashboard-group-report",
+        _ => "dashboard-group-default"
+    };
 }
 
-<div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-3">
-    <div>
-        <h1 class="h3 mb-0">Dashboard</h1>
-        <p class="page-subtitle mb-0">Metadata-driven administration for your business entities</p>
-    </div>
-    @if (canViewConfig)
-    {
-        <a href="/FormBuilder" class="btn btn-primary btn-icon" title="Form Builder" aria-label="Form Builder"><i class="fa-solid fa-wand-magic-sparkles"></i></a>
-    }
-</div>
-
-<div class="row g-4">
-    @if (menu != null)
-    {
-        @foreach (var group in menu)
+<div class="dashboard-page admin-hub-page">
+    <div class="page-header dashboard-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <div class="d-flex align-items-center gap-3">
+            <span class="dashboard-header-icon" aria-hidden="true"><i class="fa-solid fa-gauge-high"></i></span>
+            <div>
+                <h1 class="h3 mb-0">
+                    @if (!string.IsNullOrWhiteSpace(userName))
+                    {
+                        <text>Welcome back, @userName</text>
+                    }
+                    else
+                    {
+                        <text>Dashboard</text>
+                    }
+                </h1>
+                <p class="page-subtitle mb-0">Metadata-driven administration for your business entities</p>
+            </div>
+        </div>
+        @if (canViewConfig)
         {
-            <div class="col-md-6 col-lg-4">
-                <div class="card admin-card dashboard-module-card h-100">
-                    <div class="card-header">@group.GroupName</div>
-                    <div class="list-group list-group-flush">
-                        @foreach (var item in group.Items)
-                        {
-                            <a href="@item.Url" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-                                <span><i class="fa-solid fa-table me-2 text-muted"></i>@item.Name</span>
-                                <span class="badge rounded-pill">@item.EntityName</span>
-                            </a>
-                        }
-                    </div>
+            <a href="/FormBuilder" class="btn btn-primary btn-sm">
+                <i class="fa-solid fa-wand-magic-sparkles me-1"></i>Form Builder
+            </a>
+        }
+    </div>
+
+    <div class="row g-3 mb-4 dashboard-stat-grid security-stat-grid">
+        <div class="col-6 col-xl-3">
+            <div class="stat-card stat-primary h-100">
+                <div class="card-body text-center">
+                    <span class="stat-icon stat-icon-modules"><i class="fa-solid fa-table-columns"></i></span>
+                    <div class="stat-value">@totalModules</div>
+                    <div class="stat-label">Active Screens</div>
                 </div>
             </div>
-        }
-    }
-</div>
-
-@if (canViewConfig || canViewSecurity || canManageConfig)
-{
-    <div class="row mt-4">
-        <div class="col-lg-8">
-            <div class="card admin-card">
-                <div class="card-header">Quick Links</div>
-                <div class="card-body">
-                    <ul class="mb-0" style="color: var(--dv-text-secondary);">
-                        @if (canViewConfig)
-                        {
-                            <li class="mb-2"><a href="/FormBuilder">Form Builder</a> — Design Master Data &amp; Transaction forms</li>
-                        }
-                        @if (canViewSecurity)
-                        {
-                            <li class="mb-2"><a href="/Security">Security Management</a> — Users, Roles &amp; Permissions</li>
-                        }
-                        @if (canManageConfig)
-                        {
-                            <li class="mb-2"><a href="/FormBuilder/Create?group=Master%20Data">New Master Data Form</a></li>
-                            <li><a href="/FormBuilder/Create?group=Transaction">New Transaction Form</a></li>
-                        }
-                    </ul>
+        </div>
+        <div class="col-6 col-xl-3">
+            <div class="stat-card stat-info h-100">
+                <div class="card-body text-center">
+                    <span class="stat-icon stat-icon-groups"><i class="fa-solid fa-layer-group"></i></span>
+                    <div class="stat-value">@groupCount</div>
+                    <div class="stat-label">Module Groups</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-xl-3">
+            <div class="stat-card stat-warning h-100">
+                <div class="card-body text-center">
+                    <span class="stat-icon stat-icon-platform"><i class="fa-solid fa-code"></i></span>
+                    <div class="stat-value">.NET 10</div>
+                    <div class="stat-label">Platform</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-xl-3">
+            <div class="stat-card stat-success h-100">
+                <div class="card-body text-center">
+                    <span class="stat-icon stat-icon-status"><i class="fa-solid fa-circle-check"></i></span>
+                    <div class="stat-value">Live</div>
+                    <div class="stat-label">System Status</div>
                 </div>
             </div>
         </div>
     </div>
-}
+
+    @if (canViewConfig || canViewSecurity || canManageConfig)
+    {
+        <div class="dashboard-section-header">
+            <h2 class="h6 fw-bold mb-0">Quick Actions</h2>
+            <p class="text-muted small mb-0">Common administration tasks</p>
+        </div>
+        <div class="row g-3 mb-4 dashboard-actions-row">
+            @if (canViewConfig)
+            {
+                <div class="col-md-6 col-xl-4">
+                    <div class="card admin-card dashboard-action-card h-100">
+                        <div class="card-body">
+                            <span class="dashboard-action-icon dashboard-action-icon-builder"><i class="fa-solid fa-wand-magic-sparkles"></i></span>
+                            <h3 class="h6 mb-0 fw-bold">Form Builder</h3>
+                            <p>Design Master Data and Transaction forms with fields, grids, and validation rules.</p>
+                            <a href="/FormBuilder" class="btn btn-primary btn-sm">
+                                <i class="fa-solid fa-arrow-right me-1"></i>Open Form Builder
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+            @if (canViewSecurity)
+            {
+                <div class="col-md-6 col-xl-4">
+                    <div class="card admin-card dashboard-action-card h-100">
+                        <div class="card-body">
+                            <span class="dashboard-action-icon dashboard-action-icon-security"><i class="fa-solid fa-user-shield"></i></span>
+                            <h3 class="h6 mb-0 fw-bold">Security</h3>
+                            <p>Manage users, roles, and permissions to control access across all modules.</p>
+                            <a href="/Security" class="btn btn-primary btn-sm">
+                                <i class="fa-solid fa-arrow-right me-1"></i>Security Management
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+            @if (canManageConfig)
+            {
+                <div class="col-md-6 col-xl-4">
+                    <div class="card admin-card dashboard-action-card h-100">
+                        <div class="card-body">
+                            <span class="dashboard-action-icon dashboard-action-icon-create"><i class="fa-solid fa-plus"></i></span>
+                            <h3 class="h6 mb-0 fw-bold">Create New Form</h3>
+                            <p>Start a new master data screen or build a transaction with header and line items.</p>
+                            <div class="d-flex flex-wrap gap-2">
+                                <a href="/FormBuilder/Create?group=Master%20Data" class="btn btn-outline-primary btn-sm">
+                                    <i class="fa-solid fa-database me-1"></i>Master Data
+                                </a>
+                                <a href="/FormBuilder/Create?group=Transaction" class="btn btn-outline-success btn-sm">
+                                    <i class="fa-solid fa-file-invoice me-1"></i>Transaction
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    <div class="dashboard-section-header">
+        <h2 class="h6 fw-bold mb-0">Business Modules</h2>
+        <p class="text-muted small mb-0">Navigate to your configured screens</p>
+    </div>
+
+    @if (menuList.Count > 0)
+    {
+        <div class="row g-3 dashboard-modules-row">
+            @foreach (var group in menuList)
+            {
+                var accentClass = GroupAccentClass(group.GroupName);
+                var groupIcon = GroupIcon(group.GroupName);
+                <div class="col-md-6 col-xl-4">
+                    <div class="card admin-card dashboard-module-card @accentClass h-100">
+                        <div class="card-header dashboard-module-header d-flex align-items-center justify-content-between gap-2">
+                            <div class="d-flex align-items-center gap-2 min-w-0">
+                                <span class="dashboard-group-icon" aria-hidden="true"><i class="fa-solid @groupIcon"></i></span>
+                                <span class="fw-semibold text-truncate">@group.GroupName</span>
+                            </div>
+                            <span class="badge dashboard-module-count">@group.Items.Count</span>
+                        </div>
+                        <div class="list-group list-group-flush">
+                            @foreach (var item in group.Items)
+                            {
+                                <a href="@item.Url" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center gap-2">
+                                    <span class="dashboard-module-link-text text-truncate">
+                                        <i class="fa-solid fa-table me-2" aria-hidden="true"></i>@item.Name
+                                    </span>
+                                    <span class="d-flex align-items-center gap-2 flex-shrink-0">
+                                        <span class="badge rounded-pill dashboard-entity-badge">@item.EntityName</span>
+                                        <i class="fa-solid fa-chevron-right dashboard-module-chevron" aria-hidden="true"></i>
+                                    </span>
+                                </a>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="card admin-card dashboard-empty-state">
+            <div class="card-body text-center py-5">
+                <div class="dashboard-empty-icon" aria-hidden="true"><i class="fa-solid fa-table-columns"></i></div>
+                <h2 class="h6 mb-2">No modules configured yet</h2>
+                <p class="text-muted mb-3 mx-auto dashboard-empty-text">
+                    Create your first form in the Form Builder to start managing business data.
+                </p>
+                @if (canViewConfig)
+                {
+                    <a href="/FormBuilder" class="btn btn-primary btn-sm">
+                        <i class="fa-solid fa-wand-magic-sparkles me-1"></i>Open Form Builder
+                    </a>
+                }
+            </div>
+        </div>
+    }
+</div>
