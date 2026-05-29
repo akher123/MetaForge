@@ -60,7 +60,7 @@
             <span><i class="fa-solid fa-table-list me-2"></i>@detailLabel</span>
             <div class="d-flex align-items-center gap-2">
                 <span class="detail-count-badge"><span id="detailItemCount">0</span> items</span>
-                @if (perms?.CanCreate == true)
+                @if (perms?.CanCreate == true || perms?.CanEdit == true)
                 {
                     <button type="button" class="btn btn-sm btn-teal" id="btnAddDetail">
                         <i class="fa-solid fa-plus me-1"></i>Add Item
@@ -78,16 +78,16 @@
                             {
                                 <th>@label</th>
                             }
-                            @if (perms?.CanDelete == true)
+                            @if (perms?.CanEdit == true || perms?.CanDelete == true)
                             {
-                                <th style="width:88px" class="text-center">Actions</th>
+                                <th style="width:120px" class="text-center">Actions</th>
                             }
                         </tr>
                     </thead>
                     <tbody id="detailGridBody"></tbody>
                     <tfoot>
                         <tr id="detailSummaryRow" class="d-none">
-                            <td colspan="@(detailColCount + (perms?.CanDelete == true ? 2 : 1))" class="text-end fw-semibold">
+                            <td colspan="@(detailColCount + ((perms?.CanEdit == true || perms?.CanDelete == true) ? 2 : 1))" class="text-end fw-semibold">
                                 Line Total: <span id="detailLineTotal">0.00</span>
                             </td>
                         </tr>

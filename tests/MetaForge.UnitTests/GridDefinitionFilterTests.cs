@@ -20,7 +20,8 @@ public class GridDefinitionFilterTests
         var permissions = new FormPermissionsDto
         {
             CanView = true,
-            CanApprove = false
+            CanApprove = false,
+            GrantedActions = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "View" }
         };
 
         GridDefinitionFilter.ApplyPermissions(grid, permissions);

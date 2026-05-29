@@ -63,9 +63,12 @@ public class ModuleController : Controller
         var form = await _formMetadataService.GetFormDefinitionAsync(formCode, cancellationToken);
         if (form == null) return NotFound();
 
+        var permissions = await _authorizationService.GetFormPermissionsAsync(User, formCode, cancellationToken);
+
         ViewBag.FormCode = formCode;
         ViewBag.Form = form;
         ViewBag.RecordId = id;
+        ViewBag.Permissions = permissions;
         return View();
     }
 

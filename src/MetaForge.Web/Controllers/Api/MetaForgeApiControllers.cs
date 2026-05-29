@@ -210,14 +210,23 @@ public class MasterDetailApiController : ControllerBase
     [HttpPost("{formCode}")]
     public async Task<IActionResult> Save(string formCode, [FromBody] MasterDetailSaveRequest request, CancellationToken cancellationToken)
     {
-        var action = request.Master?.ContainsKey("Id") == true &&
-                     request.Master["Id"] != null &&
-                     DynamicEntityMapper.ToInt32(request.Master["Id"]) > 0
-            ? PermissionAction.Edit
-            : PermissionAction.Create;
+        var isUpdate = request.Master?.ContainsKey("Id") == true &&
+                       request.Master["Id"] != null &&
+                       DynamicEntityMapper.ToInt32(request.Master["Id"]) > 0;
 
+        var action = isUpdate ? PermissionAction.Edit : PermissionAction.Create;
         var denied = await PermissionGuard.EnsureFormPermissionAsync(HttpContext, formCode, action, cancellationToken);
         if (denied != null) return denied;
+
+        var hasDeletedDetails =
+            (request.DeletedDetailIds?.Count ?? 0) > 0
+            || request.DetailSections?.Any(s => (s.DeletedIds?.Count ?? 0) > 0) == true;
+
+        if (hasDeletedDetails)
+        {
+            denied = await PermissionGuard.EnsureFormPermissionAsync(HttpContext, formCode, PermissionAction.Delete, cancellationToken);
+            if (denied != null) return denied;
+        }
 
         if (request.Master == null)
             return BadRequest(new { error = "Master data is required." });

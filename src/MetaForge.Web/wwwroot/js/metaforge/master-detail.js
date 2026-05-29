@@ -8,24 +8,34 @@ const MasterDetail = (function () {
     let listModal = null;
     let masterModal = null;
 
+    function perm() {
+        return MetaForgePermissions.createApi(permissions);
+    }
+
+    function isNewRecord() {
+        const data = screen?.MasterData ?? screen?.masterData;
+        const id = data?.Id ?? data?.id;
+        return id == null || id === '' || parseInt(id, 10) <= 0;
+    }
+
     function canCreate() {
-        return permissions?.CanCreate === true;
+        return perm().canCreate();
     }
 
     function canEdit() {
-        return permissions?.CanEdit === true;
+        return perm().canEdit();
     }
 
     function canDelete() {
-        return permissions?.CanDelete === true;
+        return perm().canDelete();
     }
 
     function canModifyDetails() {
-        return canCreate() || canEdit();
+        return perm().canModify();
     }
 
     function canSave() {
-        return canCreate() || canEdit();
+        return perm().canSaveMaster(isNewRecord());
     }
 
     function getDetailFields() {
@@ -120,7 +130,7 @@ const MasterDetail = (function () {
     }
 
     function configureActionButtons() {
-        $('#btnAddDetail').toggleClass('d-none', !canCreate());
+        $('#btnAddDetail').toggleClass('d-none', !canModifyDetails());
         $('#btnSaveAll').toggleClass('d-none', !canSave());
     }
 

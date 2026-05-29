@@ -3,7 +3,10 @@
     var form = ViewBag.Form as MetaForge.Application.DTOs.FormDefinition;
     var formCode = ViewBag.FormCode as string;
     var recordId = ViewBag.RecordId as int?;
+    var perms = ViewBag.Permissions as MetaForge.Application.DTOs.FormPermissionsDto;
     var isEdit = recordId.HasValue;
+    var canSave = isEdit ? perms?.CanEdit == true : perms?.CanCreate == true;
+    var isReadOnly = isEdit ? perms?.CanEdit != true : perms?.CanCreate != true;
 }
 
 <div class="module-page module-page--master">
@@ -34,9 +37,12 @@
                 <form id="dynamicForm" class="master-detail-form" data-module="@formCode" data-entity="@form?.EntityName" data-id="@recordId"></form>
             </div>
             <div class="module-form-actions d-flex flex-wrap gap-2 mt-4">
-                <button type="button" class="btn btn-primary" id="btnSave">
-                    <i class="fa-solid fa-floppy-disk me-1"></i>Save
-                </button>
+                @if (canSave)
+                {
+                    <button type="button" class="btn btn-primary" id="btnSave">
+                        <i class="fa-solid fa-floppy-disk me-1"></i>Save
+                    </button>
+                }
                 <a class="btn btn-outline-secondary" href="/Modules/@formCode">
                     <i class="fa-solid fa-xmark me-1"></i>Cancel
                 </a>
@@ -50,14 +56,22 @@
         $(function () {
             const formDef = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(form));
             const recordId = @(recordId.HasValue ? recordId.Value.ToString() : "null");
+            const isReadOnly = @(isReadOnly ? "true" : "false");
             DynamicForm.init('#dynamicForm', formDef, { layoutClass: 'master-detail-form' });
             if (recordId) {
-                DynamicForm.load(recordId);
+                DynamicForm.load(recordId).then(function () {
+                    if (isReadOnly) {
+                        $('#dynamicForm :input').prop('disabled', true);
+                    }
+                });
             }
-            $('#btnSave').on('click', () => {
-                DynamicForm.save()
-                    .then(() => window.location = '/Modules/@formCode');
-            });
+            const $btnSave = $('#btnSave');
+            if ($btnSave.length) {
+                $btnSave.on('click', () => {
+                    DynamicForm.save()
+                        .then(() => window.location = '/Modules/@formCode');
+                });
+            }
         });
     </script>
 }

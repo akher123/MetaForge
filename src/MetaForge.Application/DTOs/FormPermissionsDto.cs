@@ -19,14 +19,26 @@ public class FormPermissionsDto
 
     public bool CanApprove { get; set; }
 
-    public bool Has(string action) => action switch
+    /// <summary>All granted action names for this form (View, Create, Edit, …).</summary>
+    public HashSet<string> GrantedActions { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+
+    public bool Has(string action)
     {
-        "View" => CanView,
-        "Create" => CanCreate,
-        "Edit" => CanEdit,
-        "Delete" => CanDelete,
-        "Export" => CanExport,
-        "Approve" => CanApprove,
-        _ => false
-    };
+        if (string.IsNullOrWhiteSpace(action))
+            return CanView;
+
+        if (GrantedActions.Contains(action))
+            return true;
+
+        return action switch
+        {
+            "View" => CanView,
+            "Create" => CanCreate,
+            "Edit" => CanEdit,
+            "Delete" => CanDelete,
+            "Export" => CanExport,
+            "Approve" => CanApprove,
+            _ => false
+        };
+    }
 }

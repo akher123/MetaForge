@@ -10,7 +10,9 @@
     var openMasterDetailId = ViewBag.OpenMasterDetailId as int?;
     var openMasterDetailNew = ViewBag.OpenMasterDetailNew == true;
     var rowCustomActions = grid?.Actions?.Where(a => string.Equals(a.Placement, "Row", StringComparison.OrdinalIgnoreCase)).ToList() ?? [];
-    var showActionsColumn = perms?.CanEdit == true || perms?.CanDelete == true || (hasMasterDetail && perms?.CanView == true) || rowCustomActions.Count > 0;
+    var showActionsColumn = perms?.CanView == true || perms?.CanEdit == true || perms?.CanDelete == true || rowCustomActions.Count > 0;
+    var canOpenRecordForm = perms?.CanCreate == true || perms?.CanEdit == true || perms?.CanView == true;
+    var canSaveRecordForm = perms?.CanCreate == true || perms?.CanEdit == true;
     var pageModeClass = hasMasterDetail
         ? "module-page--transaction"
         : isTabbedForm
@@ -59,7 +61,7 @@
         </div>
     </div>
 
-    @if (!hasMasterDetail && (perms?.CanCreate == true || perms?.CanEdit == true))
+    @if (!hasMasterDetail && canOpenRecordForm)
     {
         <div class="modal fade admin-modal module-record-modal @(isTabbedForm ? "module-record-modal--tabbed" : "")" id="recordFormModal" tabindex="-1" aria-labelledby="recordFormModalTitle" aria-hidden="true">
             <div class="modal-dialog @(isTabbedForm ? "modal-xl" : "modal-lg") modal-dialog-scrollable">
@@ -84,9 +86,12 @@
                         <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
                             <i class="fa-solid fa-xmark me-1"></i>Cancel
                         </button>
-                        <button type="button" class="btn btn-primary" id="btnSave">
-                            <i class="fa-solid fa-floppy-disk me-1"></i>Save
-                        </button>
+                        @if (canSaveRecordForm)
+                        {
+                            <button type="button" class="btn btn-primary" id="btnSave">
+                                <i class="fa-solid fa-floppy-disk me-1"></i>Save
+                            </button>
+                        }
                     </div>
                 </div>
             </div>
@@ -143,9 +148,20 @@
             const hasMasterDetail = @(hasMasterDetail ? "true" : "false");
             const isTabularMasterDetail = @(isTabularMasterDetail ? "true" : "false");
             const isTabbedForm = @(isTabbedForm ? "true" : "false");
+            const recordPerms = MetaForgePermissions.createApi(permissions);
 
             function setRecordModalTitle(isEdit) {
-                $('#recordFormModalTitle').text(isEdit ? `Edit ${formName}` : `New ${formName}`);
+                const readOnly = isEdit && !recordPerms.canEdit();
+                $('#recordFormModalTitle').text(
+                    isEdit
+                        ? (readOnly ? `View ${formName}` : `Edit ${formName}`)
+                        : `New ${formName}`);
+            }
+
+            function applyRecordFormPermissions(isEdit) {
+                const readOnly = isEdit ? !recordPerms.canEdit() : !recordPerms.canCreate();
+                $('#dynamicForm :input').prop('disabled', readOnly);
+                $('#btnSave').toggleClass('d-none', readOnly || (isEdit ? !recordPerms.canEdit() : !recordPerms.canCreate()));
             }
 
             DynamicGrid.init('#dynamicGrid', gridDef, permissions, hasMasterDetail);
@@ -163,6 +179,7 @@
             $('#btnAdd').on('click', function () {
                 DynamicForm.showNew();
                 setRecordModalTitle(false);
+                applyRecordFormPermissions(false);
                 recordModal.show();
             });
 

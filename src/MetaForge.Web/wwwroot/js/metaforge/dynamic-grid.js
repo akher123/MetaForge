@@ -28,16 +28,20 @@ const DynamicGrid = (function () {
         return row?.Id ?? row?.id ?? null;
     }
 
+    function perm() {
+        return MetaForgePermissions.createApi(permissions);
+    }
+
     function canView() {
-        return permissions?.CanView === true || permissions?.canView === true;
+        return perm().canView();
     }
 
     function canEdit() {
-        return permissions?.CanEdit === true || permissions?.canEdit === true;
+        return perm().canEdit();
     }
 
     function canDelete() {
-        return permissions?.CanDelete === true || permissions?.canDelete === true;
+        return perm().canDelete();
     }
 
     function getRowActions() {
@@ -154,16 +158,20 @@ const DynamicGrid = (function () {
     }
 
     function bindActionHandlers() {
-        if (canEdit() && !hasMasterDetail) {
-            $table.off('click', '.btn-edit').on('click', '.btn-edit', function (e) {
+        if ((canEdit() || canView()) && !hasMasterDetail) {
+            $table.off('click', '.btn-edit, .btn-view').on('click', '.btn-edit, .btn-view', function (e) {
                 e.preventDefault();
                 const id = $(this).attr('data-id');
                 if (!id) {
-                    alert('Cannot edit: record Id is missing.');
+                    alert('Cannot open record: Id is missing.');
                     return;
                 }
+                const readOnly = !canEdit();
                 DynamicForm.load(id).then(() => {
-                    $('#recordFormModalTitle').text(`Edit ${getFormName(gridDef)}`);
+                    $('#recordFormModalTitle').text(
+                        readOnly ? `View ${getFormName(gridDef)}` : `Edit ${getFormName(gridDef)}`);
+                    $('#dynamicForm :input').prop('disabled', readOnly);
+                    $('#btnSave').toggleClass('d-none', readOnly);
                     bootstrap.Modal.getOrCreateInstance(document.getElementById('recordFormModal')).show();
                 }).fail(function (xhr) {
                     alert('Failed to load record: ' + (xhr.responseJSON?.error ?? xhr.statusText));
@@ -360,9 +368,12 @@ const DynamicGrid = (function () {
                     if (hasMasterDetail && (canEdit() || canView())) {
                         const label = canEdit() ? 'Edit' : 'View';
                         const icon = canEdit() ? MetaForgeIcons.edit : MetaForgeIcons.view;
-                        buttons.push(`<button type="button" class="btn btn-sm btn-outline-primary btn-icon btn-action-edit btn-master-edit" data-id="${id}" title="${label}" aria-label="${label}">${icon}</button>`);
+                        const btnClass = canEdit() ? 'btn-edit btn-master-edit' : 'btn-view btn-master-edit';
+                        buttons.push(`<button type="button" class="btn btn-sm btn-outline-primary btn-icon btn-action-edit ${btnClass}" data-id="${id}" title="${label}" aria-label="${label}">${icon}</button>`);
                     } else if (canEdit()) {
                         buttons.push(`<button type="button" class="btn btn-sm btn-outline-primary btn-icon btn-action-edit btn-edit" data-id="${id}" title="Edit" aria-label="Edit">${MetaForgeIcons.edit}</button>`);
+                    } else if (canView()) {
+                        buttons.push(`<button type="button" class="btn btn-sm btn-outline-secondary btn-icon btn-action-view btn-view" data-id="${id}" title="View" aria-label="View">${MetaForgeIcons.view}</button>`);
                     }
                     if (canDelete()) {
                         buttons.push(`<button type="button" class="btn btn-sm btn-outline-danger btn-icon btn-action-delete btn-delete" data-id="${id}" data-entity="${entity}" title="Delete" aria-label="Delete">${MetaForgeIcons.delete}</button>`);

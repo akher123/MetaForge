@@ -195,17 +195,32 @@ public class FormAuthorizationService : IFormAuthorizationService
     public async Task<FormPermissionsDto> GetFormPermissionsAsync(ClaimsPrincipal user, string formCode, CancellationToken cancellationToken = default)
     {
         var snapshot = await _snapshotProvider.GetSnapshotAsync(user, cancellationToken);
-        bool Has(string action) => snapshot?.HasPermission($"{formCode}.{action}") == true;
+        var prefix = $"{formCode}.";
+
+        HashSet<string> granted;
+        if (snapshot?.IsAdministrator == true)
+        {
+            granted = new HashSet<string>(PermissionAction.All, StringComparer.OrdinalIgnoreCase);
+        }
+        else
+        {
+            granted = snapshot?.Permissions
+                .Where(p => p.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                .Select(p => p[prefix.Length..])
+                .ToHashSet(StringComparer.OrdinalIgnoreCase)
+                ?? new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        }
 
         return new FormPermissionsDto
         {
             FormCode = formCode,
-            CanView = Has(PermissionAction.View),
-            CanCreate = Has(PermissionAction.Create),
-            CanEdit = Has(PermissionAction.Edit),
-            CanDelete = Has(PermissionAction.Delete),
-            CanExport = Has(PermissionAction.Export),
-            CanApprove = Has(PermissionAction.Approve)
+            CanView = granted.Contains(PermissionAction.View),
+            CanCreate = granted.Contains(PermissionAction.Create),
+            CanEdit = granted.Contains(PermissionAction.Edit),
+            CanDelete = granted.Contains(PermissionAction.Delete),
+            CanExport = granted.Contains(PermissionAction.Export),
+            CanApprove = granted.Contains(PermissionAction.Approve),
+            GrantedActions = granted
         };
     }
 

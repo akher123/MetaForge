@@ -10,24 +10,34 @@ const MasterDetailTabular = (function () {
         return section.ChildEntity ?? section.childEntity;
     }
 
+    function perm() {
+        return MetaForgePermissions.createApi(permissions);
+    }
+
+    function isNewRecord() {
+        const data = screen?.MasterData ?? screen?.masterData;
+        const id = data?.Id ?? data?.id;
+        return id == null || id === '' || parseInt(id, 10) <= 0;
+    }
+
     function canCreate() {
-        return permissions?.CanCreate === true;
+        return perm().canCreate();
     }
 
     function canEdit() {
-        return permissions?.CanEdit === true;
+        return perm().canEdit();
     }
 
     function canDelete() {
-        return permissions?.CanDelete === true;
+        return perm().canDelete();
     }
 
     function canModifyDetails() {
-        return canCreate() || canEdit();
+        return perm().canModify();
     }
 
     function canSave() {
-        return canCreate() || canEdit();
+        return perm().canSaveMaster(isNewRecord());
     }
 
     function getSections() {
@@ -185,7 +195,7 @@ const MasterDetailTabular = (function () {
                 .always(() => renderSectionGrid(section));
         });
 
-        $('.btn-add-section-row').toggleClass('d-none', !canCreate());
+        $('.btn-add-section-row').toggleClass('d-none', !canModifyDetails());
     }
 
     function renderSectionHeader(section) {
