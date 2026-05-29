@@ -18,6 +18,10 @@
   --dv-indigo-100: #e0e7ff;
   --dv-indigo-50:  #eef2ff;
 
+  --dv-navbar-bg-start: var(--dv-indigo-950);
+  --dv-navbar-bg-mid: var(--dv-indigo-900);
+  --dv-navbar-bg-end: var(--dv-indigo-800);
+
   --dv-cyan-600: #0891b2;
   --dv-cyan-500: #06b6d4;
   --dv-cyan-400: #22d3ee;
@@ -228,9 +232,9 @@ a:hover {
   --app-navbar-height: 56px;
   background: linear-gradient(
     135deg,
-    var(--dv-indigo-950) 0%,
-    var(--dv-indigo-900) 45%,
-    var(--dv-indigo-800) 100%
+    var(--dv-navbar-bg-start) 0%,
+    var(--dv-navbar-bg-mid) 45%,
+    var(--dv-navbar-bg-end) 100%
   ) !important;
   box-shadow: var(--dv-shadow-md);
   padding-top: 0.55rem;
@@ -1126,7 +1130,7 @@ html.sidebar-collapsed .sidebar-tree-children {
 }
 
 .btn-primary {
-  background: var(--dv-indigo-700);
+  background: var(--dv-primary-dark);
   border-color: var(--dv-indigo-800);
   color: var(--dv-text-on-primary);
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.12);
@@ -1142,13 +1146,13 @@ html.sidebar-collapsed .sidebar-tree-children {
 
 .btn-outline-primary {
   color: var(--dv-indigo-800);
-  border-color: var(--dv-indigo-700);
+  border-color: var(--dv-primary-dark);
   background: var(--dv-surface);
 }
 
 .btn-outline-primary:hover,
 .btn-outline-primary:focus {
-  background: var(--dv-indigo-700);
+  background: var(--dv-primary-dark);
   border-color: var(--dv-indigo-800);
   color: var(--dv-text-on-primary);
 }
@@ -1212,16 +1216,16 @@ html.sidebar-collapsed .sidebar-tree-children {
 }
 
 .btn-teal {
-  background: linear-gradient(135deg, var(--dv-cyan-600), var(--dv-cyan-500));
-  border-color: var(--dv-cyan-600);
-  color: #fff;
-  box-shadow: 0 1px 3px rgba(8, 145, 178, 0.3);
+  background: linear-gradient(135deg, var(--dv-indigo-800), var(--dv-indigo-700));
+  border-color: var(--dv-indigo-800);
+  color: var(--dv-text-on-primary);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.18);
 }
 
 .btn-teal:hover {
-  background: var(--dv-cyan-600);
-  border-color: var(--dv-cyan-600);
-  color: #fff;
+  background: var(--dv-indigo-800);
+  border-color: var(--dv-indigo-900);
+  color: var(--dv-text-on-primary);
 }
 
 .btn i.fa-solid,
@@ -1573,7 +1577,7 @@ html.sidebar-collapsed .sidebar-tree-children {
 }
 
 .admin-modal .modal-header {
-  background: linear-gradient(135deg, var(--dv-indigo-800) 0%, var(--dv-indigo-900) 100%);
+  background: linear-gradient(135deg, var(--dv-navbar-bg-end) 0%, var(--dv-navbar-bg-start) 100%);
   color: var(--dv-text-on-primary);
   border-bottom: 3px solid var(--dv-cyan-500);
   padding: 0.75rem 1.15rem;

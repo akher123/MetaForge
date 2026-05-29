@@ -58,6 +58,30 @@
         });
     }
 
+    function refreshThemedChrome() {
+        requestAnimationFrame(function () {
+            document.querySelectorAll(
+                '.dataTables_scrollHead thead th, table.dataTable thead th, .table > thead th, .master-detail-grid thead th, .admin-modal .modal-header, .module-grid-toolbar .btn-primary, #btnAdd, #btnAddMasterDetail, .btn-teal, #btnAddDetail'
+            ).forEach(function (el) {
+                el.style.removeProperty('background');
+                el.style.removeProperty('background-color');
+                el.style.removeProperty('background-image');
+                el.style.removeProperty('border-color');
+                el.style.removeProperty('color');
+            });
+
+            if (typeof $ !== 'undefined' && $.fn.dataTable && $.fn.dataTable.tables) {
+                try {
+                    $.fn.dataTable.tables({ visible: true, api: true }).columns.adjust();
+                } catch (_) { /* ignore */ }
+            }
+
+            document.dispatchEvent(new CustomEvent('metaforge-theme-changed', {
+                detail: { theme: document.documentElement.getAttribute('data-theme') }
+            }));
+        });
+    }
+
     function applyTheme(themeKey, isDarkHint, themeName) {
         const key = themeKey || 'indigo-light';
         const root = document.documentElement;
@@ -72,6 +96,7 @@
         }
 
         if (themeName) updateToolbarLabel(themeName);
+        refreshThemedChrome();
     }
 
     function getInitialTheme() {
@@ -169,6 +194,7 @@
     window.MetaForgeTheme = {
         apply: applyTheme,
         persist: persistTheme,
-        bindPickers: bindPickers
+        bindPickers: bindPickers,
+        refreshChrome: refreshThemedChrome
     };
 })();

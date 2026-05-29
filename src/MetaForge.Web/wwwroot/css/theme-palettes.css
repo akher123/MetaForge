@@ -33,6 +33,9 @@ html[data-theme="indigo-light"] {
   --dv-grid-body-text: #0f172a;
   --dv-grid-body-muted: #475569;
   --dv-grid-header-bg: linear-gradient(180deg, var(--dv-surface-table-head-start) 0%, var(--dv-surface-table-head) 48%, var(--dv-surface-table-head-end) 100%);
+  --dv-navbar-bg-start: #1e1b4b;
+  --dv-navbar-bg-mid: #312e81;
+  --dv-navbar-bg-end: #3730a3;
 }
 
 html[data-theme="ocean-light"] {
@@ -63,6 +66,9 @@ html[data-theme="ocean-light"] {
   --dv-grid-body-text: #0f172a;
   --dv-grid-body-muted: #475569;
   --dv-grid-header-bg: linear-gradient(180deg, var(--dv-surface-table-head-start) 0%, var(--dv-surface-table-head) 48%, var(--dv-surface-table-head-end) 100%);
+  --dv-navbar-bg-start: #0c4a6e;
+  --dv-navbar-bg-mid: #075985;
+  --dv-navbar-bg-end: #0369a1;
 }
 
 html[data-theme="emerald-light"] {
@@ -93,6 +99,9 @@ html[data-theme="emerald-light"] {
   --dv-grid-body-text: #0f172a;
   --dv-grid-body-muted: #475569;
   --dv-grid-header-bg: linear-gradient(180deg, var(--dv-surface-table-head-start) 0%, var(--dv-surface-table-head) 48%, var(--dv-surface-table-head-end) 100%);
+  --dv-navbar-bg-start: #064e3b;
+  --dv-navbar-bg-mid: #047857;
+  --dv-navbar-bg-end: #059669;
 }
 
 html[data-theme="rose-light"] {
@@ -123,6 +132,9 @@ html[data-theme="rose-light"] {
   --dv-grid-body-text: #0f172a;
   --dv-grid-body-muted: #475569;
   --dv-grid-header-bg: linear-gradient(180deg, var(--dv-surface-table-head-start) 0%, var(--dv-surface-table-head) 48%, var(--dv-surface-table-head-end) 100%);
+  --dv-navbar-bg-start: #881337;
+  --dv-navbar-bg-mid: #9f1239;
+  --dv-navbar-bg-end: #be123c;
 }
 
 html[data-theme="amber-light"] {
@@ -153,6 +165,9 @@ html[data-theme="amber-light"] {
   --dv-grid-body-text: #0f172a;
   --dv-grid-body-muted: #475569;
   --dv-grid-header-bg: linear-gradient(180deg, var(--dv-surface-table-head-start) 0%, var(--dv-surface-table-head) 48%, var(--dv-surface-table-head-end) 100%);
+  --dv-navbar-bg-start: #78350f;
+  --dv-navbar-bg-mid: #92400e;
+  --dv-navbar-bg-end: #b45309;
 }
 
 html[data-theme="forest-light"] {
@@ -183,6 +198,9 @@ html[data-theme="forest-light"] {
   --dv-grid-body-text: #0f172a;
   --dv-grid-body-muted: #475569;
   --dv-grid-header-bg: linear-gradient(180deg, var(--dv-surface-table-head-start) 0%, var(--dv-surface-table-head) 48%, var(--dv-surface-table-head-end) 100%);
+  --dv-navbar-bg-start: #14532d;
+  --dv-navbar-bg-mid: #166534;
+  --dv-navbar-bg-end: #15803d;
 }
 
 html[data-theme="graphite-light"] {
@@ -213,6 +231,9 @@ html[data-theme="graphite-light"] {
   --dv-grid-body-text: #111827;
   --dv-grid-body-muted: #4b5563;
   --dv-grid-header-bg: linear-gradient(180deg, var(--dv-surface-table-head-start) 0%, var(--dv-surface-table-head) 48%, var(--dv-surface-table-head-end) 100%);
+  --dv-navbar-bg-start: #111827;
+  --dv-navbar-bg-mid: #1f2937;
+  --dv-navbar-bg-end: #374151;
 }
 
 /* ── Dark themes (WCAG AA on surfaces ≥ #0f172a) ──────────────────────── */
@@ -252,6 +273,9 @@ html[data-theme="indigo-dark"] {
   --bs-border-color: var(--dv-border);
   --bs-link-color: var(--dv-link);
   --bs-link-hover-color: var(--dv-link-hover);
+  --dv-navbar-bg-start: #1e1b4b;
+  --dv-navbar-bg-mid: #312e81;
+  --dv-navbar-bg-end: #4338ca;
 }
 
 html[data-theme="slate-dark"] {
@@ -286,6 +310,9 @@ html[data-theme="slate-dark"] {
   --bs-body-bg: var(--dv-bg);
   --bs-body-color: var(--dv-text);
   --bs-border-color: var(--dv-border);
+  --dv-navbar-bg-start: #020617;
+  --dv-navbar-bg-mid: #0f172a;
+  --dv-navbar-bg-end: #1e293b;
 }
 
 html[data-theme="emerald-dark"] {
@@ -320,6 +347,9 @@ html[data-theme="emerald-dark"] {
   --bs-body-bg: var(--dv-bg);
   --bs-body-color: var(--dv-text);
   --bs-border-color: var(--dv-border);
+  --dv-navbar-bg-start: #022c22;
+  --dv-navbar-bg-mid: #064e3b;
+  --dv-navbar-bg-end: #047857;
 }
 
 html[data-theme="violet-dark"] {
@@ -354,6 +384,9 @@ html[data-theme="violet-dark"] {
   --bs-body-bg: var(--dv-bg);
   --bs-body-color: var(--dv-text);
   --bs-border-color: var(--dv-border);
+  --dv-navbar-bg-start: #1e1b4b;
+  --dv-navbar-bg-mid: #4c1d95;
+  --dv-navbar-bg-end: #6d28d9;
 }
 
 html[data-theme="midnight-dark"] {
@@ -388,4 +421,29 @@ html[data-theme="midnight-dark"] {
   --bs-body-bg: var(--dv-bg);
   --bs-body-color: var(--dv-text);
   --bs-border-color: var(--dv-border);
+  --dv-navbar-bg-start: #030712;
+  --dv-navbar-bg-mid: #111827;
+  --dv-navbar-bg-end: #1e3a5f;
+}
+
+/* Grid / table headers — repaint when data-theme changes (avoids stale nested var gradients) */
+html[data-theme] table.dataTable > thead > tr > th,
+html[data-theme] table.dataTable thead th,
+html[data-theme] .dataTables_wrapper .dataTables_scrollHead thead th,
+html[data-theme] .dataTables_wrapper .dataTables_scrollHead table thead th,
+html[data-theme] .table > thead th,
+html[data-theme] .table-light th,
+html[data-theme] .master-detail-grid thead th,
+html[data-theme] .permission-matrix-table thead th,
+html[data-theme] .form-builder-field-table thead th,
+html[data-theme] .permission-tree-module .permission-tree-table thead th,
+html[data-theme] .admin-grid-card .table thead th {
+  background-color: var(--dv-surface-table-head) !important;
+  background-image: linear-gradient(
+    180deg,
+    var(--dv-surface-table-head-start) 0%,
+    var(--dv-surface-table-head) 48%,
+    var(--dv-surface-table-head-end) 100%
+  ) !important;
+  color: var(--dv-grid-header-text) !important;
 }
