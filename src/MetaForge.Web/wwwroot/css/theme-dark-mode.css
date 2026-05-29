@@ -1,0 +1,368 @@
+/* ==========================================================================
+   Dark themes — readable text & surfaces (all *-dark theme keys)
+   Fixes hardcoded --dv-slate-* / white --dv-surface-raised from :root.
+   ========================================================================== */
+
+html[data-theme$="-dark"],
+html[data-bs-theme="dark"] {
+  --dv-surface-raised: var(--dv-surface);
+  --dv-slate-900: var(--dv-text);
+  --dv-slate-800: var(--dv-text-secondary);
+  --dv-slate-700: var(--dv-text-muted);
+  --dv-slate-600: #94a3b8;
+  --dv-slate-500: #64748b;
+  --dv-indigo-400: var(--dv-primary-light);
+  --dv-indigo-50: color-mix(in srgb, var(--dv-primary) 16%, var(--dv-surface));
+  --dv-indigo-100: color-mix(in srgb, var(--dv-primary) 26%, var(--dv-surface));
+
+  --bs-body-bg: var(--dv-bg);
+  --bs-body-color: var(--dv-text);
+  --bs-emphasis-color: var(--dv-text);
+  --bs-secondary-color: var(--dv-text-muted);
+  --bs-tertiary-color: var(--dv-text-muted);
+  --bs-heading-color: var(--dv-text);
+  --bs-link-color: var(--dv-link);
+  --bs-link-hover-color: var(--dv-link-hover);
+  --bs-border-color: var(--dv-border);
+
+  --bs-card-bg: var(--dv-surface);
+  --bs-card-color: var(--dv-text);
+  --bs-card-border-color: var(--dv-border);
+
+  --bs-dropdown-bg: var(--dv-surface);
+  --bs-dropdown-color: var(--dv-text);
+  --bs-dropdown-link-color: var(--dv-text);
+  --bs-dropdown-link-hover-bg: var(--dv-surface-hover);
+  --bs-dropdown-link-hover-color: var(--dv-text);
+  --bs-dropdown-border-color: var(--dv-border);
+
+  --bs-modal-bg: var(--dv-surface);
+  --bs-modal-color: var(--dv-text);
+
+  --bs-form-control-bg: var(--dv-surface);
+  --bs-form-control-color: var(--dv-text);
+  --bs-form-control-border-color: var(--dv-border-strong);
+  --bs-form-select-bg: var(--dv-surface);
+  --bs-form-select-color: var(--dv-text);
+  --bs-form-select-border-color: var(--dv-border-strong);
+
+  --bs-table-color: var(--dv-text);
+  --bs-table-bg: transparent;
+  --bs-table-border-color: var(--dv-grid-border);
+  --bs-table-striped-color: var(--dv-grid-body-text);
+  --bs-table-striped-bg: var(--dv-surface-table-stripe);
+  --bs-table-hover-color: var(--dv-grid-body-hover-text);
+  --bs-table-hover-bg: var(--dv-surface-table-hover);
+
+  color: var(--dv-text);
+}
+
+/* Typography */
+html[data-theme$="-dark"] h1,
+html[data-theme$="-dark"] h2,
+html[data-theme$="-dark"] h3,
+html[data-theme$="-dark"] h4,
+html[data-theme$="-dark"] h5,
+html[data-theme$="-dark"] h6,
+html[data-theme$="-dark"] .h1,
+html[data-theme$="-dark"] .h2,
+html[data-theme$="-dark"] .h3,
+html[data-theme$="-dark"] .h4,
+html[data-theme$="-dark"] .h5,
+html[data-theme$="-dark"] .h6,
+html[data-theme$="-dark"] label,
+html[data-theme$="-dark"] .form-label,
+html[data-theme$="-dark"] .admin-form-label {
+  color: var(--dv-text-secondary);
+}
+
+html[data-theme$="-dark"] .page-header h1,
+html[data-theme$="-dark"] .page-header .h3 {
+  color: var(--dv-text) !important;
+}
+
+html[data-theme$="-dark"] .text-muted {
+  color: var(--dv-text-muted) !important;
+}
+
+html[data-theme$="-dark"] .text-primary {
+  color: var(--dv-indigo-400) !important;
+}
+
+html[data-theme$="-dark"] .text-secondary {
+  color: var(--dv-text-secondary) !important;
+}
+
+/* Cards & panels */
+html[data-theme$="-dark"] .admin-card,
+html[data-theme$="-dark"] .stat-card,
+html[data-theme$="-dark"] .card {
+  color: var(--dv-text);
+}
+
+html[data-theme$="-dark"] .admin-card > .card-header,
+html[data-theme$="-dark"] .card > .card-header {
+  color: var(--dv-text) !important;
+}
+
+html[data-theme$="-dark"] .admin-card > .card-body,
+html[data-theme$="-dark"] .card > .card-body,
+html[data-theme$="-dark"] .card > .card-footer {
+  color: var(--dv-text);
+}
+
+html[data-theme$="-dark"] .page-header,
+html[data-theme$="-dark"] .page-breadcrumb-bar {
+  color: var(--dv-text);
+}
+
+/* Forms */
+html[data-theme$="-dark"] .form-control,
+html[data-theme$="-dark"] .form-select,
+html[data-theme$="-dark"] .admin-form-control,
+html[data-theme$="-dark"] textarea.form-control {
+  color: var(--dv-text) !important;
+  background-color: var(--dv-surface) !important;
+  border-color: var(--dv-border-strong) !important;
+}
+
+html[data-theme$="-dark"] .form-control::placeholder {
+  color: var(--dv-text-muted);
+  opacity: 1;
+}
+
+html[data-theme$="-dark"] .form-control:focus,
+html[data-theme$="-dark"] .form-select:focus {
+  color: var(--dv-text);
+  border-color: var(--dv-indigo-500);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--dv-primary) 35%, transparent);
+}
+
+html[data-theme$="-dark"] .form-check-label {
+  color: var(--dv-text-secondary);
+}
+
+html[data-theme$="-dark"] .admin-form-section-title {
+  color: var(--dv-text) !important;
+  background: var(--dv-surface-muted) !important;
+  border-left-color: var(--dv-indigo-500) !important;
+}
+
+html[data-theme$="-dark"] .input-group-text {
+  color: var(--dv-text-secondary);
+  background-color: var(--dv-surface-muted);
+  border-color: var(--dv-border-strong);
+}
+
+/* Sidebar */
+html[data-theme$="-dark"] .app-sidebar-wrapper {
+  background: var(--dv-surface);
+  border-color: var(--dv-border);
+}
+
+html[data-theme$="-dark"] .sidebar-link {
+  color: var(--dv-text-secondary);
+}
+
+html[data-theme$="-dark"] .sidebar-link:hover,
+html[data-theme$="-dark"] .sidebar-link:focus {
+  color: var(--dv-indigo-400);
+}
+
+html[data-theme$="-dark"] .sidebar-link.active {
+  color: var(--dv-indigo-400) !important;
+  background: var(--dv-indigo-50) !important;
+}
+
+html[data-theme$="-dark"] .sidebar-folder-toggle {
+  color: var(--dv-text);
+}
+
+html[data-theme$="-dark"] .sidebar-icon {
+  color: var(--dv-indigo-500);
+}
+
+/* Breadcrumbs */
+html[data-theme$="-dark"] .breadcrumb-item a {
+  color: var(--dv-link);
+}
+
+html[data-theme$="-dark"] .breadcrumb-item,
+html[data-theme$="-dark"] .breadcrumb-item.active {
+  color: var(--dv-text-muted);
+}
+
+/* Buttons — secondary / outline on dark surfaces */
+html[data-theme$="-dark"] .btn-secondary {
+  color: var(--dv-text) !important;
+  background-color: var(--dv-surface-muted) !important;
+  border-color: var(--dv-border-strong) !important;
+}
+
+html[data-theme$="-dark"] .btn-secondary:hover {
+  color: var(--dv-text) !important;
+  background-color: var(--dv-surface-hover) !important;
+}
+
+html[data-theme$="-dark"] .btn-outline-secondary {
+  color: var(--dv-text-secondary) !important;
+  border-color: var(--dv-border-strong) !important;
+  background-color: transparent !important;
+}
+
+html[data-theme$="-dark"] .btn-outline-secondary:hover {
+  color: var(--dv-text) !important;
+  background-color: var(--dv-surface-muted) !important;
+}
+
+html[data-theme$="-dark"] .btn-light {
+  color: var(--dv-text) !important;
+  background: var(--dv-surface-muted) !important;
+  border-color: var(--dv-border) !important;
+}
+
+/* Tables & DataTables */
+html[data-theme$="-dark"] .table,
+html[data-theme$="-dark"] table.dataTable {
+  color: var(--dv-grid-body-text);
+}
+
+html[data-theme$="-dark"] .dataTables_wrapper,
+html[data-theme$="-dark"] .dataTables_wrapper .dataTables_info,
+html[data-theme$="-dark"] .dataTables_wrapper .dataTables_length,
+html[data-theme$="-dark"] .dataTables_wrapper .dataTables_length label,
+html[data-theme$="-dark"] .dataTables_wrapper .dataTables_filter,
+html[data-theme$="-dark"] .dataTables_wrapper .dataTables_filter label {
+  color: var(--dv-text-secondary) !important;
+}
+
+html[data-theme$="-dark"] .dataTables_wrapper .dataTables_filter input,
+html[data-theme$="-dark"] .dataTables_wrapper .dataTables_length select {
+  color: var(--dv-text) !important;
+  background-color: var(--dv-surface) !important;
+  border-color: var(--dv-border-strong) !important;
+}
+
+html[data-theme$="-dark"] .dataTables_wrapper .dataTables_paginate .paginate_button {
+  color: var(--dv-text-secondary) !important;
+}
+
+html[data-theme$="-dark"] .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+  background: var(--dv-indigo-50) !important;
+  border-color: var(--dv-border) !important;
+  color: var(--dv-indigo-400) !important;
+}
+
+html[data-theme$="-dark"] .dataTables_wrapper .dataTables_paginate .paginate_button.disabled {
+  color: var(--dv-text-muted) !important;
+}
+
+/* Modals */
+html[data-theme$="-dark"] .admin-modal .modal-body,
+html[data-theme$="-dark"] .admin-modal .modal-footer,
+html[data-theme$="-dark"] .modal-body,
+html[data-theme$="-dark"] .modal-footer {
+  color: var(--dv-text);
+}
+
+html[data-theme$="-dark"] .modal-content {
+  background-color: var(--dv-surface);
+  color: var(--dv-text);
+  border-color: var(--dv-border);
+}
+
+/* Dropdowns & theme picker */
+html[data-theme$="-dark"] .dropdown-menu,
+html[data-theme$="-dark"] .app-theme-panel {
+  background-color: var(--dv-surface) !important;
+  color: var(--dv-text) !important;
+}
+
+html[data-theme$="-dark"] .dropdown-item {
+  color: var(--dv-text) !important;
+}
+
+html[data-theme$="-dark"] .dropdown-item:hover,
+html[data-theme$="-dark"] .dropdown-item:focus {
+  background-color: var(--dv-surface-hover) !important;
+  color: var(--dv-text) !important;
+}
+
+html[data-theme$="-dark"] .dropdown-divider {
+  border-color: var(--dv-border);
+}
+
+html[data-theme$="-dark"] .theme-card {
+  background: var(--dv-surface-alt);
+  color: var(--dv-text);
+  border-color: var(--dv-border);
+}
+
+html[data-theme$="-dark"] .theme-card-name {
+  color: var(--dv-text) !important;
+}
+
+html[data-theme$="-dark"] .theme-card-desc {
+  color: var(--dv-text-muted) !important;
+}
+
+html[data-theme$="-dark"] .app-user-dropdown-name,
+html[data-theme$="-dark"] .app-user-dropdown-email {
+  color: var(--dv-text);
+}
+
+/* Tabs, nav pills */
+html[data-theme$="-dark"] .nav-tabs .nav-link {
+  color: var(--dv-text-secondary);
+}
+
+html[data-theme$="-dark"] .nav-tabs .nav-link.active,
+html[data-theme$="-dark"] .nav-tabs .nav-link:hover {
+  color: var(--dv-text);
+}
+
+html[data-theme$="-dark"] .nav-pills .nav-link {
+  color: var(--dv-text-secondary);
+}
+
+html[data-theme$="-dark"] .nav-pills .nav-link.active {
+  color: var(--dv-text-on-primary);
+}
+
+/* List group & alerts on dark pages */
+html[data-theme$="-dark"] .list-group-item {
+  background-color: var(--dv-surface);
+  color: var(--dv-text);
+  border-color: var(--dv-border);
+}
+
+html[data-theme$="-dark"] .alert {
+  color: var(--dv-text);
+}
+
+html[data-theme$="-dark"] .alert-secondary {
+  background-color: var(--dv-surface-muted);
+  border-color: var(--dv-border);
+  color: var(--dv-text);
+}
+
+/* Select2 (if present) */
+html[data-theme$="-dark"] .select2-container--bootstrap-5 .select2-selection {
+  background-color: var(--dv-surface) !important;
+  color: var(--dv-text) !important;
+  border-color: var(--dv-border-strong) !important;
+}
+
+html[data-theme$="-dark"] .select2-container--bootstrap-5 .select2-dropdown {
+  background-color: var(--dv-surface) !important;
+  border-color: var(--dv-border) !important;
+}
+
+html[data-theme$="-dark"] .select2-container--bootstrap-5 .select2-results__option {
+  color: var(--dv-text) !important;
+}
+
+html[data-theme$="-dark"] .select2-container--bootstrap-5 .select2-results__option--highlighted {
+  background-color: var(--dv-surface-hover) !important;
+  color: var(--dv-text) !important;
+}

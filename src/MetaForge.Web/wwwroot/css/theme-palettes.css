@@ -242,6 +242,7 @@ html[data-theme="indigo-dark"] {
   --dv-bg: #0f172a;
   --dv-bg-subtle: #1e293b;
   --dv-surface: #1e293b;
+  --dv-surface-raised: #1e293b;
   --dv-surface-alt: #1e293b;
   --dv-surface-muted: #334155;
   --dv-surface-header: #334155;
@@ -282,6 +283,7 @@ html[data-theme="slate-dark"] {
   --dv-bg: #020617;
   --dv-bg-subtle: #0f172a;
   --dv-surface: #0f172a;
+  --dv-surface-raised: #0f172a;
   --dv-surface-alt: #0f172a;
   --dv-surface-muted: #1e293b;
   --dv-surface-header: #1e293b;
@@ -319,6 +321,7 @@ html[data-theme="emerald-dark"] {
   --dv-bg: #022c22;
   --dv-bg-subtle: #064e3b;
   --dv-surface: #064e3b;
+  --dv-surface-raised: #064e3b;
   --dv-surface-alt: #064e3b;
   --dv-surface-muted: #065f46;
   --dv-surface-header: #065f46;
@@ -356,6 +359,7 @@ html[data-theme="violet-dark"] {
   --dv-bg: #1e1b4b;
   --dv-bg-subtle: #2e1065;
   --dv-surface: #2e1065;
+  --dv-surface-raised: #2e1065;
   --dv-surface-alt: #2e1065;
   --dv-surface-muted: #4c1d95;
   --dv-surface-header: #4c1d95;
@@ -393,6 +397,7 @@ html[data-theme="midnight-dark"] {
   --dv-bg: #030712;
   --dv-bg-subtle: #111827;
   --dv-surface: #111827;
+  --dv-surface-raised: #111827;
   --dv-surface-alt: #111827;
   --dv-surface-muted: #1f2937;
   --dv-surface-header: #1f2937;
