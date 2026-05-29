@@ -431,18 +431,12 @@ html[data-theme="midnight-dark"] {
   --dv-navbar-bg-end: #1e3a5f;
 }
 
-/* Grid / table headers — repaint when data-theme changes (avoids stale nested var gradients) */
-html[data-theme] table.dataTable > thead > tr > th,
-html[data-theme] table.dataTable thead th,
-html[data-theme] .dataTables_wrapper .dataTables_scrollHead thead th,
-html[data-theme] .dataTables_wrapper .dataTables_scrollHead table thead th,
-html[data-theme] .table > thead th,
-html[data-theme] .table-light th,
+/* Non–DataTables grids — themed headers */
+html[data-theme] .table:not(.dataTable) > thead th,
 html[data-theme] .master-detail-grid thead th,
 html[data-theme] .permission-matrix-table thead th,
 html[data-theme] .form-builder-field-table thead th,
-html[data-theme] .permission-tree-module .permission-tree-table thead th,
-html[data-theme] .admin-grid-card .table thead th {
+html[data-theme] .permission-tree-module .permission-tree-table thead th {
   background-color: var(--dv-surface-table-head) !important;
   background-image: linear-gradient(
     180deg,

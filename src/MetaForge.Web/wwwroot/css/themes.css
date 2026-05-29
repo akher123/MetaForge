@@ -354,18 +354,7 @@ html[data-theme="graphite-light"] {
 }
 */
 
-/* DataTables cloned header (scroll) — see theme-palettes.css html[data-theme] grid rules */
-.dataTables_wrapper .dataTables_scrollHead thead th {
-  background-color: var(--dv-surface-table-head) !important;
-  background-image: linear-gradient(
-    180deg,
-    var(--dv-surface-table-head-start) 0%,
-    var(--dv-surface-table-head) 48%,
-    var(--dv-surface-table-head-end) 100%
-  ) !important;
-  color: var(--dv-grid-header-text) !important;
-  border-bottom: none !important;
-}
+/* DataTables Bootstrap styling: datatables-bootstrap.css */
 
 /* ==========================================================================
    Theme UI — navbar trigger, panel dropdown, appearance page

@@ -99,11 +99,11 @@
             </div>
         </div>
         <div class="card-body p-0">
-            <table id="dynamicGrid" class="table table-sm table-striped table-hover w-100 mb-0"
+            <table id="dynamicGrid" class="table table-sm table-striped table-hover table-bordered w-100 mb-0"
                    data-module="@formCode"
                    data-entity="@grid?.Entity"
                    data-has-master-detail="@(hasMasterDetail ? "true" : "false")">
-                <thead>
+                <thead class="table-light">
                     <tr>
                         @if (grid?.Columns != null)
                         {

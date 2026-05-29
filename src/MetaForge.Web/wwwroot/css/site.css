@@ -2102,44 +2102,7 @@ body:has(#confirmDeleteModal.show) .modal-backdrop.show {
   border-top: 1px solid var(--dv-grid-border);
 }
 
-.admin-grid-card .dataTables_wrapper {
-  font-size: var(--dv-grid-font-body);
-}
-
-.admin-grid-card .dataTables_processing {
-  display: none !important;
-}
-
-.admin-grid-card .dataTables_wrapper table.dataTable {
-  border: 1px solid var(--dv-grid-border-strong) !important;
-  border-top: none !important;
-}
-
-.admin-grid-card .dataTables_wrapper .dataTables_length,
-.admin-grid-card .dataTables_wrapper .dataTables_filter,
-.admin-grid-card .dataTables_wrapper .dataTables_info,
-.admin-grid-card .dataTables_wrapper .dataTables_paginate {
-  font-size: 0.8125rem;
-  padding-top: 0;
-  padding-bottom: 0;
-  color: var(--dv-text-secondary);
-}
-
-.admin-grid-card .dataTables_wrapper .row {
-  margin-left: 0;
-  margin-right: 0;
-  padding: 0.5rem 0.85rem;
-  align-items: center;
-  background: linear-gradient(180deg, var(--dv-surface) 0%, var(--dv-surface-alt) 100%);
-  border-bottom: 1px solid var(--dv-grid-border);
-}
-
-.admin-grid-card .dataTables_wrapper .dataTables_length select,
-.admin-grid-card .dataTables_wrapper .dataTables_filter input {
-  font-size: 0.8125rem;
-  padding: 0.2rem 0.45rem;
-  min-height: 1.75rem;
-}
+/* DataTables layout/chrome: wwwroot/css/datatables-bootstrap.css */
 
 .table {
   --bs-table-border-color: var(--dv-grid-border);
@@ -2207,18 +2170,6 @@ body:has(#confirmDeleteModal.show) .modal-backdrop.show {
   outline: none;
 }
 
-table.dataTable {
-  font-size: var(--dv-grid-font-body) !important;
-  border-collapse: collapse !important;
-  border: 1px solid var(--dv-grid-border-strong) !important;
-}
-
-table.dataTable > thead > tr > th,
-table.dataTable > tbody > tr > td,
-table.dataTable > tfoot > tr > td {
-  border: 1px solid var(--dv-grid-border) !important;
-}
-
 .table-sm > thead th {
   padding: var(--dv-grid-head-py) var(--dv-grid-cell-px);
   font-size: var(--dv-grid-font-head);
@@ -2229,140 +2180,6 @@ table.dataTable > tfoot > tr > td {
   padding: var(--dv-grid-body-py) var(--dv-grid-cell-px);
   font-size: var(--dv-grid-font-body);
   min-height: var(--dv-grid-row-min-h);
-}
-
-/* Sticky headers in scrollable admin grids */
-.admin-grid-card .card-body .table thead th,
-.admin-grid-card .dataTables_wrapper table.dataTable thead th {
-  position: sticky;
-  top: 0;
-  z-index: 2;
-}
-
-table.dataTable thead th {
-  background: var(--dv-grid-header-bg) !important;
-  color: var(--dv-grid-header-text) !important;
-  font-size: var(--dv-grid-font-head) !important;
-  font-weight: 600;
-  line-height: var(--dv-grid-line-height);
-  text-transform: none;
-  letter-spacing: 0.01em;
-  border-bottom: none !important;
-  border-color: var(--dv-grid-border) !important;
-  padding: var(--dv-grid-head-py) var(--dv-grid-cell-px) !important;
-  min-height: var(--dv-grid-head-min-h);
-  white-space: nowrap;
-  vertical-align: middle;
-}
-
-table.dataTable thead th.sorting,
-table.dataTable thead th.sorting_asc,
-table.dataTable thead th.sorting_desc {
-  padding-right: 1.5rem !important;
-}
-
-table.dataTable thead th.sorting:before,
-table.dataTable thead th.sorting:after,
-table.dataTable thead th.sorting_asc:before,
-table.dataTable thead th.sorting_asc:after,
-table.dataTable thead th.sorting_desc:before,
-table.dataTable thead th.sorting_desc:after {
-  color: var(--dv-grid-header-sort-icon) !important;
-  opacity: 1;
-}
-
-table.dataTable thead th.sorting_asc:after,
-table.dataTable thead th.sorting_desc:after {
-  color: var(--dv-grid-header-sort-active) !important;
-  opacity: 1;
-}
-
-table.dataTable tbody > tr {
-  min-height: var(--dv-grid-row-min-h);
-}
-
-table.dataTable tbody td {
-  font-size: var(--dv-grid-font-body) !important;
-  color: var(--dv-grid-body-text);
-  vertical-align: middle;
-  padding: var(--dv-grid-body-py) var(--dv-grid-cell-px) !important;
-  min-height: var(--dv-grid-row-min-h);
-  line-height: var(--dv-grid-line-height);
-  border-color: var(--dv-grid-border) !important;
-  background: var(--dv-grid-body-bg);
-}
-
-table.dataTable.table-striped > tbody > tr:nth-of-type(odd) > td {
-  background: var(--dv-surface-table-stripe) !important;
-}
-
-table.dataTable.table-striped > tbody > tr:nth-of-type(even) > td {
-  background: var(--dv-grid-body-bg) !important;
-}
-
-table.dataTable tbody tr:hover > td {
-  background: var(--dv-surface-table-hover) !important;
-  color: var(--dv-grid-body-hover-text);
-}
-
-table.dataTable tbody tr:focus-within > td {
-  background: var(--dv-surface-table-hover) !important;
-}
-
-table.dataTable .btn-icon.btn-sm,
-.admin-card .table .btn-icon.btn-sm {
-  width: 1.5rem;
-  height: 1.5rem;
-  min-width: 1.5rem;
-  min-height: 1.5rem;
-  font-size: 0.6875rem;
-}
-
-table.dataTable.no-footer {
-  border-bottom: 1px solid var(--dv-grid-border-strong) !important;
-}
-
-.dataTables_wrapper .dataTables_scrollHead table.dataTable,
-.dataTables_wrapper .dataTables_scrollBody table.dataTable {
-  border-color: var(--dv-grid-border-strong) !important;
-}
-
-.dataTables_wrapper .dataTables_paginate {
-  padding: 0.5rem 0.85rem 0.6rem;
-  background: linear-gradient(0deg, var(--dv-surface) 0%, var(--dv-surface-alt) 100%);
-  border-top: 1px solid var(--dv-grid-border);
-}
-
-.dataTables_wrapper .dataTables_paginate .paginate_button {
-  padding: 0.2rem 0.55rem !important;
-  font-size: 0.8125rem !important;
-  min-height: auto !important;
-}
-
-.dataTables_wrapper .dataTables_paginate .paginate_button.current {
-  background: var(--dv-indigo-600) !important;
-  border-color: var(--dv-indigo-600) !important;
-  color: #fff !important;
-  border-radius: var(--bs-border-radius-sm);
-}
-
-.dataTables_wrapper .dataTables_paginate .paginate_button:hover {
-  background: var(--dv-indigo-50) !important;
-  border-color: var(--dv-indigo-100) !important;
-  color: var(--dv-indigo-700) !important;
-}
-
-.dataTables_wrapper .dataTables_filter input,
-.dataTables_wrapper .dataTables_length select {
-  border: 1.5px solid var(--dv-border);
-  border-radius: var(--bs-border-radius-sm);
-  padding: 0.35rem 0.65rem;
-}
-
-.dataTables_wrapper .dataTables_filter input:focus {
-  border-color: var(--dv-indigo-500);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
-  outline: none;
 }
 
 /* List tables inside cards (Security, Menu, Form Builder, etc.) */
@@ -2382,12 +2199,6 @@ table.dataTable.no-footer {
 
 .admin-card .table:not(.dataTable) > tbody > tr:last-child > td {
   border-bottom-color: var(--dv-grid-border) !important;
-}
-
-/* Muted secondary text inside grid cells */
-.admin-grid-card .table td .text-muted,
-table.dataTable tbody td .text-muted {
-  color: var(--dv-grid-body-muted) !important;
 }
 
 /* ── Badges ───────────────────────────────────────────────────────────── */
