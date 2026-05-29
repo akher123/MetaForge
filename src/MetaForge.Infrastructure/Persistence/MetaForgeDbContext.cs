@@ -42,6 +42,8 @@ public class MetaForgeDbContext : DbContext
 
     public DbSet<Teacher> Teachers => Set<Teacher>();
 
+    public DbSet<Semester> Semesters => Set<Semester>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(MetaForgeDbContext).Assembly);

@@ -145,11 +145,15 @@ const FieldConditionalEngine = (function () {
     }
 
     function summarizeRule(rule) {
-        const action = rule.action || 'rule';
-        const source = rule.sourceField || '?';
-        const op = rule.operator || 'equals';
+        return summarizeRuleReadable(rule);
+    }
 
-        if (op === 'empty' || op === 'notempty') {
+    function summarizeRuleReadable(rule) {
+        const action = getActionLabel(rule.action || 'rule');
+        const source = rule.sourceField || '?';
+        const op = getOperatorLabel(rule.operator || 'equals');
+
+        if (op === 'is empty' || op === 'is not empty') {
             return `${action} when ${source} ${op}`;
         }
 
@@ -159,7 +163,61 @@ const FieldConditionalEngine = (function () {
     function summarize(stored) {
         const ruleSet = parseConditionalRule(stored);
         if (!ruleSet.rules.length) return '';
-        return ruleSet.rules.map(summarizeRule).join(', ');
+        return ruleSet.rules.map(summarizeRuleReadable).join(', ');
+    }
+
+    function summarizeCompact(stored) {
+        const ruleSet = parseConditionalRule(stored);
+        if (!ruleSet.rules.length) return '';
+
+        if (ruleSet.rules.length === 1) {
+            return summarizeRuleReadable(ruleSet.rules[0]);
+        }
+
+        return ruleSet.rules.length + ' rules';
+    }
+
+    function escapeHtml(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/"/g, '&quot;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+    }
+
+    function formatRuleTooltipLine(rule, index) {
+        const action = getActionLabel(rule.action || 'rule');
+        const source = escapeHtml(rule.sourceField || '?');
+        const op = getOperatorLabel(rule.operator || 'equals');
+        const prefix = typeof index === 'number' ? (index + 1) + '. ' : '';
+
+        if (op === 'is empty' || op === 'is not empty') {
+            return prefix + '<strong>' + action + '</strong> when <code>' + source + '</code> ' + op;
+        }
+
+        const value = escapeHtml(rule.value ?? '');
+        return prefix + '<strong>' + action + '</strong> when <code>' + source + '</code> ' + op + ' <em>' + value + '</em>';
+    }
+
+    function formatRulesTooltip(stored) {
+        const ruleSet = parseConditionalRule(stored);
+        if (!ruleSet.rules.length) return '';
+
+        return ruleSet.rules
+            .map(function (rule, index) {
+                return formatRuleTooltipLine(rule, index);
+            })
+            .join('<br>');
+    }
+
+    function getColumnHeaderTooltip() {
+        return [
+            '<strong>Conditional rules</strong><br>',
+            'Click <em>Rules</em> to configure show/hide, enable/disable, require/optional.',
+            '<hr class="my-1">',
+            '<strong>Actions:</strong> Show, Hide, Enable, Disable, Require, Make optional',
+            '<br><strong>Operators:</strong> Equals, Not equal, Empty, Not empty, Contains, &gt;, &gt;=, &lt;, &lt;='
+        ].join('');
     }
 
     function getActionLabel(action) {
@@ -198,6 +256,11 @@ const FieldConditionalEngine = (function () {
         evaluateEffectiveState,
         summarize,
         summarizeRule,
+        summarizeRuleReadable,
+        summarizeCompact,
+        formatRulesTooltip,
+        formatRuleTooltipLine,
+        getColumnHeaderTooltip,
         getActionLabel,
         getOperatorLabel,
         getFieldValue,

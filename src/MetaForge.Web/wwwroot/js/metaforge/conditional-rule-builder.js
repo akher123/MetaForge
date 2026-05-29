@@ -22,6 +22,60 @@ const ConditionalRuleBuilder = (function () {
         bindGlobalEvents();
         refreshSelects();
         loadCatalog();
+        initColumnHeaderTooltips();
+    }
+
+    function disposeTooltip($el) {
+        const el = $el.get(0);
+        if (!el) return;
+
+        const instance = bootstrap.Tooltip.getInstance(el);
+        if (instance) {
+            instance.dispose();
+        }
+    }
+
+    function applyTooltip($el, content, options) {
+        disposeTooltip($el);
+
+        if (!content) {
+            $el.removeAttr('data-bs-toggle data-bs-html data-bs-placement data-bs-custom-class data-bs-sanitize title tabindex aria-label');
+            return;
+        }
+
+        options = options || {};
+        const el = $el.get(0);
+        $el.attr({
+            'data-bs-toggle': 'tooltip',
+            'data-bs-html': 'true',
+            'data-bs-placement': options.placement || 'left',
+            'data-bs-custom-class': options.customClass || 'conditional-rule-tooltip',
+            'data-bs-sanitize': 'false',
+            'title': content,
+            'tabindex': '0'
+        });
+
+        if (options.ariaLabel) {
+            $el.attr('aria-label', options.ariaLabel);
+        }
+
+        bootstrap.Tooltip.getOrCreateInstance(el, {
+            html: true,
+            sanitize: false,
+            placement: options.placement || 'left',
+            customClass: options.customClass || 'conditional-rule-tooltip'
+        });
+    }
+
+    function initColumnHeaderTooltips() {
+        const headerTooltip = FieldConditionalEngine.getColumnHeaderTooltip();
+
+        $('.field-conditional-col .conditional-col-help').each(function () {
+            applyTooltip($(this), headerTooltip, {
+                placement: 'bottom',
+                ariaLabel: 'Conditional rules reference'
+            });
+        });
     }
 
     function loadCatalog() {
@@ -388,11 +442,21 @@ const ConditionalRuleBuilder = (function () {
 
     function updateRowSummary($row) {
         const stored = getRowConditionalRule($row);
-        const summary = FieldConditionalEngine.summarize(stored);
+        const ruleSet = FieldConditionalEngine.parseConditionalRule(stored);
+        const hasRules = ruleSet.rules.length > 0;
+        const compact = hasRules ? FieldConditionalEngine.summarizeCompact(stored) : '';
+        const tooltip = hasRules ? FieldConditionalEngine.formatRulesTooltip(stored) : '';
         const $summary = $row.find('.conditional-rule-summary');
-        $summary.text(summary || 'None');
-        $summary.toggleClass('text-muted', !summary);
-        $summary.toggleClass('text-info', !!summary);
+
+        $summary.text(compact || 'None');
+        $summary.toggleClass('text-muted', !hasRules);
+        $summary.toggleClass('text-info', hasRules);
+        $summary.toggleClass('conditional-rule-summary--active', hasRules);
+
+        applyTooltip($summary, tooltip, {
+            placement: 'left',
+            ariaLabel: hasRules ? 'Conditional rules: ' + FieldConditionalEngine.summarize(stored) : ''
+        });
     }
 
     function esc(value) {
@@ -408,6 +472,7 @@ const ConditionalRuleBuilder = (function () {
         renderConditionalCell,
         setRowConditionalRule,
         getRowConditionalRule,
-        updateRowSummary
+        updateRowSummary,
+        initColumnHeaderTooltips
     };
 })();

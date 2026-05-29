@@ -11,7 +11,8 @@ public class SalesOrder : BaseEntity
 
     public int CustomerId { get; set; }
 
-    public string? Address { get; set; } 
+    public string? Address { get; set; }
+    public string? MailingAddress { get; set; }
     public string Status { get; set; } = "Draft";
 
     public Customer Customer { get; set; } = null!;

@@ -2935,6 +2935,60 @@ code {
   white-space: nowrap;
 }
 
+.form-builder-field-table .field-conditional-col {
+  min-width: 7.5rem;
+  white-space: nowrap;
+}
+
+.conditional-col-help {
+  line-height: 1;
+  vertical-align: middle;
+  text-decoration: none;
+}
+
+.conditional-col-help:hover,
+.conditional-col-help:focus {
+  text-decoration: none;
+}
+
+.conditional-rule-summary {
+  font-size: 0.72rem;
+  line-height: 1.3;
+  word-break: break-word;
+  cursor: default;
+}
+
+.conditional-rule-summary--active {
+  cursor: help;
+  text-decoration: underline dotted;
+  text-underline-offset: 0.15em;
+}
+
+.conditional-rule-tooltip .tooltip-inner {
+  max-width: 320px;
+  text-align: left;
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.conditional-rule-tooltip .tooltip-inner code {
+  font-size: 0.74rem;
+  color: inherit;
+  background: rgba(255, 255, 255, 0.12);
+  padding: 0.05rem 0.25rem;
+  border-radius: 0.2rem;
+}
+
+.conditional-rule-tooltip .tooltip-inner hr {
+  border-color: rgba(255, 255, 255, 0.25);
+  opacity: 1;
+}
+
+.form-builder-field-table .field-conditional-cell,
+.form-builder-field-table td:has(.field-conditional-cell) {
+  min-width: 9rem;
+}
+
 .validation-rule-hint {
   font-size: 0.82rem;
   color: var(--dv-text-secondary);
