@@ -19,18 +19,121 @@ const MenuManagement = (function () {
     }
 
     function initIndex() {
-        if ($('#menuTable').length) {
-            $('#menuTable').DataTable({
-                pageLength: 25,
-                ordering: false,
-                processing: false,
-                metaforgeProgress: false,
-                columnDefs: [{ orderable: false, targets: -1 }],
-                language: { search: 'Filter menu:' }
-            });
+        if (!$('#menuTable').length) {
+            return;
         }
 
-        $('.btn-delete-menu').on('click', function () {
+        let menuTableApi = null;
+
+        function isMenuTableSettings(settings) {
+            return settings.sTableId === 'menuTable'
+                || (settings.nTable && settings.nTable.id === 'menuTable');
+        }
+
+        function getMenuRowById(id) {
+            return document.querySelector('#menuTable tbody tr.menu-tree-row[data-menu-id="' + id + '"]');
+        }
+
+        function isMenuTreeRowVisible(row) {
+            if (!row) {
+                return true;
+            }
+
+            let parentId = row.getAttribute('data-parent-id');
+            while (parentId) {
+                const parent = getMenuRowById(parentId);
+                if (!parent) {
+                    break;
+                }
+                if (parent.getAttribute('data-expanded') === 'false') {
+                    return false;
+                }
+                parentId = parent.getAttribute('data-parent-id') || '';
+            }
+
+            return true;
+        }
+
+        function setMenuTreeChevron(row, expanded) {
+            const toggle = row.querySelector('.menu-tree-toggle');
+            if (!toggle) {
+                return;
+            }
+
+            const icon = toggle.querySelector('.menu-tree-chevron');
+            if (icon) {
+                icon.classList.remove('fa-chevron-down', 'fa-chevron-right');
+                icon.classList.add(expanded ? 'fa-chevron-down' : 'fa-chevron-right');
+            }
+
+            toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+        }
+
+        function refreshMenuTreeVisibility() {
+            if (menuTableApi) {
+                menuTableApi.draw(false);
+            }
+        }
+
+        function setMenuRowExpanded(row, expanded) {
+            row.setAttribute('data-expanded', expanded ? 'true' : 'false');
+            setMenuTreeChevron(row, expanded);
+            refreshMenuTreeVisibility();
+        }
+
+        function setAllMenuRowsExpanded(expanded) {
+            document.querySelectorAll('#menuTable tbody tr.menu-tree-row[data-has-children="true"]').forEach(function (row) {
+                row.setAttribute('data-expanded', expanded ? 'true' : 'false');
+                setMenuTreeChevron(row, expanded);
+            });
+            refreshMenuTreeVisibility();
+        }
+
+        $.fn.dataTable.ext.search.push(function (settings, _data, dataIndex) {
+            if (!isMenuTableSettings(settings)) {
+                return true;
+            }
+
+            return isMenuTreeRowVisible(settings.aoData[dataIndex].nTr);
+        });
+
+        $('#menuIndexApp').on('click', '.menu-tree-toggle', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const row = this.closest('tr.menu-tree-row');
+            if (!row) {
+                return;
+            }
+
+            const expanded = row.getAttribute('data-expanded') !== 'false';
+            setMenuRowExpanded(row, !expanded);
+        });
+
+        $('#btnMenuExpandAll').on('click', function () {
+            setAllMenuRowsExpanded(true);
+        });
+
+        $('#btnMenuCollapseAll').on('click', function () {
+            setAllMenuRowsExpanded(false);
+        });
+
+        menuTableApi = $('#menuTable').DataTable({
+            paging: false,
+            ordering: false,
+            processing: false,
+            metaforgeProgress: false,
+            columnDefs: [{ orderable: false, targets: -1 }],
+            language: { search: 'Filter menu:' }
+        });
+
+        document.querySelectorAll('#menuTable tbody tr.menu-tree-row[data-has-children="true"]').forEach(function (row) {
+            setMenuTreeChevron(row, true);
+        });
+
+        refreshMenuTreeVisibility();
+
+        $('#menuIndexApp').on('click', '.btn-delete-menu', function () {
             deleteMenu($(this).data('id'), $(this).data('name'));
         });
     }

@@ -47,7 +47,7 @@ const SecurityManagement = (function () {
     }
 
     function setChevron($toggle, expanded) {
-        const $icon = $toggle.find('.matrix-chevron');
+        const $icon = $toggle.find('.matrix-chevron, .permission-tree-chevron');
         $icon.removeClass('fa-chevron-down fa-chevron-right');
         $icon.addClass(expanded ? 'fa-chevron-down' : 'fa-chevron-right');
     }
@@ -65,6 +65,65 @@ const SecurityManagement = (function () {
             $(`[data-bs-target="#${targetId}"]`).each(function () {
                 setChevron($(this), false);
             });
+        });
+    }
+
+    function bindPermissionTreeToggles() {
+        $('#permissionTree').on('show.bs.collapse', function (e) {
+            if (!$(e.target).closest('#permissionTree').length) {
+                return;
+            }
+
+            const targetId = $(e.target).attr('id');
+            $(`#permissionTree [data-bs-target="#${targetId}"]`).each(function () {
+                setChevron($(this), true);
+            });
+        });
+
+        $('#permissionTree').on('hide.bs.collapse', function (e) {
+            if (!$(e.target).closest('#permissionTree').length) {
+                return;
+            }
+
+            const targetId = $(e.target).attr('id');
+            $(`#permissionTree [data-bs-target="#${targetId}"]`).each(function () {
+                setChevron($(this), false);
+            });
+        });
+    }
+
+    function initPermissionsPage() {
+        if (!$('#permissionsApp').length) {
+            return;
+        }
+
+        bindPermissionTreeToggles();
+
+        $('#btnPermExpandAll').on('click', function () {
+            $('#permissionTree .collapse').addClass('show');
+            $('#permissionTree .permission-tree-toggle').each(function () {
+                setChevron($(this), true);
+            });
+        });
+
+        $('#btnPermCollapseAll').on('click', function () {
+            $('#permissionTree .collapse').removeClass('show');
+            $('#permissionTree .permission-tree-toggle').each(function () {
+                setChevron($(this), false);
+            });
+        });
+
+        $('#btnSyncPermissions').on('click', function () {
+            const $btn = $(this).prop('disabled', true);
+            $.post('/api/metaforge/security/permissions/sync')
+                .done(function (r) {
+                    MetaForgeUi.showAlert(r.message || 'Permissions synced.', 'success', 3000);
+                    window.setTimeout(function () { location.reload(); }, 900);
+                })
+                .fail(function (xhr) {
+                    MetaForgeUi.showAlert(xhr.responseJSON?.error ?? 'Sync failed.', 'danger');
+                })
+                .always(function () { $btn.prop('disabled', false); });
         });
     }
 
@@ -174,5 +233,5 @@ const SecurityManagement = (function () {
         });
     }
 
-    return { initRoleForm, initUserForm };
+    return { initRoleForm, initUserForm, initPermissionsPage };
 })();

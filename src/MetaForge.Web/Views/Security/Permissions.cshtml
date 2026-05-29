@@ -27,97 +27,152 @@
         .ToList();
 
     var totalPermissions = groups?.Sum(g => g.Permissions.Count) ?? 0;
+    var moduleCount = groups?.Count ?? 0;
 }
 
-<div class="page-header security-page-header d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
-    <div class="d-flex align-items-center gap-3">
-        <span class="security-header-icon" aria-hidden="true"><i class="fa-solid fa-key"></i></span>
-        <div>
-            <h1 class="h3 mb-0">Permissions</h1>
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb mb-0 mt-1">
-                    <li class="breadcrumb-item"><a href="/Security">Security</a></li>
-                    <li class="breadcrumb-item active">Permissions</li>
-                </ol>
-            </nav>
-        </div>
-    </div>
-    @if (canSyncPermissions)
-    {
-        <button type="button" id="btnSyncPermissions" class="btn btn-outline-primary" title="Sync Module Permissions" aria-label="Sync Module Permissions">
-            <i class="fa-solid fa-rotate me-1"></i>Sync Permissions
-        </button>
-    }
-</div>
-
-@await Html.PartialAsync("_SecuritySubnav")
-
-<div class="card admin-card mb-4">
-    <div class="card-body py-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
-        <div>
-            <div class="fw-semibold">@totalPermissions permissions across @categories.Count category(ies)</div>
-            <div class="text-muted small">Permissions are generated from configured forms and assigned through roles.</div>
-        </div>
-    </div>
-</div>
-
-@foreach (var category in categories)
-{
-    var moduleCount = category.Count();
-    var permCount = category.Sum(g => g.Permissions.Count);
-
-    <div class="card admin-card admin-grid-card mb-4">
-        <div class="security-permission-category-header">
-            <h2 class="security-permission-category-title">@category.Key</h2>
-            <span class="security-permission-category-meta">@moduleCount module(s) · @permCount permission(s)</span>
-        </div>
-
-        @foreach (var group in category.OrderBy(g => g.GroupName))
-        {
-            <div class="security-permission-module">
-                @group.GroupName <code>@group.FormCode</code>
+<div id="permissionsApp">
+    <div class="page-header security-page-header d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+        <div class="d-flex align-items-center gap-3">
+            <span class="security-header-icon" aria-hidden="true"><i class="fa-solid fa-key"></i></span>
+            <div>
+                <h1 class="h3 mb-0">Permissions</h1>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-0 mt-1">
+                        <li class="breadcrumb-item"><a href="/Security">Security</a></li>
+                        <li class="breadcrumb-item active">Permissions</li>
+                    </ol>
+                </nav>
             </div>
-            <div class="table-responsive">
-                <table class="table table-sm table-striped table-hover mb-0">
-                    <thead>
-                        <tr>
-                            <th>Code</th>
-                            <th>Name</th>
-                            <th style="width:120px">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var p in group.Permissions)
-                        {
-                            <tr>
-                                <td><code>@p.Code</code></td>
-                                <td>@p.Name</td>
-                                <td><span class="permission-action-badge @ActionClass(p.Action)">@p.Action</span></td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
+        </div>
+        @if (canSyncPermissions)
+        {
+            <button type="button" id="btnSyncPermissions" class="btn btn-outline-primary" title="Sync Module Permissions" aria-label="Sync Module Permissions">
+                <i class="fa-solid fa-rotate me-1"></i>Sync Permissions
+            </button>
+        }
+    </div>
+
+    @await Html.PartialAsync("_SecuritySubnav")
+
+    <div class="card admin-card mb-4">
+        <div class="card-body py-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
+            <div>
+                <div class="fw-semibold">@totalPermissions permissions across @categories.Count category(ies)</div>
+                <div class="text-muted small">Permissions are generated from configured forms and assigned through roles.</div>
+            </div>
+            <div class="text-muted small">@moduleCount module(s)</div>
+        </div>
+    </div>
+
+    <div class="card admin-card admin-grid-card">
+        @if (categories.Count == 0)
+        {
+            <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <span><i class="fa-solid fa-key me-2"></i>Permission Tree</span>
+                <span class="text-muted small">0 permission(s)</span>
+            </div>
+            <div class="card-body">
+                <div class="text-center text-muted py-4">
+                    <i class="fa-solid fa-key fa-2x mb-3 d-block opacity-50"></i>
+                    <p class="mb-0">No permissions found. Configure forms or sync permissions to populate this list.</p>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="security-permissions-toolbar">
+                <span class="toolbar-label"><i class="fa-solid fa-sitemap me-2"></i>Permission Tree</span>
+                <div class="d-flex flex-wrap align-items-center gap-2">
+                    <span class="text-muted small">@totalPermissions permission(s)</span>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="btnPermExpandAll" title="Expand All">
+                        <i class="fa-solid fa-angles-down me-1"></i>Expand
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="btnPermCollapseAll" title="Collapse All">
+                        <i class="fa-solid fa-angles-up me-1"></i>Collapse
+                    </button>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="permission-tree" id="permissionTree">
+                    @foreach (var category in categories)
+                    {
+                        var catSlug = category.Key.Replace(" ", "_");
+                        var catId = $"perm_cat_{catSlug}";
+                        var catModuleCount = category.Count();
+                        var catPermCount = category.Sum(g => g.Permissions.Count);
+
+                        <div class="permission-tree-section">
+                            <div class="permission-tree-section-header">
+                                <button type="button"
+                                        class="permission-tree-toggle"
+                                        data-bs-toggle="collapse"
+                                        data-bs-target="#@catId"
+                                        aria-expanded="true"
+                                        aria-controls="@catId"
+                                        aria-label="Toggle @category.Key">
+                                    <i class="fa-solid fa-chevron-down permission-tree-chevron" aria-hidden="true"></i>
+                                </button>
+                                <div class="permission-tree-section-title">
+                                    @category.Key
+                                    <span class="permission-tree-meta">· @catModuleCount module(s) · @catPermCount permission(s)</span>
+                                </div>
+                            </div>
+                            <div id="@catId" class="collapse show">
+                                @foreach (var group in category.OrderBy(g => g.GroupName))
+                                {
+                                    var modId = $"perm_mod_{catSlug}_{group.FormCode}";
+                                    <div class="permission-tree-module">
+                                        <div class="permission-tree-module-header">
+                                            <button type="button"
+                                                    class="permission-tree-toggle permission-tree-toggle--nested"
+                                                    data-bs-toggle="collapse"
+                                                    data-bs-target="#@modId"
+                                                    aria-expanded="true"
+                                                    aria-controls="@modId"
+                                                    aria-label="Toggle @group.GroupName permissions">
+                                                <i class="fa-solid fa-chevron-down permission-tree-chevron" aria-hidden="true"></i>
+                                            </button>
+                                            <div class="permission-tree-module-title">
+                                                <span class="permission-tree-module-name">@group.GroupName</span>
+                                                <code class="permission-tree-module-code">@group.FormCode</code>
+                                                <span class="permission-tree-meta">· @group.Permissions.Count permission(s)</span>
+                                            </div>
+                                        </div>
+                                        <div id="@modId" class="collapse show">
+                                            <div class="table-responsive">
+                                                <table class="table table-sm table-striped table-hover mb-0 permission-tree-table">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Code</th>
+                                                            <th>Name</th>
+                                                            <th style="width:120px">Action</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @foreach (var p in group.Permissions)
+                                                        {
+                                                            <tr>
+                                                                <td><code>@p.Code</code></td>
+                                                                <td>@p.Name</td>
+                                                                <td><span class="permission-action-badge @ActionClass(p.Action)">@p.Action</span></td>
+                                                            </tr>
+                                                        }
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
             </div>
         }
     </div>
-}
+</div>
 
 @section Scripts {
-    @if (canSyncPermissions)
-    {
-        <script>
-            $('#btnSyncPermissions').on('click', function () {
-                const $btn = $(this).prop('disabled', true);
-                $.post('/api/metaforge/security/permissions/sync')
-                    .done(function (r) {
-                        MetaForgeUi.showAlert(r.message || 'Permissions synced.', 'success', 3000);
-                        window.setTimeout(function () { location.reload(); }, 900);
-                    })
-                    .fail(function (xhr) {
-                        MetaForgeUi.showAlert(xhr.responseJSON?.error ?? 'Sync failed.', 'danger');
-                    })
-                    .always(function () { $btn.prop('disabled', false); });
-            });
-        </script>
-    }
+    <script src="~/js/metaforge/security-management.js" asp-append-version="true"></script>
+    <script>SecurityManagement.initPermissionsPage();</script>
 }

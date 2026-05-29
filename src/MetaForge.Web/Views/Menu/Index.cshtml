@@ -7,6 +7,10 @@
     var moduleCount = menuList.Count(m => m.ItemType is "Form" or "Module");
     var urlCount = menuList.Count(m => m.ItemType == "Url");
     var activeCount = menuList.Count(m => m.IsActive);
+    var parentIdsWithChildren = menuList
+        .Where(m => m.ParentId.HasValue)
+        .Select(m => m.ParentId!.Value)
+        .ToHashSet();
 
     string TypeKey(string itemType) => itemType switch
     {
@@ -83,10 +87,28 @@
     </div>
 
     <div class="card admin-card admin-grid-card">
-        <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
-            <span><i class="fa-solid fa-sitemap me-2"></i>Navigation Tree</span>
-            <span class="text-muted small">@menuList.Count item(s)</span>
-        </div>
+        @if (menuList.Count == 0)
+        {
+            <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <span><i class="fa-solid fa-sitemap me-2"></i>Navigation Tree</span>
+                <span class="text-muted small">0 item(s)</span>
+            </div>
+        }
+        else
+        {
+            <div class="menu-tree-toolbar">
+                <span class="toolbar-label"><i class="fa-solid fa-sitemap me-2"></i>Navigation Tree</span>
+                <div class="d-flex flex-wrap align-items-center gap-2">
+                    <span class="text-muted small">@menuList.Count item(s)</span>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="btnMenuExpandAll" title="Expand All">
+                        <i class="fa-solid fa-angles-down me-1"></i>Expand
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="btnMenuCollapseAll" title="Collapse All">
+                        <i class="fa-solid fa-angles-up me-1"></i>Collapse
+                    </button>
+                </div>
+            </div>
+        }
         <div class="card-body p-0">
             @if (menuList.Count == 0)
             {
@@ -116,9 +138,28 @@
                         @foreach (var m in menuList)
                         {
                             var typeKey = TypeKey(m.ItemType);
-                            <tr class="menu-tree-row" data-depth="@m.Depth">
+                            var hasChildren = parentIdsWithChildren.Contains(m.Id);
+                            <tr class="menu-tree-row"
+                                data-menu-id="@m.Id"
+                                data-parent-id="@(m.ParentId?.ToString() ?? "")"
+                                data-depth="@m.Depth"
+                                data-has-children="@(hasChildren ? "true" : "false")"
+                                data-expanded="true">
                                 <td>
                                     <div class="menu-tree-cell">
+                                        @if (hasChildren)
+                                        {
+                                            <button type="button"
+                                                    class="menu-tree-toggle"
+                                                    aria-expanded="true"
+                                                    aria-label="Toggle @m.Name children">
+                                                <i class="fa-solid fa-chevron-down menu-tree-chevron" aria-hidden="true"></i>
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <span class="menu-tree-toggle-spacer" aria-hidden="true"></span>
+                                        }
                                         @if (m.Depth > 0)
                                         {
                                             <span class="menu-tree-branch" aria-hidden="true"></span>
