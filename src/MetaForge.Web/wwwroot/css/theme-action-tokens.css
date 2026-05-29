@@ -1,0 +1,130 @@
+/* Delete action buttons — backgrounds & icons follow each theme palette (not fixed red) */
+
+:root {
+  --dv-action-danger-bg: #eef2ff;
+  --dv-action-danger-fg: #4338ca;
+  --dv-action-danger-border: #818cf8;
+  --dv-action-danger-hover-bg: #4338ca;
+  --dv-action-danger-hover-fg: #ffffff;
+  --dv-action-danger-soft: #eef2ff;
+}
+
+html[data-theme="indigo-light"] {
+  --dv-action-danger-bg: #eef2ff;
+  --dv-action-danger-fg: #4338ca;
+  --dv-action-danger-border: #a5b4fc;
+  --dv-action-danger-hover-bg: #4338ca;
+  --dv-action-danger-soft: #eef2ff;
+  --bs-danger: #4338ca;
+  --bs-danger-rgb: 67, 56, 202;
+}
+
+html[data-theme="ocean-light"] {
+  --dv-action-danger-bg: #e0f2fe;
+  --dv-action-danger-fg: #0369a1;
+  --dv-action-danger-border: #7dd3fc;
+  --dv-action-danger-hover-bg: #0369a1;
+  --dv-action-danger-soft: #e0f2fe;
+  --bs-danger: #0369a1;
+  --bs-danger-rgb: 3, 105, 161;
+}
+
+html[data-theme="emerald-light"] {
+  --dv-action-danger-bg: #d1fae5;
+  --dv-action-danger-fg: #047857;
+  --dv-action-danger-border: #6ee7b7;
+  --dv-action-danger-hover-bg: #047857;
+  --dv-action-danger-soft: #d1fae5;
+  --bs-danger: #047857;
+  --bs-danger-rgb: 4, 120, 87;
+}
+
+html[data-theme="rose-light"] {
+  --dv-action-danger-bg: #ffe4e6;
+  --dv-action-danger-fg: #be123c;
+  --dv-action-danger-border: #fda4af;
+  --dv-action-danger-hover-bg: #e11d48;
+  --dv-action-danger-soft: #ffe4e6;
+  --bs-danger: #e11d48;
+  --bs-danger-rgb: 225, 29, 72;
+}
+
+html[data-theme="amber-light"] {
+  --dv-action-danger-bg: #fef3c7;
+  --dv-action-danger-fg: #b45309;
+  --dv-action-danger-border: #fcd34d;
+  --dv-action-danger-hover-bg: #d97706;
+  --dv-action-danger-soft: #fef3c7;
+  --bs-danger: #d97706;
+  --bs-danger-rgb: 217, 119, 6;
+}
+
+html[data-theme="forest-light"] {
+  --dv-action-danger-bg: #ecfccb;
+  --dv-action-danger-fg: #166534;
+  --dv-action-danger-border: #a3e635;
+  --dv-action-danger-hover-bg: #15803d;
+  --dv-action-danger-soft: #ecfccb;
+  --bs-danger: #166534;
+  --bs-danger-rgb: 22, 101, 52;
+}
+
+html[data-theme="graphite-light"] {
+  --dv-action-danger-bg: #f3f4f6;
+  --dv-action-danger-fg: #374151;
+  --dv-action-danger-border: #9ca3af;
+  --dv-action-danger-hover-bg: #374151;
+  --dv-action-danger-soft: #f3f4f6;
+  --bs-danger: #374151;
+  --bs-danger-rgb: 55, 65, 81;
+}
+
+html[data-theme="indigo-dark"] {
+  --dv-action-danger-bg: rgba(99, 102, 241, 0.18);
+  --dv-action-danger-fg: #a5b4fc;
+  --dv-action-danger-border: #6366f1;
+  --dv-action-danger-hover-bg: #6366f1;
+  --dv-action-danger-soft: rgba(99, 102, 241, 0.18);
+  --bs-danger: #818cf8;
+  --bs-danger-rgb: 129, 140, 248;
+}
+
+html[data-theme="slate-dark"] {
+  --dv-action-danger-bg: rgba(56, 189, 248, 0.15);
+  --dv-action-danger-fg: #7dd3fc;
+  --dv-action-danger-border: #38bdf8;
+  --dv-action-danger-hover-bg: #0284c7;
+  --dv-action-danger-soft: rgba(56, 189, 248, 0.15);
+  --bs-danger: #38bdf8;
+  --bs-danger-rgb: 56, 189, 248;
+}
+
+html[data-theme="emerald-dark"] {
+  --dv-action-danger-bg: rgba(52, 211, 153, 0.16);
+  --dv-action-danger-fg: #6ee7b7;
+  --dv-action-danger-border: #34d399;
+  --dv-action-danger-hover-bg: #10b981;
+  --dv-action-danger-soft: rgba(52, 211, 153, 0.16);
+  --bs-danger: #34d399;
+  --bs-danger-rgb: 52, 211, 153;
+}
+
+html[data-theme="violet-dark"] {
+  --dv-action-danger-bg: rgba(167, 139, 250, 0.18);
+  --dv-action-danger-fg: #ddd6fe;
+  --dv-action-danger-border: #a78bfa;
+  --dv-action-danger-hover-bg: #7c3aed;
+  --dv-action-danger-soft: rgba(167, 139, 250, 0.18);
+  --bs-danger: #a78bfa;
+  --bs-danger-rgb: 167, 139, 250;
+}
+
+html[data-theme="midnight-dark"] {
+  --dv-action-danger-bg: rgba(96, 165, 250, 0.16);
+  --dv-action-danger-fg: #93c5fd;
+  --dv-action-danger-border: #60a5fa;
+  --dv-action-danger-hover-bg: #3b82f6;
+  --dv-action-danger-soft: rgba(96, 165, 250, 0.16);
+  --bs-danger: #60a5fa;
+  --bs-danger-rgb: 96, 165, 250;
+}

@@ -343,13 +343,29 @@ const DynamicGrid = (function () {
         const cols = columns.map(col => {
             const prop = col.PropertyName ?? col.propertyName;
             const lookupEntity = col.LookupEntity ?? col.lookupEntity;
+            const controlType = col.ControlType ?? col.controlType;
+            const displayFormat = col.DisplayFormat ?? col.displayFormat;
+            const hasTemporalFormat = typeof MetaForgeGridDisplayFormat !== 'undefined'
+                && (MetaForgeGridDisplayFormat.isTemporalControlType(controlType)
+                    || (displayFormat && String(displayFormat).trim()));
+
             return {
                 data: prop,
                 title: col.Label ?? col.label,
                 orderable: col.IsSortable ?? col.isSortable ?? true,
                 render: (data) => {
                     if (data == null || data === '') return '';
-                    return lookupEntity ? `<span class="grid-lookup-value">${escapeHtml(String(data))}</span>` : data;
+
+                    let text = data;
+                    if (hasTemporalFormat && typeof MetaForgeGridDisplayFormat !== 'undefined') {
+                        text = MetaForgeGridDisplayFormat.formatValue(data, displayFormat, controlType);
+                    }
+
+                    if (lookupEntity) {
+                        return `<span class="grid-lookup-value">${escapeHtml(String(text))}</span>`;
+                    }
+
+                    return hasTemporalFormat ? escapeHtml(String(text)) : text;
                 }
             };
         });

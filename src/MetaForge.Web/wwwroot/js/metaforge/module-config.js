@@ -71,6 +71,14 @@ const FormBuilder = (function () {
         $('#btnAddMasterField').on('click', () => addFieldRow('#masterFieldsTable', {}, refreshMasterPreview));
         $('#btnAddDetailField').on('click', () => addFieldRow('#detailFieldsTable', {}, refreshDetailPreview));
         $('#btnAddColumn').on('click', () => addColumnRow());
+        $(document).on('change blur', '#columnsTable .col-prop', function () {
+            syncColumnFormatSelect($(this).closest('tr'));
+        });
+        $(document).on('change', '#masterFieldsTable .field-control, #masterFieldsTable .field-prop, #detailFieldsTable .field-control, #detailFieldsTable .field-prop', function () {
+            $('#columnsTable tbody tr').each(function () {
+                syncColumnFormatSelect($(this));
+            });
+        });
         $('#btnAddGridAction').on('click', () => addGridActionRow());
         $('#btnAddRelation').on('click', () => addRelationRow());
         $('#btnSaveScreen').on('click', saveScreen);
@@ -402,16 +410,70 @@ const FormBuilder = (function () {
             </tr>`);
     }
 
+    function getFieldControlType(propertyName) {
+        if (!propertyName) return '';
+        const prop = propertyName.trim().toLowerCase();
+        let controlType = '';
+        $('#masterFieldsTable tbody tr, #detailFieldsTable tbody tr').each(function () {
+            const rowProp = $(this).find('.field-prop').val()?.trim().toLowerCase();
+            if (rowProp === prop) {
+                controlType = $(this).find('.field-control').val() || '';
+                return false;
+            }
+        });
+        return controlType;
+    }
+
+    function buildColumnFormatSelect(selected, controlType) {
+        const options = typeof MetaForgeGridDisplayFormat !== 'undefined'
+            ? MetaForgeGridDisplayFormat.buildSelectOptions(selected)
+            : `<option value="">Default</option>`;
+        const temporal = typeof MetaForgeGridDisplayFormat !== 'undefined'
+            ? MetaForgeGridDisplayFormat.isTemporalControlType(controlType)
+            : false;
+        const disabled = temporal ? '' : ' disabled';
+        const title = temporal
+            ? 'Date or date-time display format for this column'
+            : 'Only applies to Date or DateTime fields';
+        return `<select class="form-select form-select-sm col-display-format"${disabled} title="${title}">${options}</select>`;
+    }
+
+    function syncColumnFormatSelect($row) {
+        const prop = $row.find('.col-prop').val()?.trim();
+        const controlType = getFieldControlType(prop);
+        const $select = $row.find('.col-display-format');
+        const selected = $select.val() || '';
+        const temporal = typeof MetaForgeGridDisplayFormat !== 'undefined'
+            && MetaForgeGridDisplayFormat.isTemporalControlType(controlType);
+
+        $select.prop('disabled', !temporal);
+        if (temporal && !selected && typeof MetaForgeGridDisplayFormat !== 'undefined') {
+            $select.val(MetaForgeGridDisplayFormat.getDefaultForControlType(controlType));
+        }
+    }
+
     function addColumnRow(col = {}) {
-        $('#columnsTable tbody').append(`
+        const prop = col.PropertyName ?? col.propertyName ?? '';
+        const controlType = getFieldControlType(prop);
+        const displayFormat = col.DisplayFormat ?? col.displayFormat
+            ?? (typeof MetaForgeGridDisplayFormat !== 'undefined'
+                ? MetaForgeGridDisplayFormat.getDefaultForControlType(controlType)
+                : '');
+        const formatSelect = buildColumnFormatSelect(displayFormat, controlType);
+
+        const $row = $(`
             <tr>
-                <td><input type="text" class="form-control form-control-sm col-prop" value="${esc(col.PropertyName ?? col.propertyName ?? '')}" /></td>
+                <td><input type="text" class="form-control form-control-sm col-prop" value="${esc(prop)}" /></td>
                 <td><input type="text" class="form-control form-control-sm col-label" value="${esc(col.Label ?? col.label ?? '')}" /></td>
+                <td>${formatSelect}</td>
                 <td class="text-center"><input type="checkbox" class="form-check-input col-sortable" ${(col.IsSortable ?? col.isSortable ?? true) ? 'checked' : ''} /></td>
                 <td class="text-center"><input type="checkbox" class="form-check-input col-searchable" ${(col.IsSearchable ?? col.isSearchable) ? 'checked' : ''} /></td>
                 <td class="text-center"><input type="checkbox" class="form-check-input col-visible" ${(col.IsVisible ?? col.isVisible ?? true) ? 'checked' : ''} /></td>
                 <td><button type="button" class="btn btn-sm btn-outline-danger btn-icon btn-remove-row" title="Remove" aria-label="Remove"><i class="fa-solid fa-trash"></i></button></td>
             </tr>`);
+
+        $('#columnsTable tbody').append($row);
+        syncColumnFormatSelect($row);
     }
 
     function addRelationRow(rel = {}) {
@@ -464,9 +526,11 @@ const FormBuilder = (function () {
         $('#columnsTable tbody tr').each(function (i) {
             const prop = $(this).find('.col-prop').val()?.trim();
             if (!prop) return;
+            const displayFormat = $(this).find('.col-display-format').val()?.trim() || null;
             gridColumns.push({
                 PropertyName: prop,
                 Label: $(this).find('.col-label').val()?.trim() || prop,
+                DisplayFormat: displayFormat,
                 IsSortable: $(this).find('.col-sortable').is(':checked'),
                 IsSearchable: $(this).find('.col-searchable').is(':checked'),
                 IsVisible: $(this).find('.col-visible').is(':checked'),
@@ -532,14 +596,20 @@ const FormBuilder = (function () {
         return (fields || [])
             .filter(f => (f.IsVisible ?? f.isVisible ?? true)
                 && (f.ControlType ?? f.controlType) !== 'Hidden')
-            .map((f, i) => ({
-                PropertyName: f.PropertyName ?? f.propertyName,
-                Label: f.Label ?? f.label ?? f.PropertyName ?? f.propertyName,
-                DisplayOrder: i,
-                IsSortable: false,
-                IsSearchable: false,
-                IsVisible: true
-            }));
+            .map((f, i) => {
+                const controlType = f.ControlType ?? f.controlType;
+                return {
+                    PropertyName: f.PropertyName ?? f.propertyName,
+                    Label: f.Label ?? f.label ?? f.PropertyName ?? f.propertyName,
+                    DisplayOrder: i,
+                    IsSortable: false,
+                    IsSearchable: false,
+                    IsVisible: true,
+                    DisplayFormat: typeof MetaForgeGridDisplayFormat !== 'undefined'
+                        ? (MetaForgeGridDisplayFormat.getDefaultForControlType(controlType) || null)
+                        : null
+                };
+            });
     }
 
     function collectDetailConfig() {

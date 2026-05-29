@@ -1,5 +1,6 @@
 using MetaForge.Application.Validation;
 using MetaForge.Infrastructure.Validation;
+using MetaForge.Shared.Constants;
 
 namespace MetaForge.Infrastructure.Services;
 
@@ -265,7 +266,8 @@ public class FormConfigurationService : IFormConfigurationService
             DisplayOrder = c.DisplayOrder >= 0 ? c.DisplayOrder : i,
             IsSortable = c.IsSortable,
             IsSearchable = c.IsSearchable,
-            IsVisible = c.IsVisible
+            IsVisible = c.IsVisible,
+            DisplayFormat = string.IsNullOrWhiteSpace(c.DisplayFormat) ? null : c.DisplayFormat.Trim()
         }))
         {
             module.GridColumns.Add(column);
@@ -445,7 +447,8 @@ public class FormConfigurationService : IFormConfigurationService
                 DisplayOrder = i,
                 IsSortable = false,
                 IsSearchable = false,
-                IsVisible = true
+                IsVisible = true,
+                DisplayFormat = GridDisplayFormats.GetDefaultForControlType(f.ControlType)
             })
             .ToList();
     }
@@ -486,7 +489,8 @@ public class FormConfigurationService : IFormConfigurationService
             DisplayOrder = c.DisplayOrder,
             IsSortable = c.IsSortable,
             IsSearchable = c.IsSearchable,
-            IsVisible = c.IsVisible
+            IsVisible = c.IsVisible,
+            DisplayFormat = c.DisplayFormat
         }).ToList(),
         GridActions = module.GridActions.OrderBy(a => a.DisplayOrder).Select(a => new FormGridActionConfigDto
         {

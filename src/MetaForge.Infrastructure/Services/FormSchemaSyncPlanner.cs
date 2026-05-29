@@ -367,7 +367,8 @@ public static class FormSchemaSyncPlanner
         DisplayOrder = order,
         IsSortable = column.IsSortable,
         IsSearchable = column.IsSearchable,
-        IsVisible = column.IsVisible
+        IsVisible = column.IsVisible,
+        DisplayFormat = column.DisplayFormat
     };
 
     private static FormRelationConfigDto CloneRelation(FormRelationConfigDto relation, int order) => new()

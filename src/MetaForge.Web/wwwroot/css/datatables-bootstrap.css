@@ -51,8 +51,17 @@
   padding: 0.15rem 1.75rem 0.15rem 0.45rem;
   font-size: 0.8125rem;
   line-height: 1.25;
-  background-position: right 0.35rem center;
-  background-size: 10px 8px;
+  color: var(--dv-text);
+  background-color: var(--dv-surface);
+  border-color: var(--dv-border-strong);
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%2394a3b8' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 0.4rem center;
+  background-size: 12px 10px;
+}
+
+html[data-theme$="-dark"] .dataTables_wrapper .dataTables_length select.form-select {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23cbd5e1' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
 }
 
 /* Search — right-aligned, wider input */
@@ -98,11 +107,11 @@
   width: 100%;
   min-width: 0;
   margin-left: 0;
-  min-height: 1.75rem;
-  height: 1.75rem;
-  padding: 0.2rem 0.65rem 0.2rem 2.1rem;
+  min-height: 2rem;
+  height: 2rem;
+  padding: 0.35rem 0.65rem 0.35rem 2.15rem;
   font-size: 0.8125rem;
-  line-height: 1.25;
+  line-height: 1.35;
 }
 
 /* Table — Bootstrap variables + theme */
@@ -243,6 +252,30 @@ table.dataTable .btn-icon.btn-sm,
   min-width: 1.5rem;
   min-height: 1.5rem;
   font-size: 0.6875rem;
+}
+
+/* Grid row delete — theme background (override Bootstrap danger red) */
+table.dataTable .btn-outline-danger,
+table.dataTable .btn-action-delete,
+table.dataTable .btn-delete {
+  color: var(--dv-action-danger-fg) !important;
+  border-color: var(--dv-action-danger-border) !important;
+  background-color: var(--dv-action-danger-bg) !important;
+}
+
+table.dataTable .btn-outline-danger:hover,
+table.dataTable .btn-outline-danger:focus,
+table.dataTable .btn-action-delete:hover,
+table.dataTable .btn-delete:hover {
+  color: var(--dv-action-danger-hover-fg) !important;
+  background-color: var(--dv-action-danger-hover-bg) !important;
+  border-color: var(--dv-action-danger-hover-bg) !important;
+}
+
+table.dataTable .btn-outline-danger i,
+table.dataTable .btn-action-delete i,
+table.dataTable .btn-delete i {
+  color: inherit !important;
 }
 
 .admin-grid-card .table td .text-muted,

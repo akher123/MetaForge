@@ -5,6 +5,7 @@
 
 @import url('theme-palettes.css');
 @import url('theme-brand-tokens.css');
+@import url('theme-action-tokens.css');
 @import url('theme-dark-mode.css');
 
 /* indigo-light brand tokens: theme-brand-tokens.css */

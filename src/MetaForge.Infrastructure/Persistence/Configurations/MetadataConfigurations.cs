@@ -59,6 +59,7 @@ public class ForgeGridColumnConfiguration : IEntityTypeConfiguration<ForgeGridCo
         builder.HasKey(x => x.Id);
         builder.Property(x => x.PropertyName).HasMaxLength(200).IsRequired();
         builder.Property(x => x.Label).HasMaxLength(200).IsRequired();
+        builder.Property(x => x.DisplayFormat).HasMaxLength(100);
     }
 }
 

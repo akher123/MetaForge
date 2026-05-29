@@ -1,7 +1,10 @@
+using MetaForge.Application.DTOs;
+using MetaForge.Shared.Constants;
+
 namespace MetaForge.Infrastructure.Dynamic;
 
 /// <summary>
-/// Replaces foreign-key ids in grid rows with lookup display text.
+/// Enriches grid rows: lookup ids to display text, and formats date/date-time columns.
 /// </summary>
 public static class GridDisplayEnricher
 {
@@ -14,6 +17,16 @@ public static class GridDisplayEnricher
         if (rows.Count == 0)
             return;
 
+        await EnrichLookupsAsync(rows, columns, lookupService, cancellationToken);
+        FormatTemporalColumns(rows, columns);
+    }
+
+    private static async Task EnrichLookupsAsync(
+        IList<Dictionary<string, object?>> rows,
+        IReadOnlyList<GridColumnDefinition> columns,
+        ILookupService lookupService,
+        CancellationToken cancellationToken)
+    {
         var lookupColumns = columns
             .Where(c => !string.IsNullOrWhiteSpace(c.LookupEntity))
             .ToList();
@@ -45,6 +58,37 @@ public static class GridDisplayEnricher
                 var key = Convert.ToString(rawValue, System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty;
                 if (lookupTexts.TryGetValue(key, out var displayText))
                     row[column.PropertyName] = displayText;
+            }
+        }
+    }
+
+    private static void FormatTemporalColumns(
+        IList<Dictionary<string, object?>> rows,
+        IReadOnlyList<GridColumnDefinition> columns)
+    {
+        var temporalColumns = columns
+            .Where(c => GridDisplayFormats.IsTemporalControlType(c.ControlType)
+                || !string.IsNullOrWhiteSpace(c.DisplayFormat))
+            .ToList();
+
+        if (temporalColumns.Count == 0)
+            return;
+
+        foreach (var column in temporalColumns)
+        {
+            var formatKey = GridDisplayFormats.ResolveFormatKey(column.DisplayFormat, column.ControlType);
+            if (string.IsNullOrEmpty(formatKey) && !GridDisplayFormats.IsTemporalControlType(column.ControlType))
+                continue;
+
+            foreach (var row in rows)
+            {
+                if (!row.TryGetValue(column.PropertyName, out var rawValue) || rawValue is null or "")
+                    continue;
+
+                row[column.PropertyName] = GridDisplayFormats.FormatValue(
+                    rawValue,
+                    column.DisplayFormat,
+                    column.ControlType);
             }
         }
     }

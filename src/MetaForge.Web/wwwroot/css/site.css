@@ -1182,15 +1182,17 @@ html.sidebar-collapsed .sidebar-tree-children {
 }
 
 .btn-outline-danger {
-  color: #b91c1c;
-  border-color: #f87171;
-  background: var(--dv-surface);
+  color: var(--dv-action-danger-fg);
+  border-color: var(--dv-action-danger-border);
+  background-color: var(--dv-action-danger-bg);
 }
 
-.btn-outline-danger:hover {
-  background: var(--dv-danger);
-  border-color: var(--dv-danger);
-  color: #fff;
+.btn-outline-danger:hover,
+.btn-outline-danger:focus,
+.btn-outline-danger:active {
+  background-color: var(--dv-action-danger-hover-bg);
+  border-color: var(--dv-action-danger-hover-bg);
+  color: var(--dv-action-danger-hover-fg);
 }
 
 .btn-outline-success {
@@ -1264,16 +1266,49 @@ html.sidebar-collapsed .sidebar-tree-children {
   color: var(--dv-text-on-primary);
 }
 
-.btn-action-delete {
-  color: #b91c1c;
-  border-color: #f87171;
-  background: var(--dv-surface);
+.btn-action-delete,
+.btn-delete,
+[class*="btn-delete"],
+.btn-remove-row,
+.btn-remove-detail,
+.btn-remove-conditional-rule,
+.btn-remove-validation-rule {
+  color: var(--dv-action-danger-fg);
+  border-color: var(--dv-action-danger-border);
+  background-color: var(--dv-action-danger-bg);
 }
 
-.btn-action-delete:hover {
-  background: var(--dv-danger);
-  border-color: var(--dv-danger);
-  color: #fff;
+.btn-action-delete:hover,
+.btn-action-delete:focus,
+.btn-action-delete:active,
+.btn-delete:hover,
+.btn-delete:focus,
+.btn-delete:active,
+[class*="btn-delete"]:hover,
+[class*="btn-delete"]:focus,
+[class*="btn-delete"]:active,
+.btn-remove-row:hover,
+.btn-remove-row:focus,
+.btn-remove-row:active,
+.btn-remove-detail:hover,
+.btn-remove-detail:focus,
+.btn-remove-detail:active,
+.btn-remove-conditional-rule:hover,
+.btn-remove-conditional-rule:focus,
+.btn-remove-validation-rule:hover,
+.btn-remove-validation-rule:focus {
+  background-color: var(--dv-action-danger-hover-bg);
+  border-color: var(--dv-action-danger-hover-bg);
+  color: var(--dv-action-danger-hover-fg);
+}
+
+.btn-outline-danger i,
+.btn-action-delete i,
+.btn-delete i,
+[class*="btn-delete"] i,
+.btn-remove-row i,
+.btn-remove-detail i {
+  color: inherit;
 }
 
 /* ── Forms ────────────────────────────────────────────────────────────── */
@@ -1315,6 +1350,18 @@ html.sidebar-collapsed .sidebar-tree-children {
   border-color: var(--dv-indigo-700);
   box-shadow: 0 0 0 3px rgba(67, 56, 202, 0.25);
   outline: 2px solid transparent;
+}
+
+/* Select dropdown chevron — theme-aligned color & vertical centering */
+body.metaforge-app .form-select {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%2394a3b8' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 0.5rem center;
+  background-size: 12px 10px;
+}
+
+html[data-theme$="-dark"] body.metaforge-app .form-select {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23cbd5e1' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
 }
 
 .admin-form-section-title {
@@ -1741,12 +1788,22 @@ body:has(#confirmDeleteModal.show) .modal-backdrop.show {
 
 .confirm-delete-content {
   position: relative;
-  border: 1px solid var(--dv-border);
-  border-radius: 1rem;
+  border: 1px solid var(--dv-border-strong);
+  border-radius: var(--bs-border-radius-lg);
   overflow: hidden;
-  box-shadow:
-    0 24px 48px rgba(15, 23, 42, 0.16),
-    0 8px 16px rgba(15, 23, 42, 0.08);
+  background: var(--dv-surface);
+  box-shadow: var(--dv-shadow-lg);
+}
+
+.confirm-delete-content::before {
+  content: '';
+  display: block;
+  height: 3px;
+  background: linear-gradient(90deg, var(--dv-action-danger-hover-bg) 0%, color-mix(in srgb, var(--dv-action-danger-hover-bg) 55%, transparent) 100%);
+}
+
+.confirm-delete-content--warning::before {
+  background: linear-gradient(90deg, var(--dv-navbar-bg-end) 0%, var(--dv-cyan-500) 100%);
 }
 
 .confirm-delete-close {
@@ -1754,16 +1811,18 @@ body:has(#confirmDeleteModal.show) .modal-backdrop.show {
   top: 0.85rem;
   right: 0.85rem;
   z-index: 2;
-  opacity: 0.45;
+  opacity: 0.55;
 }
 
 .confirm-delete-close:hover {
-  opacity: 0.85;
+  opacity: 0.9;
 }
 
 .confirm-delete-body {
-  padding: 2rem 1.75rem 1.1rem;
+  padding: 1.75rem 1.5rem 1rem;
   text-align: center;
+  background: var(--dv-surface-alt);
+  color: var(--dv-text);
 }
 
 .confirm-delete-icon-wrap {
@@ -1781,11 +1840,11 @@ body:has(#confirmDeleteModal.show) .modal-backdrop.show {
 }
 
 .confirm-delete-content--danger .confirm-delete-icon-ring {
-  background: radial-gradient(circle at 30% 30%, #fecaca 0%, #fee2e2 45%, #fff1f2 100%);
+  background: radial-gradient(circle at 30% 30%, var(--dv-action-danger-soft) 0%, color-mix(in srgb, var(--dv-action-danger-soft) 40%, transparent) 55%, transparent 100%);
 }
 
 .confirm-delete-content--warning .confirm-delete-icon-ring {
-  background: radial-gradient(circle at 30% 30%, #fde68a 0%, #fef3c7 45%, #fffbeb 100%);
+  background: radial-gradient(circle at 30% 30%, var(--dv-indigo-100) 0%, color-mix(in srgb, var(--dv-indigo-50) 50%, transparent) 55%, transparent 100%);
 }
 
 .confirm-delete-icon {
@@ -1802,13 +1861,13 @@ body:has(#confirmDeleteModal.show) .modal-backdrop.show {
 }
 
 .confirm-delete-content--danger .confirm-delete-icon {
-  background: linear-gradient(145deg, #ef4444, #dc2626);
-  box-shadow: 0 8px 20px rgba(220, 38, 38, 0.35);
+  background: linear-gradient(145deg, var(--dv-action-danger-hover-bg), var(--dv-action-danger-fg));
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--dv-action-danger-hover-bg) 40%, transparent);
 }
 
 .confirm-delete-content--warning .confirm-delete-icon {
-  background: linear-gradient(145deg, var(--dv-indigo-500), var(--dv-indigo-600));
-  box-shadow: 0 8px 20px rgba(79, 70, 229, 0.3);
+  background: linear-gradient(145deg, var(--dv-indigo-600), var(--dv-indigo-800));
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--dv-indigo-600) 35%, transparent);
 }
 
 @keyframes confirm-delete-pulse {
@@ -1817,16 +1876,17 @@ body:has(#confirmDeleteModal.show) .modal-backdrop.show {
 }
 
 .confirm-delete-title {
-  font-size: 1.125rem;
+  font-size: 1.0625rem;
   font-weight: 700;
-  color: var(--dv-slate-900);
+  color: var(--dv-text);
   margin-bottom: 0.5rem;
+  letter-spacing: -0.01em;
 }
 
 .confirm-delete-message {
-  font-size: 0.9375rem;
+  font-size: 0.875rem;
   font-weight: 500;
-  color: var(--dv-slate-800);
+  color: var(--dv-text-secondary);
   margin-bottom: 0.35rem;
   line-height: 1.5;
 }
@@ -1844,10 +1904,10 @@ body:has(#confirmDeleteModal.show) .modal-backdrop.show {
 
 .confirm-delete-footer {
   justify-content: center;
-  gap: 1.25rem;
-  padding: 1.1rem 1.25rem 1.5rem;
+  gap: 1rem;
+  padding: 1rem 1.25rem 1.25rem;
   border-top: 1px solid var(--dv-border);
-  background: linear-gradient(180deg, var(--dv-surface-muted, #f8fafc) 0%, var(--dv-surface) 100%);
+  background: var(--dv-surface-muted);
 }
 
 .confirm-delete-action {
@@ -1868,17 +1928,17 @@ body:has(#confirmDeleteModal.show) .modal-backdrop.show {
 }
 
 .confirm-delete-action--no {
-  border: 1px solid var(--dv-border);
+  border: 1px solid var(--dv-border-strong);
   background: var(--dv-surface);
-  color: var(--dv-slate-600);
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+  color: var(--dv-text-muted);
+  box-shadow: var(--dv-shadow-sm);
 }
 
 .confirm-delete-action--no:hover {
-  background: var(--dv-surface-header);
+  background: var(--dv-surface-hover);
   border-color: var(--dv-border-strong);
-  color: var(--dv-slate-900);
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.1);
+  color: var(--dv-text);
+  box-shadow: var(--dv-shadow);
 }
 
 .confirm-delete-action--yes {
@@ -1887,23 +1947,27 @@ body:has(#confirmDeleteModal.show) .modal-backdrop.show {
 }
 
 .confirm-delete-content--danger .confirm-delete-action--yes {
-  background: linear-gradient(145deg, #ef4444, #dc2626);
-  box-shadow: 0 4px 14px rgba(220, 38, 38, 0.32);
+  background: linear-gradient(145deg, var(--dv-action-danger-hover-bg), var(--dv-action-danger-fg));
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--dv-action-danger-hover-bg) 38%, transparent);
 }
 
 .confirm-delete-content--danger .confirm-delete-action--yes:hover {
-  background: linear-gradient(145deg, #dc2626, #b91c1c);
-  box-shadow: 0 6px 18px rgba(220, 38, 38, 0.38);
+  background: linear-gradient(145deg, var(--dv-action-danger-fg), color-mix(in srgb, var(--dv-action-danger-fg) 80%, #000));
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--dv-action-danger-hover-bg) 45%, transparent);
 }
 
 .confirm-delete-content--warning .confirm-delete-action--yes {
-  background: linear-gradient(145deg, var(--dv-indigo-500), var(--dv-indigo-600));
-  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.32);
+  background: linear-gradient(145deg, var(--dv-indigo-600), var(--dv-indigo-800));
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--dv-indigo-600) 35%, transparent);
 }
 
 .confirm-delete-content--warning .confirm-delete-action--yes:hover {
-  background: linear-gradient(145deg, var(--dv-indigo-600), var(--dv-indigo-700));
-  box-shadow: 0 6px 18px rgba(79, 70, 229, 0.38);
+  background: linear-gradient(145deg, var(--dv-indigo-700), var(--dv-indigo-900));
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--dv-indigo-700) 40%, transparent);
+}
+
+html[data-theme$="-dark"] .confirm-delete-close {
+  filter: invert(1) grayscale(100%) brightness(200%);
 }
 
 .modal-section-card {
@@ -2254,6 +2318,14 @@ body:has(#confirmDeleteModal.show) .modal-backdrop.show {
   border: 1.5px solid var(--dv-border) !important;
   border-radius: var(--bs-border-radius-sm) !important;
   min-height: 38px;
+}
+
+.select2-container--bootstrap-5 .select2-selection--single .select2-selection__arrow b {
+  border-color: var(--dv-text-muted) transparent transparent transparent !important;
+}
+
+.select2-container--bootstrap-5.select2-container--open .select2-selection--single .select2-selection__arrow b {
+  border-color: transparent transparent var(--dv-text-muted) transparent !important;
 }
 
 .select2-container--bootstrap-5.select2-container--focus .select2-selection,
@@ -4053,7 +4125,11 @@ code {
 .permission-action-badge.action-view { background: #dbeafe; color: #1d4ed8; border-color: #bfdbfe; }
 .permission-action-badge.action-create { background: var(--dv-success-soft); color: var(--dv-success); border-color: #a7f3d0; }
 .permission-action-badge.action-edit { background: var(--dv-indigo-50); color: var(--dv-indigo-800); border-color: var(--dv-indigo-100); }
-.permission-action-badge.action-delete { background: #fee2e2; color: #b91c1c; border-color: #fecaca; }
+.permission-action-badge.action-delete {
+  background: var(--dv-action-danger-bg);
+  color: var(--dv-action-danger-fg);
+  border-color: var(--dv-action-danger-border);
+}
 .permission-action-badge.action-export { background: var(--dv-surface-muted); color: var(--dv-text-secondary); border-color: var(--dv-border); }
 .permission-action-badge.action-default { background: var(--dv-surface-muted); color: var(--dv-text-secondary); border-color: var(--dv-border); }
 

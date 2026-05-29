@@ -78,6 +78,8 @@ public class FormGridColumnConfigDto
     public bool IsSearchable { get; set; } = true;
 
     public bool IsVisible { get; set; } = true;
+
+    public string? DisplayFormat { get; set; }
 }
 
 public class FormGridActionConfigDto

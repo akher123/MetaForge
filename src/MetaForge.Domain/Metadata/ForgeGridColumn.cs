@@ -21,5 +21,10 @@ public class ForgeGridColumn
 
     public bool IsVisible { get; set; } = true;
 
+    /// <summary>
+    /// Optional display format preset key or custom .NET format string for date/date-time columns.
+    /// </summary>
+    public string? DisplayFormat { get; set; }
+
     public ForgeForm Form { get; set; } = null!;
 }

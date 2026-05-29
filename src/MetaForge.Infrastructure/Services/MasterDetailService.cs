@@ -1,6 +1,7 @@
 using System.Linq.Expressions;
 using System.Text.Json;
 using MetaForge.Infrastructure.Dynamic;
+using MetaForge.Shared.Constants;
 
 namespace MetaForge.Infrastructure.Services;
 
@@ -332,7 +333,8 @@ public class MasterDetailService : IMasterDetailService
             ControlType = f.ControlType,
             LookupEntity = f.LookupEntity,
             LookupParentField = f.LookupParentField,
-            LookupFilterField = f.LookupFilterField
+            LookupFilterField = f.LookupFilterField,
+            DisplayFormat = GridDisplayFormats.GetDefaultForControlType(f.ControlType)
         }).ToList();
 
         return detailGrid;

@@ -217,7 +217,8 @@ public class GridService : IGridService
             ControlType = field?.ControlType,
             LookupEntity = lookupEntity,
             LookupParentField = field?.LookupParentField,
-            LookupFilterField = field?.LookupFilterField
+            LookupFilterField = field?.LookupFilterField,
+            DisplayFormat = column.DisplayFormat
         };
     }
 

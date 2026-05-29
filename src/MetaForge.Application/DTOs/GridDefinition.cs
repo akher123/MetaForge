@@ -35,6 +35,8 @@ public class GridColumnDefinition
     public string? LookupParentField { get; set; }
 
     public string? LookupFilterField { get; set; }
+
+    public string? DisplayFormat { get; set; }
 }
 
 public class GridActionDefinition
