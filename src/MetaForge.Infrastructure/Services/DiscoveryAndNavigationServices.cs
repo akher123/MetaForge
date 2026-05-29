@@ -346,6 +346,232 @@ public class NavigationService : INavigationService
         return tree;
     }
 
+    public async Task<IReadOnlyList<NavigationBreadcrumbDto>> GetBreadcrumbsAsync(
+        string requestPath,
+        string? currentPage = null,
+        CancellationToken cancellationToken = default)
+    {
+        var targetPath = NormalizePath(requestPath);
+        var sidebar = await GetSidebarMenuAsync(cancellationToken);
+        var trail = new List<NavigationBreadcrumbDto>();
+
+        if (TryFindMenuPath(sidebar, targetPath, trail, currentPage, out var matched))
+            return EnsureDashboardRoot(matched);
+
+        return EnsureDashboardRoot(await BuildFallbackPathAsync(targetPath, currentPage, cancellationToken));
+    }
+
+    private static bool TryFindMenuPath(
+        IEnumerable<MenuTreeNodeDto> nodes,
+        string targetPath,
+        List<NavigationBreadcrumbDto> trail,
+        string? currentPage,
+        out IReadOnlyList<NavigationBreadcrumbDto> result)
+    {
+        foreach (var node in nodes)
+        {
+            if (node.ItemType == MenuItemType.Folder)
+            {
+                trail.Add(new NavigationBreadcrumbDto { Text = node.Name });
+                if (TryFindMenuPath(node.Children, targetPath, trail, currentPage, out result))
+                    return true;
+
+                trail.RemoveAt(trail.Count - 1);
+                continue;
+            }
+
+            var nodeUrl = NormalizePath(node.Url);
+            if (string.IsNullOrEmpty(nodeUrl))
+                continue;
+
+            if (string.Equals(nodeUrl, targetPath, StringComparison.OrdinalIgnoreCase))
+            {
+                trail.Add(new NavigationBreadcrumbDto
+                {
+                    Text = node.Name,
+                    IsCurrent = string.IsNullOrWhiteSpace(currentPage)
+                });
+                result = FinalizeTrail(trail, currentPage, node.Url);
+                return true;
+            }
+
+            if (targetPath.StartsWith(nodeUrl + "/", StringComparison.OrdinalIgnoreCase))
+            {
+                trail.Add(new NavigationBreadcrumbDto { Text = node.Name, Url = node.Url });
+                var remainder = targetPath[(nodeUrl.Length + 1)..];
+                AppendPathSegments(trail, node.Url!, remainder, currentPage);
+                result = FinalizeTrail(trail, currentPage, targetPath);
+                return true;
+            }
+        }
+
+        result = [];
+        return false;
+    }
+
+    private static void AppendPathSegments(
+        List<NavigationBreadcrumbDto> trail,
+        string baseUrl,
+        string remainder,
+        string? currentPage)
+    {
+        var segments = remainder.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        var cumulative = NormalizePath(baseUrl);
+
+        for (var i = 0; i < segments.Length; i++)
+        {
+            cumulative += "/" + segments[i];
+            var isLastSegment = i == segments.Length - 1;
+            var text = FormatPathSegment(segments[i]);
+
+            if (isLastSegment && string.IsNullOrWhiteSpace(currentPage))
+            {
+                trail.Add(new NavigationBreadcrumbDto { Text = text, IsCurrent = true });
+                return;
+            }
+
+            trail.Add(new NavigationBreadcrumbDto { Text = text, Url = cumulative });
+        }
+    }
+
+    private static IReadOnlyList<NavigationBreadcrumbDto> FinalizeTrail(
+        List<NavigationBreadcrumbDto> trail,
+        string? currentPage,
+        string? linkForPreviousCurrent = null)
+    {
+        if (trail.Count == 0)
+            return trail;
+
+        if (!string.IsNullOrWhiteSpace(currentPage))
+        {
+            var last = trail[^1];
+            if (last.IsCurrent)
+            {
+                trail[^1] = new NavigationBreadcrumbDto
+                {
+                    Text = last.Text,
+                    Url = linkForPreviousCurrent ?? last.Url
+                };
+            }
+
+            trail.Add(new NavigationBreadcrumbDto { Text = currentPage, IsCurrent = true });
+        }
+        else if (!trail[^1].IsCurrent && string.IsNullOrWhiteSpace(trail[^1].Url))
+        {
+            trail[^1] = new NavigationBreadcrumbDto { Text = trail[^1].Text, IsCurrent = true };
+        }
+        else if (!trail[^1].IsCurrent)
+        {
+            var last = trail[^1];
+            trail[^1] = new NavigationBreadcrumbDto { Text = last.Text, Url = last.Url, IsCurrent = true };
+        }
+
+        return trail;
+    }
+
+    private static IReadOnlyList<NavigationBreadcrumbDto> EnsureDashboardRoot(IReadOnlyList<NavigationBreadcrumbDto> trail)
+    {
+        if (trail.Count == 0)
+            return trail;
+
+        if (string.Equals(trail[0].Text, "Dashboard", StringComparison.OrdinalIgnoreCase))
+            return trail;
+
+        var list = trail.ToList();
+        list.Insert(0, new NavigationBreadcrumbDto { Text = "Dashboard", Url = "/Home/Dashboard" });
+        return list;
+    }
+
+    private async Task<IReadOnlyList<NavigationBreadcrumbDto>> BuildFallbackPathAsync(
+        string targetPath,
+        string? currentPage,
+        CancellationToken cancellationToken)
+    {
+        var trail = new List<NavigationBreadcrumbDto>();
+
+        if (targetPath.StartsWith("/modules/", StringComparison.OrdinalIgnoreCase))
+        {
+            var segments = targetPath.Trim('/').Split('/', StringSplitOptions.RemoveEmptyEntries);
+            if (segments.Length >= 2)
+            {
+                var code = segments[1];
+                var form = await _unitOfWork.Forms.GetByCodeAsync(code, cancellationToken);
+                if (!string.IsNullOrWhiteSpace(form?.GroupName))
+                    trail.Add(new NavigationBreadcrumbDto { Text = form.GroupName });
+
+                var moduleUrl = $"/Modules/{code}";
+                var moduleName = form?.Name ?? FormatPathSegment(code);
+                if (segments.Length == 2)
+                {
+                    trail.Add(new NavigationBreadcrumbDto { Text = moduleName, IsCurrent = string.IsNullOrWhiteSpace(currentPage) });
+                    return FinalizeTrail(trail, currentPage, moduleUrl);
+                }
+
+                trail.Add(new NavigationBreadcrumbDto { Text = moduleName, Url = moduleUrl });
+                AppendPathSegments(trail, moduleUrl, string.Join('/', segments.Skip(2)), currentPage);
+                return FinalizeTrail(trail, currentPage, targetPath);
+            }
+        }
+
+        if (targetPath.StartsWith("/security", StringComparison.OrdinalIgnoreCase))
+            return FinalizeTrail(BuildSecurityFallback(trail, targetPath), currentPage, targetPath);
+
+        if (string.Equals(targetPath, "/formbuilder", StringComparison.OrdinalIgnoreCase)
+            || targetPath.StartsWith("/formbuilder/", StringComparison.OrdinalIgnoreCase))
+        {
+            trail.Add(new NavigationBreadcrumbDto { Text = "Form Builder", IsCurrent = string.IsNullOrWhiteSpace(currentPage) });
+            return FinalizeTrail(trail, currentPage, "/FormBuilder");
+        }
+
+        if (string.Equals(targetPath, "/menu", StringComparison.OrdinalIgnoreCase)
+            || targetPath.StartsWith("/menu/", StringComparison.OrdinalIgnoreCase))
+        {
+            trail.Add(new NavigationBreadcrumbDto { Text = "Menu Management", IsCurrent = string.IsNullOrWhiteSpace(currentPage) });
+            return FinalizeTrail(trail, currentPage, "/Menu");
+        }
+
+        return FinalizeTrail(trail, currentPage, targetPath);
+    }
+
+    private static List<NavigationBreadcrumbDto> BuildSecurityFallback(List<NavigationBreadcrumbDto> trail, string targetPath)
+    {
+        if (string.Equals(targetPath, "/security", StringComparison.OrdinalIgnoreCase))
+        {
+            trail.Add(new NavigationBreadcrumbDto { Text = "Security", IsCurrent = true });
+            return trail;
+        }
+
+        trail.Add(new NavigationBreadcrumbDto { Text = "Security", Url = "/Security" });
+        AppendPathSegments(trail, "/Security", targetPath["/security/".Length..], null);
+        return trail;
+    }
+
+    private static string NormalizePath(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+            return "/";
+
+        var normalized = path.Split('?', '#')[0].Trim().TrimEnd('/');
+        return string.IsNullOrEmpty(normalized) ? "/" : normalized.ToLowerInvariant();
+    }
+
+    private static string FormatPathSegment(string segment) => segment.ToLowerInvariant() switch
+    {
+        "users" => "Users",
+        "roles" => "Roles",
+        "permissions" => "Permissions",
+        "create" => "Create",
+        "edit" => "Edit",
+        "form" => "Form",
+        "masterdetail" => "Entry",
+        "customer" => "Customer",
+        "product" => "Product",
+        "supplier" => "Supplier",
+        "country" => "Country",
+        "salesorder" => "Sales Order",
+        _ => char.ToUpperInvariant(segment[0]) + segment[1..]
+    };
+
     private async Task<bool> CanViewSecurityAsync(ClaimsPrincipal user, CancellationToken cancellationToken) =>
         await _authorizationService.HasPermissionCodeAsync(user, Shared.Constants.SecurityPermissions.ViewUsers, cancellationToken)
         || await _authorizationService.HasPermissionCodeAsync(user, Shared.Constants.SecurityPermissions.ViewRoles, cancellationToken)

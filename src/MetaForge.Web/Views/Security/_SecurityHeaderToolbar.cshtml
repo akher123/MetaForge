@@ -1,0 +1,12 @@
+@{
+    var showSync = ViewBag.ShowSecuritySyncToolbar == true;
+}
+
+@if (showSync)
+{
+    <div class="module-grid-toolbar">
+        <button type="button" id="btnSyncPermissions" class="btn btn-sm btn-outline-primary" title="Sync Module Permissions" aria-label="Sync Module Permissions">
+            <i class="fa-solid fa-rotate me-1"></i>Sync Permissions
+        </button>
+    </div>
+}

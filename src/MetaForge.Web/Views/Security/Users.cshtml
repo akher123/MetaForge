@@ -14,33 +14,20 @@
     }
 }
 
-<div class="page-header security-page-header d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
-    <div class="d-flex align-items-center gap-3">
-        <span class="security-header-icon" aria-hidden="true"><i class="fa-solid fa-users"></i></span>
-        <div>
-            <h1 class="h3 mb-0">Users</h1>
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb mb-0 mt-1">
-                    <li class="breadcrumb-item"><a href="/Security">Security</a></li>
-                    <li class="breadcrumb-item active">Users</li>
-                </ol>
-            </nav>
-        </div>
-    </div>
-    @if (canManageUsers)
-    {
-        <a href="/Security/Users/Create" class="btn btn-primary" title="New User" aria-label="New User">
-            <i class="fa-solid fa-user-plus me-1"></i>New User
-        </a>
-    }
-</div>
-
-@await Html.PartialAsync("_SecuritySubnav")
+@await Html.PartialAsync("_SecurityPageHeader")
 
 <div class="card admin-card admin-grid-card">
-    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
-        <span><i class="fa-solid fa-users me-2"></i>User Directory</span>
-        <span class="text-muted small">@(users?.Count ?? 0) user(s)</span>
+    <div class="card-header module-grid-card-header">
+        <span class="fw-semibold"><i class="fa-solid fa-users me-2"></i>User Directory</span>
+        <div class="module-grid-toolbar">
+            <span class="text-muted small align-self-center">@(users?.Count ?? 0) user(s)</span>
+            @if (canManageUsers)
+            {
+                <a href="/Security/Users/Create" class="btn btn-sm btn-primary" title="New User" aria-label="New User">
+                    <i class="fa-solid fa-user-plus me-1"></i>New User
+                </a>
+            }
+        </div>
     </div>
     <div class="card-body p-0">
         <table class="table table-sm table-striped table-hover w-100 mb-0" id="usersTable">
@@ -109,6 +96,8 @@
         </table>
     </div>
 </div>
+
+@await Html.PartialAsync("_SecurityPageFooter")
 
 @section Scripts {
     <script>

@@ -10,22 +10,14 @@
 }
 
 <div class="module-page module-page--master">
-    <div class="page-header module-page-header d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+    <div class="page-header module-page-header d-flex align-items-center flex-wrap gap-3 mb-4">
         <div class="d-flex align-items-center gap-3">
             <span class="module-page-icon" aria-hidden="true"><i class="fa-solid fa-database"></i></span>
             <div>
                 <h1 class="h3 mb-0">@form?.FormName</h1>
-                <nav aria-label="breadcrumb">
-                    <ol class="breadcrumb mb-0 mt-1">
-                        <li class="breadcrumb-item"><a href="/Modules/@formCode">@form?.FormName</a></li>
-                        <li class="breadcrumb-item active">@(isEdit ? "Edit" : "Create")</li>
-                    </ol>
-                </nav>
+                @await Component.InvokeAsync("Breadcrumb", new { currentPage = isEdit ? "Edit" : "Create", requestPath = $"/Modules/{formCode}" })
             </div>
         </div>
-        <a class="btn btn-outline-secondary" href="/Modules/@formCode" title="Back to List" aria-label="Back to List">
-            <i class="fa-solid fa-arrow-left me-1"></i>Back to List
-        </a>
     </div>
 
     <div class="card admin-card module-form-card">

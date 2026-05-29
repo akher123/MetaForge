@@ -10,22 +10,10 @@
 }
 
 <div id="menuFormApp" data-is-edit="@isEdit.ToString().ToLower()">
-    <div class="page-header menu-page-header d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
-        <div class="d-flex align-items-center gap-3">
-            <span class="menu-header-icon" aria-hidden="true"><i class="fa-solid fa-sitemap"></i></span>
-            <div>
-                <h1 class="h3 mb-0">@(isEdit ? "Edit Menu Item" : "New Menu Item")</h1>
-                <nav aria-label="breadcrumb">
-                    <ol class="breadcrumb mb-0 mt-1">
-                        <li class="breadcrumb-item"><a href="/Menu">Menu Management</a></li>
-                        <li class="breadcrumb-item active">@(isEdit ? "Edit" : "Create")</li>
-                    </ol>
-                </nav>
-            </div>
+    <div class="module-grid-card-header page-breadcrumb-bar">
+        <div class="module-grid-breadcrumb">
+            @await Component.InvokeAsync("Breadcrumb", new { currentPage = isEdit ? "Edit" : "Create" })
         </div>
-        <a class="btn btn-outline-secondary" href="/Menu" title="Back" aria-label="Back">
-            <i class="fa-solid fa-arrow-left me-1"></i>Back to List
-        </a>
     </div>
 
     <div class="card admin-card">

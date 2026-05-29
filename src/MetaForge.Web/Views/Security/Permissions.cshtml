@@ -1,8 +1,8 @@
 @{
     ViewData["Title"] = "Permissions";
     ViewBag.SecurityNav = "permissions";
+    ViewBag.ShowSecuritySyncToolbar = ViewBag.CanSyncPermissions == true;
     var groups = ViewBag.PermissionGroups as IReadOnlyList<MetaForge.Application.DTOs.PermissionGroupDto>;
-    var canSyncPermissions = ViewBag.CanSyncPermissions == true;
 
     string ActionClass(string action) => action switch
     {
@@ -30,46 +30,27 @@
     var moduleCount = groups?.Count ?? 0;
 }
 
+@await Html.PartialAsync("_SecurityPageHeader")
+
 <div id="permissionsApp">
-    <div class="page-header security-page-header d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
-        <div class="d-flex align-items-center gap-3">
-            <span class="security-header-icon" aria-hidden="true"><i class="fa-solid fa-key"></i></span>
-            <div>
-                <h1 class="h3 mb-0">Permissions</h1>
-                <nav aria-label="breadcrumb">
-                    <ol class="breadcrumb mb-0 mt-1">
-                        <li class="breadcrumb-item"><a href="/Security">Security</a></li>
-                        <li class="breadcrumb-item active">Permissions</li>
-                    </ol>
-                </nav>
-            </div>
-        </div>
-        @if (canSyncPermissions)
-        {
-            <button type="button" id="btnSyncPermissions" class="btn btn-outline-primary" title="Sync Module Permissions" aria-label="Sync Module Permissions">
-                <i class="fa-solid fa-rotate me-1"></i>Sync Permissions
-            </button>
-        }
-    </div>
-
-    @await Html.PartialAsync("_SecuritySubnav")
-
-    <div class="card admin-card mb-4">
-        <div class="card-body py-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
-            <div>
+    <div class="card admin-card">
+        <div class="card-body security-summary-bar">
+            <div class="security-summary-main">
                 <div class="fw-semibold">@totalPermissions permissions across @categories.Count category(ies)</div>
                 <div class="text-muted small">Permissions are generated from configured forms and assigned through roles.</div>
             </div>
-            <div class="text-muted small">@moduleCount module(s)</div>
+            <div class="security-summary-stat">@moduleCount module(s)</div>
         </div>
     </div>
 
     <div class="card admin-card admin-grid-card">
         @if (categories.Count == 0)
         {
-            <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
-                <span><i class="fa-solid fa-key me-2"></i>Permission Tree</span>
-                <span class="text-muted small">0 permission(s)</span>
+            <div class="card-header module-grid-card-header">
+                <span class="fw-semibold"><i class="fa-solid fa-key me-2"></i>Permission Tree</span>
+                <div class="module-grid-toolbar">
+                    <span class="text-muted small align-self-center">0 permission(s)</span>
+                </div>
             </div>
             <div class="card-body">
                 <div class="text-center text-muted py-4">
@@ -80,10 +61,10 @@
         }
         else
         {
-            <div class="security-permissions-toolbar">
-                <span class="toolbar-label"><i class="fa-solid fa-sitemap me-2"></i>Permission Tree</span>
-                <div class="d-flex flex-wrap align-items-center gap-2">
-                    <span class="text-muted small">@totalPermissions permission(s)</span>
+            <div class="security-permissions-toolbar module-grid-card-header">
+                <span class="fw-semibold"><i class="fa-solid fa-key me-2"></i>Permission Tree</span>
+                <div class="module-grid-toolbar">
+                    <span class="text-muted small align-self-center">@totalPermissions permission(s)</span>
                     <button type="button" class="btn btn-sm btn-outline-secondary" id="btnPermExpandAll" title="Expand All">
                         <i class="fa-solid fa-angles-down me-1"></i>Expand
                     </button>
@@ -171,6 +152,8 @@
         }
     </div>
 </div>
+
+@await Html.PartialAsync("_SecurityPageFooter")
 
 @section Scripts {
     <script src="~/js/metaforge/security-management.js" asp-append-version="true"></script>

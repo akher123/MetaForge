@@ -22,20 +22,16 @@
             <span class="module-page-icon" aria-hidden="true"><i class="fa-solid fa-file-invoice"></i></span>
             <div>
                 <h1 class="h3 mb-0">@moduleName Entry</h1>
+                @await Component.InvokeAsync("Breadcrumb", new { currentPage = isNew ? "New Entry" : "Edit Entry", requestPath = $"/Modules/{formCode}" })
                 <p class="page-subtitle mb-0">Edit the document header and manage line items below</p>
             </div>
         </div>
-        <div class="d-flex flex-wrap gap-2">
-            @if (canSave)
-            {
-                <button type="button" class="btn btn-primary" id="btnSaveAll">
-                    <i class="fa-solid fa-floppy-disk me-1"></i>Save @moduleName
-                </button>
-            }
-            <a class="btn btn-outline-secondary" href="/Modules/@formCode" title="Back to List" aria-label="Back to List">
-                <i class="fa-solid fa-arrow-left me-1"></i>Back to List
-            </a>
-        </div>
+        @if (canSave)
+        {
+            <button type="button" class="btn btn-primary" id="btnSaveAll">
+                <i class="fa-solid fa-floppy-disk me-1"></i>Save @moduleName
+            </button>
+        }
     </div>
 
     <div class="card admin-card mb-4 master-summary-card module-summary-card">

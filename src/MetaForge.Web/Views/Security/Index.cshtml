@@ -1,37 +1,20 @@
 @{
     ViewData["Title"] = "Security Management";
     ViewBag.SecurityNav = "overview";
+    ViewBag.ShowSecuritySyncToolbar = ViewBag.CanSyncPermissions == true;
     var overview = ViewBag.Overview as MetaForge.Application.DTOs.SecurityOverviewDto;
     var canViewUsers = ViewBag.CanViewUsers == true;
     var canManageUsers = ViewBag.CanManageUsers == true;
     var canViewRoles = ViewBag.CanViewRoles == true;
-    var canManageRoles = ViewBag.CanManageRoles == true;
     var canViewPermissions = ViewBag.CanViewPermissions == true;
-    var canSyncPermissions = ViewBag.CanSyncPermissions == true;
 }
 
-<div class="page-header security-page-header d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
-    <div class="d-flex align-items-center gap-3">
-        <span class="security-header-icon" aria-hidden="true"><i class="fa-solid fa-shield-halved"></i></span>
-        <div>
-            <h1 class="h3 mb-0">Security Management</h1>
-            <p class="page-subtitle mb-0">Control users, roles, and module permissions across the platform</p>
-        </div>
-    </div>
-    @if (canSyncPermissions)
-    {
-        <button type="button" id="btnSyncPermissions" class="btn btn-outline-primary" title="Sync Module Permissions" aria-label="Sync Module Permissions">
-            <i class="fa-solid fa-rotate me-1"></i>Sync Permissions
-        </button>
-    }
-</div>
-
-@await Html.PartialAsync("_SecuritySubnav")
+@await Html.PartialAsync("_SecurityPageHeader")
 
 @if (canViewUsers)
 {
-    <div class="row g-3 mb-4 security-stat-grid">
-        <div class="col-sm-6 col-xl-3">
+    <div class="row g-3 security-stat-grid">
+        <div class="col-6 col-xl-3">
             <div class="stat-card stat-primary h-100">
                 <div class="card-body text-center">
                     <span class="stat-icon stat-icon-users"><i class="fa-solid fa-users"></i></span>
@@ -41,7 +24,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-sm-6 col-xl-3">
+        <div class="col-6 col-xl-3">
             <div class="stat-card stat-info h-100">
                 <div class="card-body text-center">
                     <span class="stat-icon stat-icon-roles"><i class="fa-solid fa-shield-halved"></i></span>
@@ -50,7 +33,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-sm-6 col-xl-3">
+        <div class="col-6 col-xl-3">
             <div class="stat-card stat-warning h-100">
                 <div class="card-body text-center">
                     <span class="stat-icon stat-icon-perms"><i class="fa-solid fa-key"></i></span>
@@ -61,7 +44,7 @@
         </div>
         @if (canManageUsers)
         {
-            <div class="col-sm-6 col-xl-3">
+            <div class="col-6 col-xl-3">
                 <div class="stat-card stat-accent h-100">
                     <div class="card-body d-flex flex-column justify-content-center align-items-center text-center">
                         <span class="stat-icon stat-icon-quick"><i class="fa-solid fa-bolt"></i></span>
@@ -76,16 +59,16 @@
     </div>
 }
 
-<div class="row g-4">
+<div class="row g-3 security-hub-row">
     @if (canViewUsers)
     {
-        <div class="col-md-4">
+        <div class="col-md-6 col-xl-4">
             <div class="card admin-card security-hub-card h-100">
                 <div class="card-body">
                     <span class="security-hub-icon security-hub-icon-users"><i class="fa-solid fa-users"></i></span>
                     <h2 class="h6 mb-0 fw-bold">Users</h2>
                     <p>Create accounts, assign roles, and manage access for each team member.</p>
-                    <a href="/Security/Users" class="btn btn-primary btn-sm align-self-start">
+                    <a href="/Security/Users" class="btn btn-primary btn-sm">
                         <i class="fa-solid fa-arrow-right me-1"></i>Manage Users
                     </a>
                 </div>
@@ -94,13 +77,13 @@
     }
     @if (canViewRoles)
     {
-        <div class="col-md-4">
+        <div class="col-md-6 col-xl-4">
             <div class="card admin-card security-hub-card h-100">
                 <div class="card-body">
                     <span class="security-hub-icon security-hub-icon-roles"><i class="fa-solid fa-shield-halved"></i></span>
                     <h2 class="h6 mb-0 fw-bold">Roles</h2>
                     <p>Group permissions into roles and assign them using the permission matrix.</p>
-                    <a href="/Security/Roles" class="btn btn-primary btn-sm align-self-start">
+                    <a href="/Security/Roles" class="btn btn-primary btn-sm">
                         <i class="fa-solid fa-arrow-right me-1"></i>Manage Roles
                     </a>
                 </div>
@@ -109,13 +92,13 @@
     }
     @if (canViewPermissions)
     {
-        <div class="col-md-4">
+        <div class="col-md-6 col-xl-4">
             <div class="card admin-card security-hub-card h-100">
                 <div class="card-body">
                     <span class="security-hub-icon security-hub-icon-perms"><i class="fa-solid fa-key"></i></span>
                     <h2 class="h6 mb-0 fw-bold">Permissions</h2>
                     <p>Browse all module permissions and sync new ones when forms are added.</p>
-                    <a href="/Security/Permissions" class="btn btn-primary btn-sm align-self-start">
+                    <a href="/Security/Permissions" class="btn btn-primary btn-sm">
                         <i class="fa-solid fa-arrow-right me-1"></i>View Permissions
                     </a>
                 </div>
@@ -124,8 +107,10 @@
     }
 </div>
 
+@await Html.PartialAsync("_SecurityPageFooter")
+
 @section Scripts {
-    @if (canSyncPermissions)
+    @if (ViewBag.ShowSecuritySyncToolbar == true)
     {
         <script>
             $('#btnSyncPermissions').on('click', function () {

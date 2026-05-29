@@ -10,4 +10,9 @@ public interface INavigationService
     Task<AppMenuDto> GetAppMenuAsync(CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<MenuTreeNodeDto>> GetSidebarMenuAsync(CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<NavigationBreadcrumbDto>> GetBreadcrumbsAsync(
+        string requestPath,
+        string? currentPage = null,
+        CancellationToken cancellationToken = default);
 }

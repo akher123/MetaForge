@@ -1,0 +1,22 @@
+@{
+    var currentPage = ViewBag.BreadcrumbPage as string;
+}
+
+<div class="security-page">
+    <div class="security-page-header-zone">
+        <div class="module-grid-card-header page-breadcrumb-bar">
+            <div class="module-grid-breadcrumb">
+                @if (!string.IsNullOrEmpty(currentPage))
+                {
+                    @await Component.InvokeAsync("Breadcrumb", new { currentPage = currentPage })
+                }
+                else
+                {
+                    @await Component.InvokeAsync("Breadcrumb")
+                }
+            </div>
+            @await Html.PartialAsync("_SecurityHeaderToolbar")
+        </div>
+        @await Html.PartialAsync("_SecuritySubnav")
+    </div>
+    <div class="security-page-body">

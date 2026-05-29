@@ -18,49 +18,10 @@
         : isTabbedForm
             ? "module-page--tabbed"
             : "module-page--master";
-    var pageIcon = hasMasterDetail ? "fa-file-invoice" : "fa-database";
-    var pageSubtitle = hasMasterDetail
-        ? "Create and manage transaction documents with header and line items"
-        : isTabbedForm
-            ? "Structured tabs group related fields — General, Contacts, Location, Accounting, and custom sections"
-            : "Browse, create, and maintain master data records";
+    var breadcrumbPage = openMasterDetailNew ? "New Entry" : openMasterDetailId.HasValue ? "Edit Entry" : null;
 }
 
 <div class="app-page-fill module-page @pageModeClass">
-    <div class="page-header module-page-header d-flex justify-content-between align-items-center flex-wrap gap-3">
-        <div class="d-flex align-items-center gap-3">
-            <span class="module-page-icon" aria-hidden="true"><i class="fa-solid @pageIcon"></i></span>
-            <div>
-                <h1 class="h3 mb-0">@form?.FormName</h1>
-                <p class="page-subtitle mb-0">@pageSubtitle</p>
-            </div>
-        </div>
-        <div class="d-flex flex-wrap gap-2 module-page-actions">
-            <span id="moduleGridToolbarActions" class="d-flex flex-wrap gap-2"></span>
-            @if (hasMasterDetail && perms?.CanCreate == true)
-            {
-                <button type="button" class="btn btn-primary" id="btnAddMasterDetail" title="New @form?.FormName" aria-label="New @form?.FormName">
-                    <i class="fa-solid fa-plus me-1"></i>New @form?.FormName
-                </button>
-            }
-            else if (!hasMasterDetail && perms?.CanCreate == true)
-            {
-                <button type="button" class="btn btn-primary" id="btnAdd" data-module="@formCode" data-entity="@form?.EntityName" title="Add New" aria-label="Add New">
-                    <i class="fa-solid fa-plus me-1"></i>Add New
-                </button>
-            }
-            @if (perms?.CanExport == true)
-            {
-                <a class="btn btn-outline-success" href="/api/metaforge/grid/@formCode/export/excel?Page=1&PageSize=1000" title="Export Excel" aria-label="Export Excel" data-no-progress>
-                    <i class="fa-solid fa-file-excel me-1"></i>Excel
-                </a>
-                <a class="btn btn-outline-secondary" href="/api/metaforge/grid/@formCode/export/csv?Page=1&PageSize=1000" title="Export CSV" aria-label="Export CSV" data-no-progress>
-                    <i class="fa-solid fa-file-csv me-1"></i>CSV
-                </a>
-            }
-        </div>
-    </div>
-
     @if (!hasMasterDetail && canOpenRecordForm)
     {
         <div class="modal fade admin-modal module-record-modal @(isTabbedForm ? "module-record-modal--tabbed" : "")" id="recordFormModal" tabindex="-1" aria-labelledby="recordFormModalTitle" aria-hidden="true">
@@ -108,9 +69,34 @@
     }
 
     <div class="card admin-card admin-grid-card admin-grid-card--fill module-grid-card">
-        <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
-            <span><i class="fa-solid fa-table me-2"></i>@(hasMasterDetail ? "Documents" : "Records")</span>
-            <span class="text-muted small module-grid-hint">Use row actions to edit or remove entries</span>
+        <div class="card-header module-grid-card-header d-flex align-items-center flex-wrap gap-2">
+            <div class="module-grid-breadcrumb">
+                @await Component.InvokeAsync("Breadcrumb", new { currentPage = breadcrumbPage })
+            </div>
+            <div class="d-flex flex-wrap align-items-center gap-2 module-grid-toolbar">
+                <span id="moduleGridToolbarActions" class="d-flex flex-wrap gap-2"></span>
+                @if (hasMasterDetail && perms?.CanCreate == true)
+                {
+                    <button type="button" class="btn btn-sm btn-primary" id="btnAddMasterDetail" title="New @form?.FormName" aria-label="New @form?.FormName">
+                        <i class="fa-solid fa-plus me-1"></i>New @form?.FormName
+                    </button>
+                }
+                else if (!hasMasterDetail && perms?.CanCreate == true)
+                {
+                    <button type="button" class="btn btn-sm btn-primary" id="btnAdd" data-module="@formCode" data-entity="@form?.EntityName" title="Add New" aria-label="Add New">
+                        <i class="fa-solid fa-plus me-1"></i>Add New
+                    </button>
+                }
+                @if (perms?.CanExport == true)
+                {
+                    <a class="btn btn-sm btn-outline-success" href="/api/metaforge/grid/@formCode/export/excel?Page=1&PageSize=1000" title="Export Excel" aria-label="Export Excel" data-no-progress>
+                        <i class="fa-solid fa-file-excel me-1"></i>Excel
+                    </a>
+                    <a class="btn btn-sm btn-outline-secondary" href="/api/metaforge/grid/@formCode/export/csv?Page=1&PageSize=1000" title="Export CSV" aria-label="Export CSV" data-no-progress>
+                        <i class="fa-solid fa-file-csv me-1"></i>CSV
+                    </a>
+                }
+            </div>
         </div>
         <div class="card-body p-0">
             <table id="dynamicGrid" class="table table-sm table-striped table-hover w-100 mb-0"

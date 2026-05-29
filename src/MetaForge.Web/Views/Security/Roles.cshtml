@@ -5,33 +5,20 @@
     var canManageRoles = ViewBag.CanManageRoles == true;
 }
 
-<div class="page-header security-page-header d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
-    <div class="d-flex align-items-center gap-3">
-        <span class="security-header-icon" aria-hidden="true"><i class="fa-solid fa-shield-halved"></i></span>
-        <div>
-            <h1 class="h3 mb-0">Roles</h1>
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb mb-0 mt-1">
-                    <li class="breadcrumb-item"><a href="/Security">Security</a></li>
-                    <li class="breadcrumb-item active">Roles</li>
-                </ol>
-            </nav>
-        </div>
-    </div>
-    @if (canManageRoles)
-    {
-        <a href="/Security/Roles/Create" class="btn btn-primary" title="New Role" aria-label="New Role">
-            <i class="fa-solid fa-plus me-1"></i>New Role
-        </a>
-    }
-</div>
-
-@await Html.PartialAsync("_SecuritySubnav")
+@await Html.PartialAsync("_SecurityPageHeader")
 
 <div class="card admin-card admin-grid-card">
-    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
-        <span><i class="fa-solid fa-shield-halved me-2"></i>Role Directory</span>
-        <span class="text-muted small">@(roles?.Count ?? 0) role(s)</span>
+    <div class="card-header module-grid-card-header">
+        <span class="fw-semibold"><i class="fa-solid fa-shield-halved me-2"></i>Role Directory</span>
+        <div class="module-grid-toolbar">
+            <span class="text-muted small align-self-center">@(roles?.Count ?? 0) role(s)</span>
+            @if (canManageRoles)
+            {
+                <a href="/Security/Roles/Create" class="btn btn-sm btn-primary" title="New Role" aria-label="New Role">
+                    <i class="fa-solid fa-plus me-1"></i>New Role
+                </a>
+            }
+        </div>
     </div>
     <div class="card-body p-0">
         <table class="table table-sm table-striped table-hover w-100 mb-0" id="rolesTable">
@@ -83,6 +70,8 @@
         </table>
     </div>
 </div>
+
+@await Html.PartialAsync("_SecurityPageFooter")
 
 @section Scripts {
     <script>

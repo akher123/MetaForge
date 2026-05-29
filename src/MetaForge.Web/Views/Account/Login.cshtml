@@ -4,112 +4,147 @@
     ViewData["Title"] = "Sign In";
 }
 
-<div class="auth-page">
-    <div class="auth-page-grid">
-        <aside class="auth-brand-panel" aria-label="MetaForge platform overview">
-            <div class="auth-brand-bg" aria-hidden="true">
-                <div class="auth-brand-orb auth-brand-orb-1"></div>
-                <div class="auth-brand-orb auth-brand-orb-2"></div>
-                <div class="auth-brand-grid"></div>
-            </div>
-            <div class="auth-brand-content">
-                <span class="auth-brand-badge">
-                    <i class="fa-brands fa-microsoft me-2"></i>.NET 10 Admin Platform
-                </span>
-                <h1 class="auth-brand-headline">
-                    Forge enterprise apps
-                    <span class="auth-brand-gradient">from your domain model</span>
-                </h1>
-                <p class="auth-brand-lead">
-                    Dynamic forms, grids, master-detail workflows, and role-based access — configured at runtime from EF Core metadata.
-                </p>
-                <ul class="auth-brand-features">
-                    <li>
-                        <span class="auth-feature-icon"><i class="fa-solid fa-wand-magic-sparkles"></i></span>
-                        <span><strong>Runtime UI</strong>Auto-generated CRUD and transaction screens</span>
-                    </li>
-                    <li>
-                        <span class="auth-feature-icon"><i class="fa-solid fa-shield-halved"></i></span>
-                        <span><strong>Enterprise RBAC</strong>Form-level permissions and audit trails</span>
-                    </li>
-                    <li>
-                        <span class="auth-feature-icon"><i class="fa-solid fa-layer-group"></i></span>
-                        <span><strong>Clean Architecture</strong>Modular monolith ready for scale</span>
-                    </li>
-                </ul>
-            </div>
-        </aside>
+<div class="auth-shell">
+    <aside class="auth-brand-panel" aria-label="MetaForge platform">
+        <div class="auth-brand-bg" aria-hidden="true">
+            <div class="auth-brand-orb auth-brand-orb-1"></div>
+            <div class="auth-brand-orb auth-brand-orb-2"></div>
+            <div class="auth-brand-grid"></div>
+        </div>
+        <div class="auth-brand-content">
+            <a class="auth-brand-logo" asp-controller="Home" asp-action="Landing">
+                <span class="auth-brand-mark"><i class="fa-solid fa-bolt"></i></span>
+                <span>Meta<span class="auth-brand-accent">Forge</span></span>
+            </a>
+            <h1 class="auth-brand-headline">Metadata-driven admin for .NET</h1>
+            <p class="auth-brand-lead">
+                Sign in to manage modules, security, and dynamic CRUD screens powered by your EF Core domain model.
+            </p>
+            <ul class="auth-brand-highlights">
+                <li>
+                    <i class="fa-solid fa-table-cells" aria-hidden="true"></i>
+                    <span>Runtime forms &amp; grids</span>
+                </li>
+                <li>
+                    <i class="fa-solid fa-shield-halved" aria-hidden="true"></i>
+                    <span>Role-based access control</span>
+                </li>
+                <li>
+                    <i class="fa-solid fa-layer-group" aria-hidden="true"></i>
+                    <span>Clean Architecture solution</span>
+                </li>
+            </ul>
+        </div>
+        <p class="auth-brand-footer">&copy; @DateTime.UtcNow.Year MetaForge</p>
+    </aside>
 
-        <div class="auth-form-panel">
-            <div class="auth-form-card">
-                <div class="auth-form-header">
-                    <div class="auth-form-logo" aria-hidden="true">
-                        <i class="fa-solid fa-right-to-bracket"></i>
+    <section class="auth-signin-panel">
+        <a asp-controller="Home" asp-action="Landing" class="auth-back-link">
+            <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
+            <span>Back to home</span>
+        </a>
+
+        <div class="auth-form-card">
+            <header class="auth-form-header">
+                <h2 class="auth-form-title">Sign in</h2>
+                <p class="auth-form-subtitle">Enter your credentials to access the dashboard</p>
+            </header>
+
+            @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+            {
+                <div class="auth-alert auth-alert--danger" role="alert">
+                    <i class="fa-solid fa-circle-exclamation auth-alert-icon" aria-hidden="true"></i>
+                    <span>@Model.ErrorMessage</span>
+                </div>
+            }
+
+            <form asp-action="Login" method="post" class="auth-form" novalidate>
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="ReturnUrl" />
+
+                <div class="auth-field">
+                    <label asp-for="UserName" class="auth-label">Username</label>
+                    <div class="auth-input-wrap">
+                        <i class="fa-solid fa-user auth-input-icon" aria-hidden="true"></i>
+                        <input asp-for="UserName"
+                               class="form-control auth-input"
+                               placeholder="e.g. admin"
+                               autofocus
+                               autocomplete="username"
+                               aria-required="true" />
                     </div>
-                    <h2 class="auth-form-title">Welcome back</h2>
-                    <p class="auth-form-subtitle">Sign in to access your MetaForge dashboard</p>
+                    <span asp-validation-for="UserName" class="auth-field-error"></span>
                 </div>
 
-                @if (!string.IsNullOrEmpty(Model.ErrorMessage))
-                {
-                    <div class="auth-alert auth-alert--danger" role="alert">
-                        <span class="auth-alert-icon" aria-hidden="true"><i class="fa-solid fa-circle-xmark"></i></span>
-                        <span>@Model.ErrorMessage</span>
+                <div class="auth-field">
+                    <label asp-for="Password" class="auth-label">Password</label>
+                    <div class="auth-input-wrap">
+                        <i class="fa-solid fa-lock auth-input-icon" aria-hidden="true"></i>
+                        <input asp-for="Password"
+                               type="password"
+                               id="passwordInput"
+                               class="form-control auth-input auth-input--password"
+                               placeholder="Enter your password"
+                               autocomplete="current-password"
+                               aria-required="true" />
+                        <button type="button"
+                                class="auth-password-toggle"
+                                id="passwordToggle"
+                                aria-label="Show password"
+                                aria-pressed="false">
+                            <i class="fa-solid fa-eye" aria-hidden="true"></i>
+                        </button>
                     </div>
-                }
+                    <span asp-validation-for="Password" class="auth-field-error"></span>
+                </div>
 
-                <form asp-action="Login" method="post" class="auth-form">
-                    @Html.AntiForgeryToken()
-                    <input type="hidden" asp-for="ReturnUrl" />
-
-                    <div class="auth-field">
-                        <label asp-for="UserName" class="auth-label">Username</label>
-                        <div class="auth-input-wrap">
-                            <i class="fa-solid fa-user auth-input-icon" aria-hidden="true"></i>
-                            <input asp-for="UserName" class="form-control auth-input" placeholder="Enter your username" autofocus autocomplete="username" />
-                        </div>
-                        <span asp-validation-for="UserName" class="auth-field-error"></span>
+                <div class="auth-form-options">
+                    <div class="form-check auth-remember">
+                        <input asp-for="RememberMe" class="form-check-input" id="RememberMe" />
+                        <label asp-for="RememberMe" class="form-check-label" for="RememberMe">Keep me signed in</label>
                     </div>
+                </div>
 
-                    <div class="auth-field">
-                        <label asp-for="Password" class="auth-label">Password</label>
-                        <div class="auth-input-wrap">
-                            <i class="fa-solid fa-lock auth-input-icon" aria-hidden="true"></i>
-                            <input asp-for="Password" type="password" class="form-control auth-input" placeholder="Enter your password" autocomplete="current-password" />
-                        </div>
-                        <span asp-validation-for="Password" class="auth-field-error"></span>
-                    </div>
+                <button type="submit" class="btn btn-auth-submit w-100">
+                    Sign in
+                    <i class="fa-solid fa-arrow-right ms-2" aria-hidden="true"></i>
+                </button>
+            </form>
 
-                    <div class="auth-form-options">
-                        <div class="form-check auth-remember">
-                            <input asp-for="RememberMe" class="form-check-input" id="RememberMe" />
-                            <label asp-for="RememberMe" class="form-check-label" for="RememberMe">Remember me on this device</label>
-                        </div>
-                    </div>
-
-                    <button type="submit" class="btn btn-auth-submit w-100">
-                        <span>Sign in to dashboard</span>
-                        <i class="fa-solid fa-arrow-right ms-2" aria-hidden="true"></i>
-                    </button>
-                </form>
-
-                <div class="auth-demo-card">
-                    <div class="auth-demo-label">
-                        <i class="fa-solid fa-flask me-1"></i>Demo environment
-                    </div>
+            <div class="auth-demo-card" role="note">
+                <div class="auth-demo-icon" aria-hidden="true">
+                    <i class="fa-solid fa-circle-info"></i>
+                </div>
+                <div>
+                    <p class="auth-demo-title">Demo credentials</p>
                     <p class="auth-demo-text mb-0">
-                        Use <kbd>admin</kbd> / <kbd>admin</kbd> to explore the platform
+                        Username <kbd>admin</kbd> &middot; Password <kbd>admin</kbd>
                     </p>
                 </div>
             </div>
-
-            <p class="auth-form-footer">
-                &copy; @DateTime.UtcNow.Year MetaForge &mdash; Metadata-driven admin for .NET
-            </p>
         </div>
-    </div>
+
+        <p class="auth-panel-footer">
+            Secured with cookie authentication &amp; form-level RBAC
+        </p>
+    </section>
 </div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function () {
+            var input = document.getElementById('passwordInput');
+            var toggle = document.getElementById('passwordToggle');
+            if (!input || !toggle) return;
+
+            toggle.addEventListener('click', function () {
+                var show = input.type === 'password';
+                input.type = show ? 'text' : 'password';
+                toggle.setAttribute('aria-pressed', show ? 'true' : 'false');
+                toggle.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+                toggle.querySelector('i').className = show ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye';
+            });
+        })();
+    </script>
 }

@@ -10,26 +10,15 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <link rel="stylesheet" href="~/css/landing.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/auth.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/top-progress.css" asp-append-version="true" />
 </head>
-<body class="landing-body auth-body">
-    <a href="#main-content" class="landing-skip">Skip to content</a>
+<body class="auth-body">
+    <a href="#main-content" class="auth-skip">Skip to sign in</a>
 
-    <header class="auth-topbar">
-        <div class="container-fluid auth-topbar-inner">
-            <a class="landing-brand auth-topbar-brand" asp-controller="Home" asp-action="Landing">
-                <span class="landing-brand-mark"><i class="fa-solid fa-bolt"></i></span>
-                <span class="landing-brand-text">Meta<span class="landing-brand-accent">Forge</span></span>
-            </a>
-            <a asp-controller="Home" asp-action="Landing" class="auth-topbar-link">
-                <i class="fa-solid fa-arrow-left me-1"></i>Back to home
-            </a>
-        </div>
-        <div id="topProgress" class="top-progress" aria-hidden="true" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Page loading">
-            <div id="topProgressBar" class="top-progress-bar"></div>
-        </div>
-    </header>
+    <div id="topProgress" class="top-progress top-progress--auth" aria-hidden="true" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Page loading">
+        <div id="topProgressBar" class="top-progress-bar"></div>
+    </div>
 
     <main id="main-content" class="auth-main">
         @RenderBody()
