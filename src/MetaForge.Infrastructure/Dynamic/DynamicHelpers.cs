@@ -37,9 +37,7 @@ public sealed class EntityTypeResolver : IEntityTypeResolver
 
     public IReadOnlyList<Type> GetAllEntityTypes() =>
         _dbContext.Model.GetEntityTypes()
-            .Where(t => !t.ClrType.Namespace!.StartsWith("MetaForge.Domain.Metadata", StringComparison.Ordinal)
-                     && !t.ClrType.Namespace!.StartsWith("MetaForge.Domain.Security", StringComparison.Ordinal)
-                     && t.ClrType != typeof(Domain.Audit.AuditLog))
+            .Where(t => FeatureDiscoveryConstants.IsFeatureEntityNamespace(t.ClrType.Namespace))
             .Select(t => t.ClrType)
             .ToList();
 
@@ -48,7 +46,7 @@ public sealed class EntityTypeResolver : IEntityTypeResolver
         try
         {
             var entityType = Resolve(entityName);
-            return entityType.Namespace?.StartsWith("MetaForge.Domain.Business", StringComparison.Ordinal) == true;
+            return FeatureDiscoveryConstants.IsFeatureEntityNamespace(entityType.Namespace);
         }
         catch (NotFoundException)
         {

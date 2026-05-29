@@ -19,7 +19,7 @@ public class EntityMetadataDiscoveryService : IEntityMetadataDiscoveryService
 
     public IReadOnlyList<EntityMetadataDto> DiscoverAll() =>
         _dbContext.Model.GetEntityTypes()
-            .Where(t => t.ClrType.Namespace?.StartsWith("MetaForge.Domain.Business") == true)
+            .Where(t => FeatureDiscoveryConstants.IsFeatureEntityNamespace(t.ClrType.Namespace))
             .Select(t => MapEntity(t))
             .ToList();
 

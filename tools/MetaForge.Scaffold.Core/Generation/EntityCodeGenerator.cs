@@ -9,7 +9,7 @@ public static class EntityCodeGenerator
     public static string Generate(TableModel table, bool includeNavigations)
     {
         var sb = new StringBuilder();
-        sb.AppendLine("namespace MetaForge.Domain.Business;");
+        sb.AppendLine("namespace MetaForge.Domain.Features;");
         sb.AppendLine();
         sb.AppendLine("/// <summary>");
         sb.AppendLine($"/// {table.EntityName} business entity (scaffolded from {table.TableName}).");

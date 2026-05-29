@@ -25,14 +25,16 @@ MetaForge follows **Clean Architecture** with a metadata-first admin shell. Busi
 ```text
 MetaForge.slnx
 ├── src/
-│   ├── MetaForge.Domain/           Entities, enums, metadata model (ForgeForm, security)
-│   ├── MetaForge.Application/      Interfaces, DTOs, application contracts
-│   ├── MetaForge.Infrastructure/   EF Core, repositories, dynamic CRUD/grid/services
+│   ├── MetaForge.Domain/           Framework (Metadata, Security) + Features (business entities)
+│   ├── MetaForge.Application/      Framework interfaces, DTOs, contracts
+│   ├── MetaForge.Infrastructure/   Framework services + feature EF configurations
 │   ├── MetaForge.Shared/           Constants, shared exceptions
-│   └── MetaForge.Web/              MVC UI, REST API, authorization, Razor views
+│   └── MetaForge.Web/              Framework shell (Form Builder, dynamic Module, Security)
 └── tests/
     └── MetaForge.UnitTests/
 ```
+
+**Framework vs features:** The platform (metadata-driven CRUD, security, menus) is the **framework**. Your EF entities and screens are **features**. Full boundaries and folder rules: [docs/architecture/framework-vs-features.md](docs/architecture/framework-vs-features.md).
 
 ### Layer dependencies
 
@@ -48,7 +50,7 @@ MetaForge.Web             ← MVC controllers, API, Razor views
 
 | Layer | Responsibility | Must not contain |
 |---|---|---|
-| **Domain** | Business entities (`MetaForge.Domain.Business`), metadata model (`ForgeForm`, `ForgeField`, `ForgeGridColumn`, `ForgeRelation`, `ForgeMenu`), RBAC entities, enums | EF Core, ASP.NET, service logic |
+| **Domain** | **Framework:** metadata (`ForgeForm`, …), RBAC, audit. **Features:** business entities under `MetaForge.Domain.Features.*` (legacy: `MetaForge.Domain.Business`) | EF Core, ASP.NET, service logic |
 | **Application** | Service interfaces, DTOs, repository contracts, validation contracts | EF Core, infrastructure implementations |
 | **Infrastructure** | `MetaForgeDbContext`, EF configurations, generic CRUD, grid/export, discovery, auth, caching | UI or controller code |
 | **Web** | `ModuleController` for dynamic screens, Form Builder, Security UI, REST API, cookie authentication | Direct database access |
@@ -80,7 +82,7 @@ All dynamic screens are driven by database-backed metadata:
 
 | Service | Role |
 |---|---|
-| `EntityMetadataDiscoveryService` | Scans EF Core model types under `MetaForge.Domain.Business` and auto-generates draft form config |
+| `EntityMetadataDiscoveryService` | Scans feature entity namespaces (`MetaForge.Domain.Features.*` and legacy `MetaForge.Domain.Business`) and auto-generates draft form config |
 | `FormConfigurationService` | Form Builder CRUD — fields, columns, relations, screen preview |
 | `FormMetadataService` | Loads cached form definitions for runtime rendering |
 | `GenericCrudService` | Dynamic create/read/update/delete against any configured entity |
@@ -301,7 +303,7 @@ Permissions are enforced on both MVC pages and REST API endpoints. Users without
 
 #### Add a master-data screen
 
-1. Add an EF entity under `MetaForge.Domain.Business` and register it in `MetaForgeDbContext`.
+1. Add an EF entity under `MetaForge.Domain/Features/{Area}/` with namespace `MetaForge.Domain.Features.{Area}` and register it in `MetaForgeDbContext`.
 2. Run the app (or `--reset-db` in development).
 3. Open Form Builder → New Form → select entity → Auto-Build → Save.
 4. Add a menu item under **Menu**.
@@ -437,13 +439,13 @@ dotnet metaforge scaffold entity --help
 
 #### Option B — Manual
 
-1. Create a class in `src/MetaForge.Domain/Business/` inheriting from `BaseEntity`.
+1. Create a class in `src/MetaForge.Domain/Features/{Area}/` with namespace `MetaForge.Domain.Features.{Area}`, inheriting from `BaseEntity`.
 2. Add a `DbSet<T>` and configure relationships in `MetaForgeDbContext` (or `Persistence/Configurations/Generated/`).
 3. Restart the app — the entity appears in Form Builder's entity list.
 4. Use **Auto-Build** or POST `/api/metaforge/form-catalog/discover/{entityName}` to generate metadata.
 5. Link the form to a menu item and sync permissions.
 
-Only entities in the `MetaForge.Domain.Business` namespace are discovered automatically.
+Only entities in `MetaForge.Domain.Features` (or legacy `MetaForge.Domain.Business`) are discovered automatically.
 
 ### Metadata cache
 

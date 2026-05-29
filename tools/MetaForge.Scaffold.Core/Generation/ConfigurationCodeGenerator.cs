@@ -10,11 +10,11 @@ public static class ConfigurationCodeGenerator
     {
         var entity = table.EntityName;
         var sb = new StringBuilder();
-        sb.AppendLine("using MetaForge.Domain.Business;");
+        sb.AppendLine("using MetaForge.Domain.Features;");
         sb.AppendLine("using Microsoft.EntityFrameworkCore;");
         sb.AppendLine("using Microsoft.EntityFrameworkCore.Metadata.Builders;");
         sb.AppendLine();
-        sb.AppendLine("namespace MetaForge.Infrastructure.Persistence.Configurations.Generated;");
+        sb.AppendLine("namespace MetaForge.Infrastructure.Persistence.Configurations.Features.Generated;");
         sb.AppendLine();
         sb.AppendLine($"public class {entity}Configuration : IEntityTypeConfiguration<{entity}>");
         sb.AppendLine("{");
