@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <ApplicationIcon />
+    <RootNamespace>MetaForge.Scaffold.WinForms</RootNamespace>
+    <AssemblyName>MetaForge.Scaffold.WinForms</AssemblyName>
+    <Description>Windows Forms UI for MetaForge entity scaffolding.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MetaForge.Scaffold.Core\MetaForge.Scaffold.Core.csproj" />
+  </ItemGroup>
+
+</Project>

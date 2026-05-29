@@ -6,7 +6,13 @@
     <Project Path="src/MetaForge.Shared/MetaForge.Shared.csproj" />
     <Project Path="src/MetaForge.Web/MetaForge.Web.csproj" />
   </Folder>
+  <Folder Name="/tools/">
+    <Project Path="tools/MetaForge.Scaffold.Core/MetaForge.Scaffold.Core.csproj" />
+    <Project Path="tools/MetaForge.Scaffold/MetaForge.Scaffold.csproj" />
+    <Project Path="tools/MetaForge.Scaffold.WinForms/MetaForge.Scaffold.WinForms.csproj" />
+  </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/MetaForge.UnitTests/MetaForge.UnitTests.csproj" />
+    <Project Path="tests/MetaForge.Scaffold.Tests/MetaForge.Scaffold.Tests.csproj" />
   </Folder>
 </Solution>

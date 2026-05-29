@@ -392,8 +392,53 @@ All endpoints require authentication (cookie session). Form-scoped endpoints als
 
 ### Add a new business entity
 
+#### Option A — Scaffold (recommended)
+
+From the solution root, with SQL Server reachable via `appsettings.json` or `METAFORGE_CONNECTION`:
+
+```bash
+# Reverse scaffold from an existing table
+dotnet run --project tools/MetaForge.Scaffold -- scaffold entity --table Warehouses
+
+# Greenfield (generates entity + EF config; migration creates the table)
+dotnet run --project tools/MetaForge.Scaffold -- scaffold entity --name Warehouse --columns "Code:string:50!,Name:string:200"
+
+# Preview without writing files
+dotnet run --project tools/MetaForge.Scaffold -- scaffold entity --name Warehouse --columns "Code:string:50!,Name:string:200" --dry-run
+
+# Add EF migration in the same step
+dotnet run --project tools/MetaForge.Scaffold -- scaffold entity --name Warehouse --columns "Code:string:50!,Name:string:200" --migration
+```
+
+Then:
+
+1. `dotnet build`
+2. Apply migrations (run the app, or `dotnet ef database update`)
+3. Form Builder → select entity → **Auto-Build** → Save
+4. Menu item + role permissions
+
+#### Windows Forms UI
+
+```bash
+dotnet run --project tools/MetaForge.Scaffold.WinForms
+```
+
+Use the GUI to set solution root, greenfield or reverse mode, preview code, and run scaffold (optional EF migration). **Load conn...** reads `DefaultConnection` from `src/MetaForge.Web/appsettings.json`.
+
+Install as a local CLI tool (optional, after pack):
+
+```bash
+dotnet pack tools/MetaForge.Scaffold -o .artifacts/tools
+dotnet tool install --local MetaForge.Scaffold --add-source .artifacts/tools
+dotnet metaforge scaffold entity --help
+```
+
+**Requirements:** Primary key must be `int Id`. System tables (`Forge*`, `Users`, etc.) cannot be scaffolded.
+
+#### Option B — Manual
+
 1. Create a class in `src/MetaForge.Domain/Business/` inheriting from `BaseEntity`.
-2. Add a `DbSet<T>` and configure relationships in `MetaForgeDbContext`.
+2. Add a `DbSet<T>` and configure relationships in `MetaForgeDbContext` (or `Persistence/Configurations/Generated/`).
 3. Restart the app — the entity appears in Form Builder's entity list.
 4. Use **Auto-Build** or POST `/api/metaforge/form-catalog/discover/{entityName}` to generate metadata.
 5. Link the form to a menu item and sync permissions.

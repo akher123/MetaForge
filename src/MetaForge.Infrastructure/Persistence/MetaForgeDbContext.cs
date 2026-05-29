@@ -40,6 +40,8 @@ public class MetaForgeDbContext : DbContext
     public DbSet<SalesOrderItem> SalesOrderItems => Set<SalesOrderItem>();
     public DbSet<SalesOrderCharge> SalesOrderCharges => Set<SalesOrderCharge>();
 
+    public DbSet<Teacher> Teachers => Set<Teacher>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(MetaForgeDbContext).Assembly);
