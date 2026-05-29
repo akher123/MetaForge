@@ -1,45 +1,56 @@
 using System.Net;
 using System.Text.Json;
-using MetaForge.Shared.Exceptions;
 using FluentValidation;
+using MetaForge.Shared.Exceptions;
+using Microsoft.AspNetCore.Diagnostics;
 
-namespace MetaForge.Web.Middleware;
+namespace MetaForge.Web.Logging;
 
-/// <summary>
-/// Global exception handling middleware.
-/// </summary>
-public class GlobalExceptionMiddleware
+public sealed class GlobalExceptionHandler : IExceptionHandler
 {
-    private readonly RequestDelegate _next;
-    private readonly ILogger<GlobalExceptionMiddleware> _logger;
+    private readonly ILogger<GlobalExceptionHandler> _logger;
+    private readonly IHostEnvironment _environment;
 
-    public GlobalExceptionMiddleware(RequestDelegate next, ILogger<GlobalExceptionMiddleware> logger)
+    public GlobalExceptionHandler(
+        ILogger<GlobalExceptionHandler> logger,
+        IHostEnvironment environment)
     {
-        _next = next;
         _logger = logger;
+        _environment = environment;
     }
 
-    public async Task InvokeAsync(HttpContext context)
+    public async ValueTask<bool> TryHandleAsync(
+        HttpContext httpContext,
+        Exception exception,
+        CancellationToken cancellationToken)
     {
-        try
-        {
-            await _next(context);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Unhandled exception");
+        _logger.LogUnhandledException(httpContext, exception);
 
-            if (!IsApiRequest(context))
-                throw;
-
-            await HandleExceptionAsync(context, ex);
+        if (IsApiRequest(httpContext))
+        {
+            await WriteApiErrorAsync(httpContext, exception, cancellationToken);
+            return true;
         }
+
+        if (_environment.IsDevelopment())
+            return false;
+
+        if (httpContext.Response.HasStarted)
+            return false;
+
+        httpContext.Response.Clear();
+        httpContext.Response.StatusCode = StatusCodes.Status500InternalServerError;
+        httpContext.Response.Redirect("/Home/Error");
+        return true;
     }
 
     private static bool IsApiRequest(HttpContext context) =>
         context.Request.Path.StartsWithSegments("/api", StringComparison.OrdinalIgnoreCase);
 
-    private static Task HandleExceptionAsync(HttpContext context, Exception exception)
+    private static Task WriteApiErrorAsync(
+        HttpContext context,
+        Exception exception,
+        CancellationToken cancellationToken)
     {
         if (exception is ValidationException validationException)
         {
@@ -73,7 +84,7 @@ public class GlobalExceptionMiddleware
                 fieldErrors
             });
 
-            return context.Response.WriteAsync(payload);
+            return context.Response.WriteAsync(payload, cancellationToken);
         }
 
         var (statusCode, message) = exception switch
@@ -87,6 +98,6 @@ public class GlobalExceptionMiddleware
         context.Response.StatusCode = (int)statusCode;
 
         var errorPayload = JsonSerializer.Serialize(new { error = message });
-        return context.Response.WriteAsync(errorPayload);
+        return context.Response.WriteAsync(errorPayload, cancellationToken);
     }
 }
