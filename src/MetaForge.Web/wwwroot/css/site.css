@@ -45,32 +45,40 @@
   --dv-accent-dark:   var(--dv-cyan-600);
   --dv-accent-soft:   var(--dv-cyan-50);
 
-  --dv-bg:            #d5dce6;
-  --dv-bg-subtle:     #c8d1de;
+  --dv-bg:            #f1f5f9;
+  --dv-bg-subtle:     #f8fafc;
   --dv-surface:       #ffffff;
   --dv-surface-raised: #ffffff;
-  --dv-surface-alt:   #eef2f7;
-  --dv-surface-muted: #e4eaf2;
-  --dv-surface-header: #e8eef6;
+  --dv-surface-alt:   #f8fafc;
+  --dv-surface-muted: #f1f5f9;
+  --dv-surface-header: #f8fafc;
   --dv-surface-hover: #eef2ff;
-  --dv-border:        #b8c5d6;
-  --dv-border-strong: #9fb0c4;
+  --dv-border:        #94a3b8;
+  --dv-border-strong: #64748b;
   --dv-border-focus:  var(--dv-indigo-700);
 
   /*
-   * Data grid — WCAG 2.1 AA
-   * Text contrast: header/body text ≥4.5:1 on respective backgrounds.
-   * UI contrast: header border ≥3:1 against header fill; cell borders ≥3:1 on body.
-   * Row height: dense 28px body / 30px header (maximum rows on screen).
+   * Data grid — WCAG 2.1 AA (1.4.3 contrast minimum)
+   * Body/header text ≥ 4.5:1 on their backgrounds.
+   * UI borders (grid cells, controls) ≥ 3:1 vs adjacent fill.
    */
-  --dv-surface-table-head: #e2e8f0;
-  --dv-surface-table-head-end: #cbd5e1;
-  --dv-surface-table-stripe: #f1f5f9;
-  --dv-surface-table-hover: #e0e7ff;
-  --dv-grid-border:        #cbd5e1;
-  --dv-grid-border-strong: #94a3b8;
-  --dv-grid-header-border: #64748b;
-  --dv-grid-header-text:   #0f172a;
+  --dv-surface-table-head-start: #f8fafc;
+  --dv-surface-table-head: #f1f5f9;
+  --dv-surface-table-head-end: #e2e8f0;
+  --dv-surface-table-stripe: #f8fafc;
+  --dv-surface-table-hover: #eef2ff;
+  --dv-grid-border:        #94a3b8;
+  --dv-grid-border-strong: #64748b;
+  --dv-grid-header-border: transparent;
+  --dv-grid-header-text:   #1e293b;
+  --dv-grid-header-sort-icon: #64748b;
+  --dv-grid-header-sort-active: #3730a3;
+  --dv-grid-header-bg: linear-gradient(
+    180deg,
+    var(--dv-surface-table-head-start) 0%,
+    var(--dv-surface-table-head) 48%,
+    var(--dv-surface-table-head-end) 100%
+  );
   --dv-grid-body-bg:       #ffffff;
   --dv-grid-body-text:     #0f172a;
   --dv-grid-body-muted:    #475569;
@@ -84,15 +92,15 @@
   --dv-grid-head-min-h:    1.875rem;
   --dv-grid-row-min-h:     1.75rem;
 
-  /* WCAG AA text — 4.5:1+ on white / light surfaces */
-  --dv-text:             var(--dv-slate-900);
-  --dv-text-secondary:   var(--dv-slate-700);
-  --dv-text-muted:       var(--dv-slate-600);
+  /* WCAG AA text — 4.5:1+ on #fff / #f1f5f9 (avoid slate-500 for small text) */
+  --dv-text:             #0f172a;
+  --dv-text-secondary:   #334155;
+  --dv-text-muted:       #475569;
   --dv-text-on-primary:  #ffffff;
   --dv-text-on-dark:     #f1f5f9;
 
-  --dv-link:             var(--dv-indigo-800);
-  --dv-link-hover:       var(--dv-indigo-950);
+  --dv-link:             #3730a3;
+  --dv-link-hover:       #312e81;
   --dv-focus-ring:       var(--dv-indigo-600);
 
   --dv-success: #059669;
@@ -163,6 +171,7 @@ html {
 body.admin-app,
 body.metaforge-app {
   font-family: var(--bs-font-sans-serif);
+  font-weight: 400;
   background-color: var(--dv-bg);
   background-image: linear-gradient(180deg, var(--dv-bg-subtle) 0%, var(--dv-bg) 120px, var(--dv-bg) 100%);
   color: var(--dv-text);
@@ -1945,7 +1954,7 @@ body:has(#confirmDeleteModal.show) .modal-backdrop.show {
 }
 
 #masterSummary strong {
-  color: var(--dv-slate-900);
+  color: var(--dv-text);
   font-weight: 600;
 }
 
@@ -1959,7 +1968,7 @@ body:has(#confirmDeleteModal.show) .modal-backdrop.show {
 }
 
 .master-detail-grid thead th {
-  background: linear-gradient(180deg, #f8fafc 0%, var(--dv-surface-table-head) 100%) !important;
+  background: var(--dv-grid-header-bg) !important;
   color: var(--dv-grid-header-text) !important;
   white-space: nowrap;
   font-size: var(--dv-grid-font-head);
@@ -1968,7 +1977,7 @@ body:has(#confirmDeleteModal.show) .modal-backdrop.show {
   text-transform: none;
   letter-spacing: 0.01em;
   border-color: var(--dv-grid-border) !important;
-  border-bottom: 2px solid var(--dv-grid-header-border) !important;
+  border-bottom: none !important;
   padding: var(--dv-grid-head-py) var(--dv-grid-cell-px);
   min-height: var(--dv-grid-head-min-h);
 }
@@ -2140,19 +2149,19 @@ body:has(#confirmDeleteModal.show) .modal-backdrop.show {
 
 .table > thead.table-light,
 .table > thead {
-  background: var(--dv-surface-table-head) !important;
+  background: var(--dv-grid-header-bg) !important;
 }
 
 .table > thead th,
 .table-light th {
-  background: linear-gradient(180deg, #f8fafc 0%, var(--dv-surface-table-head) 100%) !important;
+  background: var(--dv-grid-header-bg) !important;
   color: var(--dv-grid-header-text) !important;
   font-size: var(--dv-grid-font-head);
   font-weight: 600;
   line-height: var(--dv-grid-line-height);
   text-transform: none;
   letter-spacing: 0.01em;
-  border-bottom: 2px solid var(--dv-grid-header-border) !important;
+  border-bottom: none !important;
   border-color: var(--dv-grid-border) !important;
   padding: var(--dv-grid-head-py) var(--dv-grid-cell-px);
   min-height: var(--dv-grid-head-min-h);
@@ -2227,14 +2236,14 @@ table.dataTable > tfoot > tr > td {
 }
 
 table.dataTable thead th {
-  background: linear-gradient(180deg, #f8fafc 0%, var(--dv-surface-table-head) 100%) !important;
+  background: var(--dv-grid-header-bg) !important;
   color: var(--dv-grid-header-text) !important;
   font-size: var(--dv-grid-font-head) !important;
   font-weight: 600;
   line-height: var(--dv-grid-line-height);
   text-transform: none;
   letter-spacing: 0.01em;
-  border-bottom: 2px solid var(--dv-grid-header-border) !important;
+  border-bottom: none !important;
   border-color: var(--dv-grid-border) !important;
   padding: var(--dv-grid-head-py) var(--dv-grid-cell-px) !important;
   min-height: var(--dv-grid-head-min-h);
@@ -2254,13 +2263,13 @@ table.dataTable thead th.sorting_asc:before,
 table.dataTable thead th.sorting_asc:after,
 table.dataTable thead th.sorting_desc:before,
 table.dataTable thead th.sorting_desc:after {
-  color: var(--dv-slate-600) !important;
+  color: var(--dv-grid-header-sort-icon) !important;
   opacity: 1;
 }
 
 table.dataTable thead th.sorting_asc:after,
 table.dataTable thead th.sorting_desc:after {
-  color: var(--dv-indigo-800) !important;
+  color: var(--dv-grid-header-sort-active) !important;
   opacity: 1;
 }
 
@@ -2364,7 +2373,7 @@ table.dataTable.no-footer {
 }
 
 .admin-card .table:not(.dataTable) > thead > tr > th {
-  border-bottom: 2px solid var(--dv-grid-header-border) !important;
+  border-bottom: none !important;
 }
 
 .admin-card .table:not(.dataTable) > tbody > tr:last-child > td {
@@ -2761,7 +2770,7 @@ code {
 }
 
 .permission-matrix-table thead th {
-  background: linear-gradient(180deg, #f8fafc 0%, var(--dv-surface-table-head) 100%) !important;
+  background: var(--dv-grid-header-bg) !important;
   color: var(--dv-grid-header-text) !important;
   font-weight: 600;
   font-size: var(--dv-grid-font-head);
@@ -2770,7 +2779,7 @@ code {
   padding: var(--dv-grid-head-py) var(--dv-grid-cell-px) !important;
   min-height: var(--dv-grid-head-min-h);
   white-space: nowrap;
-  border-bottom: 2px solid var(--dv-grid-header-border) !important;
+  border-bottom: none !important;
 }
 
 .permission-matrix-table tbody > tr {
@@ -3210,7 +3219,7 @@ code {
 }
 
 .form-builder-field-table thead th {
-  background: linear-gradient(180deg, #f8fafc 0%, var(--dv-surface-table-head) 100%) !important;
+  background: var(--dv-grid-header-bg) !important;
   color: var(--dv-grid-header-text) !important;
   font-size: var(--dv-grid-font-head);
   font-weight: 600;
@@ -3219,7 +3228,7 @@ code {
   vertical-align: middle;
   padding: var(--dv-grid-head-py) var(--dv-grid-cell-px) !important;
   min-height: var(--dv-grid-head-min-h);
-  border-bottom: 2px solid var(--dv-grid-header-border) !important;
+  border-bottom: none !important;
 }
 
 .form-builder-field-table tbody > tr {
@@ -4324,7 +4333,9 @@ code {
 }
 
 .permission-tree-module .permission-tree-table thead th {
-  background: var(--dv-surface-table-head) !important;
+  background: var(--dv-grid-header-bg) !important;
+  color: var(--dv-grid-header-text) !important;
+  border-bottom: none !important;
 }
 
 .permission-matrix-section-header {

@@ -1,0 +1,88 @@
+/* Brand / Bootstrap primary tokens per theme */
+html[data-theme="indigo-dark"] {
+  --dv-indigo-500: #6366f1;
+  --dv-indigo-600: #818cf8;
+  --dv-primary: #6366f1;
+  --bs-primary: #6366f1;
+  --bs-primary-rgb: 99, 102, 241;
+}
+
+html[data-theme="ocean-light"] {
+  --dv-indigo-600: #0369a1;
+  --dv-cyan-500: #0891b2;
+  --dv-primary: #0369a1;
+  --bs-primary: #0369a1;
+  --bs-primary-rgb: 3, 105, 161;
+}
+
+html[data-theme="slate-dark"] {
+  --dv-indigo-600: #94a3b8;
+  --dv-cyan-500: #38bdf8;
+  --dv-primary: #94a3b8;
+  --bs-primary: #94a3b8;
+  --bs-primary-rgb: 148, 163, 184;
+}
+
+html[data-theme="emerald-light"] {
+  --dv-indigo-600: #059669;
+  --dv-cyan-500: #14b8a6;
+  --dv-primary: #059669;
+  --bs-primary: #059669;
+  --bs-primary-rgb: 5, 150, 105;
+}
+
+html[data-theme="emerald-dark"] {
+  --dv-indigo-600: #34d399;
+  --dv-cyan-500: #2dd4bf;
+  --dv-primary: #34d399;
+  --bs-primary: #34d399;
+  --bs-primary-rgb: 52, 211, 153;
+}
+
+html[data-theme="rose-light"] {
+  --dv-indigo-600: #e11d48;
+  --dv-cyan-500: #f43f5e;
+  --dv-primary: #e11d48;
+  --bs-primary: #e11d48;
+  --bs-primary-rgb: 225, 29, 72;
+}
+
+html[data-theme="violet-dark"] {
+  --dv-indigo-600: #a78bfa;
+  --dv-cyan-500: #c084fc;
+  --dv-primary: #a78bfa;
+  --bs-primary: #a78bfa;
+  --bs-primary-rgb: 167, 139, 250;
+}
+
+html[data-theme="amber-light"] {
+  --dv-indigo-600: #d97706;
+  --dv-cyan-500: #f59e0b;
+  --dv-primary: #d97706;
+  --bs-primary: #d97706;
+  --bs-primary-rgb: 217, 119, 6;
+}
+
+html[data-theme="midnight-dark"] {
+  --dv-indigo-600: #60a5fa;
+  --dv-cyan-500: #38bdf8;
+  --dv-primary: #60a5fa;
+  --bs-primary: #60a5fa;
+  --bs-primary-rgb: 96, 165, 250;
+}
+
+html[data-theme="forest-light"] {
+  --dv-indigo-600: #166534;
+  --dv-cyan-500: #65a30d;
+  --dv-primary: #166534;
+  --bs-primary: #166534;
+  --bs-primary-rgb: 22, 101, 52;
+}
+
+html[data-theme="graphite-light"] {
+  --dv-indigo-600: #374151;
+  --dv-cyan-500: #6b7280;
+  --dv-primary: #374151;
+  --bs-primary: #374151;
+  --bs-primary-rgb: 55, 65, 81;
+}

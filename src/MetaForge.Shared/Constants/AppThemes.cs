@@ -38,8 +38,8 @@ public static class AppThemes
 
     public static readonly IReadOnlyList<ThemeDefinition> Catalog =
     [
-        new(IndigoLight, "Indigo Light", false, "#4f46e5", "#06b6d4", "#d5dce6", "#ffffff",
-            "Default brand palette with indigo primary and cyan accents."),
+        new(IndigoLight, "Indigo Light", false, "#4f46e5", "#06b6d4", "#f1f5f9", "#ffffff",
+            "Default light theme — WCAG AA contrast, soft slate surfaces."),
         new(IndigoDark, "Indigo Dark", true, "#818cf8", "#22d3ee", "#0f172a", "#1e293b",
             "Low-glare dark workspace with indigo highlights."),
         new(OceanLight, "Ocean Light", false, "#0369a1", "#0891b2", "#e0f2fe", "#ffffff",
