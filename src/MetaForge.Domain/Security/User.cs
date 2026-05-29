@@ -17,5 +17,8 @@ public class User
 
     public string? SecurityStamp { get; set; }
 
+    /// <summary>UI theme key (e.g. indigo-light, indigo-dark).</summary>
+    public string ThemeKey { get; set; } = "indigo-light";
+
     public ICollection<UserRole> UserRoles { get; set; } = [];
 }

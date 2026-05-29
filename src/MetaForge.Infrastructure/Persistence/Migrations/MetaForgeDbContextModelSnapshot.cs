@@ -924,6 +924,13 @@ namespace MetaForge.Infrastructure.Persistence.Migrations
                         .HasMaxLength(64)
                         .HasColumnType("nvarchar(64)");
 
+                    b.Property<string>("ThemeKey")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasDefaultValue("indigo-light");
+
                     b.Property<string>("UserName")
                         .IsRequired()
                         .HasMaxLength(100)

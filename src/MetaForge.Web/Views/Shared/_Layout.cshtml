@@ -1,10 +1,30 @@
+@using System.Security.Claims
+@using MetaForge.Shared.Constants
 @inject MetaForge.Application.Interfaces.INavigationService NavigationService
+@inject MetaForge.Application.Interfaces.IUserPreferenceService UserPreferenceService
 @{
     var sidebarMenu = await NavigationService.GetSidebarMenuAsync();
     var isAuthenticated = User.Identity?.IsAuthenticated == true;
+    string userThemeKey = AppThemes.Default;
+    var themeIsDark = false;
+    if (isAuthenticated && int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var themeUserId))
+    {
+        userThemeKey = await UserPreferenceService.GetThemeAsync(themeUserId);
+        themeIsDark = AppThemes.IsDark(userThemeKey);
+    }
+    var availableThemes = UserPreferenceService.GetAvailableThemes();
+    var themePickerModel = new ThemePickerViewModel
+    {
+        ActiveThemeKey = userThemeKey,
+        Themes = availableThemes,
+        Variant = "panel",
+        GridId = "themePickerGridNav"
+    };
+    var activeThemeName = availableThemes.FirstOrDefault(t =>
+        string.Equals(t.Key, userThemeKey, StringComparison.OrdinalIgnoreCase))?.DisplayName ?? "Theme";
 }
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="@userThemeKey" data-bs-theme="@(themeIsDark ? "dark" : "light")">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -17,7 +37,25 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/themes.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/top-progress.css" asp-append-version="true" />
+    <script>
+        window.__METAFORGE_THEME__ = {
+            key: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(userThemeKey)),
+            isDark: @(themeIsDark ? "true" : "false"),
+            authenticated: @(isAuthenticated ? "true" : "false")
+        };
+        try {
+            if (!window.__METAFORGE_THEME__.authenticated) {
+                var stored = localStorage.getItem('metaforge.theme');
+                if (stored) {
+                    document.documentElement.setAttribute('data-theme', stored);
+                    document.documentElement.setAttribute('data-bs-theme', stored.indexOf('dark') >= 0 ? 'dark' : 'light');
+                    window.__METAFORGE_THEME__.key = stored;
+                }
+            }
+        } catch (_) { /* ignore */ }
+    </script>
     @if (isAuthenticated && sidebarMenu.Count > 0)
     {
         <script>
@@ -56,7 +94,26 @@
                 </button>
                 @if (isAuthenticated)
                 {
-                    <ul class="navbar-nav ms-2">
+                    <ul class="navbar-nav ms-2 align-items-center gap-1">
+                        <li class="nav-item dropdown app-theme-menu">
+                            <button type="button"
+                                    class="app-theme-trigger"
+                                    id="appThemeTrigger"
+                                    data-bs-toggle="dropdown"
+                                    data-bs-auto-close="outside"
+                                    aria-expanded="false"
+                                    aria-haspopup="listbox"
+                                    aria-label="Change color theme, current: @activeThemeName"
+                                    title="Appearance: @activeThemeName">
+                                <span class="app-theme-trigger-icon" aria-hidden="true">
+                                    <i class="fa-solid fa-palette"></i>
+                                </span>
+                                <span class="app-theme-trigger-label d-none d-xl-inline">@activeThemeName</span>
+                            </button>
+                            <div class="dropdown-menu dropdown-menu-end app-theme-panel" aria-labelledby="appThemeTrigger">
+                                @await Html.PartialAsync("_ThemePicker", themePickerModel)
+                            </div>
+                        </li>
                         <li class="nav-item dropdown app-user-menu">
                             <button type="button"
                                     class="app-user-trigger dropdown-toggle"
@@ -79,6 +136,17 @@
                                         <span class="app-user-dropdown-status">Signed in</span>
                                     </div>
                                 </div>
+                                <div class="dropdown-divider app-user-dropdown-divider"></div>
+                                <a class="app-user-dropdown-link" asp-controller="Account" asp-action="Appearance">
+                                    <span class="app-user-dropdown-link-icon" aria-hidden="true">
+                                        <i class="fa-solid fa-palette"></i>
+                                    </span>
+                                    <span class="app-user-dropdown-link-text">
+                                        <span class="app-user-dropdown-link-label">Appearance</span>
+                                        <span class="app-user-dropdown-link-hint">@activeThemeName</span>
+                                    </span>
+                                    <i class="fa-solid fa-chevron-right app-user-dropdown-link-chevron" aria-hidden="true"></i>
+                                </a>
                                 <div class="dropdown-divider app-user-dropdown-divider"></div>
                                 <form asp-controller="Account" asp-action="Logout" method="post" class="app-user-signout-form">
                                     @Html.AntiForgeryToken()
@@ -138,6 +206,7 @@
     <script src="~/js/metaforge/detail-grid-rows.js" asp-append-version="true"></script>
     <script src="~/js/metaforge/master-detail.js" asp-append-version="true"></script>
     <script src="~/js/metaforge/master-detail-tabular.js" asp-append-version="true"></script>
+    <script src="~/js/metaforge/theme.js" asp-append-version="true"></script>
     <script src="~/js/metaforge/sidebar-menu.js" asp-append-version="true"></script>
     <script src="~/js/metaforge/top-progress.js" asp-append-version="true"></script>
     <script src="~/js/metaforge/ui-feedback.js" asp-append-version="true"></script>

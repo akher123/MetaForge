@@ -1,0 +1,59 @@
+@model MetaForge.Web.Models.AppearanceViewModel
+@{
+    ViewData["Title"] = "Appearance";
+}
+
+<div class="page-header page-header--appearance">
+    <div class="page-header-main">
+        @await Component.InvokeAsync("Breadcrumb", new { currentPage = "Appearance" })
+        <h1 class="page-title">
+            <i class="fa-solid fa-palette page-title-icon" aria-hidden="true"></i>
+            Appearance
+        </h1>
+        <p class="page-lead">Customize the look and feel of your MetaForge workspace.</p>
+    </div>
+</div>
+
+<div class="appearance-page">
+    <div class="appearance-page-primary">
+        @await Html.PartialAsync("_ThemePicker", new ThemePickerViewModel
+        {
+            ActiveThemeKey = Model.ActiveThemeKey,
+            Themes = Model.Themes,
+            Variant = "page",
+            GridId = "themePickerGridPage"
+        })
+    </div>
+
+    <aside class="appearance-page-preview" aria-label="Live preview">
+        <h2 class="appearance-preview-title">
+            <i class="fa-solid fa-eye" aria-hidden="true"></i>
+            Live preview
+        </h2>
+        <p class="appearance-preview-hint">Changes apply instantly across the application.</p>
+        <div class="appearance-preview-surface">
+            <div class="appearance-preview-navbar">
+                <span class="appearance-preview-dot"></span>
+                <span class="appearance-preview-dot"></span>
+                <span class="appearance-preview-pill"></span>
+            </div>
+            <div class="appearance-preview-content">
+                <div class="appearance-preview-card">
+                    <span class="appearance-preview-card-title">Sample record</span>
+                    <span class="appearance-preview-card-row"></span>
+                    <span class="appearance-preview-card-row appearance-preview-card-row--short"></span>
+                    <button type="button" class="btn btn-primary btn-sm appearance-preview-btn">Primary action</button>
+                </div>
+                <table class="appearance-preview-table" aria-hidden="true">
+                    <thead>
+                        <tr><th>Column</th><th>Status</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Item A</td><td><span class="badge bg-success">Active</span></td></tr>
+                        <tr><td>Item B</td><td><span class="badge bg-secondary">Draft</span></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </aside>
+</div>

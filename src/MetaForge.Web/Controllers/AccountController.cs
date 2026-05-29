@@ -1,4 +1,6 @@
 using System.Security.Claims;
+using MetaForge.Shared.Constants;
+using MetaForge.Web.Theme;
 using MetaForge.Web.Models;
 using Microsoft.AspNetCore.Authentication;
 
@@ -8,11 +10,16 @@ public class AccountController : Controller
 {
     private readonly IAuthService _authService;
     private readonly IUserClaimsFactory _claimsFactory;
+    private readonly IUserPreferenceService _userPreferences;
 
-    public AccountController(IAuthService authService, IUserClaimsFactory claimsFactory)
+    public AccountController(
+        IAuthService authService,
+        IUserClaimsFactory claimsFactory,
+        IUserPreferenceService userPreferences)
     {
         _authService = authService;
         _claimsFactory = claimsFactory;
+        _userPreferences = userPreferences;
     }
 
     [AllowAnonymous]
@@ -53,6 +60,9 @@ public class AccountController : Controller
             ExpiresUtc = model.RememberMe ? DateTimeOffset.UtcNow.AddDays(14) : DateTimeOffset.UtcNow.AddHours(8)
         });
 
+        var themeKey = await _userPreferences.GetThemeAsync(result.UserId, cancellationToken);
+        Response.Cookies.Append(ThemeCookie.Name, themeKey, ThemeCookie.Options(HttpContext));
+
         return RedirectToLocal(model.ReturnUrl);
     }
 
@@ -67,10 +77,32 @@ public class AccountController : Controller
 
     [Authorize]
     [HttpGet]
+    public async Task<IActionResult> Appearance(CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(out var userId))
+            return Challenge();
+
+        var themeKey = await _userPreferences.GetThemeAsync(userId, cancellationToken);
+        return View(new AppearanceViewModel
+        {
+            ActiveThemeKey = themeKey,
+            Themes = _userPreferences.GetAvailableThemes()
+        });
+    }
+
+    [Authorize]
+    [HttpGet]
     public async Task<IActionResult> LogoutGet()
     {
         await HttpContext.SignOutAsync("Cookies");
         return RedirectToAction("Landing", "Home");
+    }
+
+    private bool TryGetUserId(out int userId)
+    {
+        userId = 0;
+        var claim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        return !string.IsNullOrEmpty(claim) && int.TryParse(claim, out userId);
     }
 
     private IActionResult RedirectToLocal(string? returnUrl)

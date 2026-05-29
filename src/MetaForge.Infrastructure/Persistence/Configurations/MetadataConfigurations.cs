@@ -129,6 +129,7 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.HasKey(x => x.Id);
         builder.Property(x => x.UserName).HasMaxLength(100).IsRequired();
         builder.Property(x => x.SecurityStamp).HasMaxLength(64);
+        builder.Property(x => x.ThemeKey).HasMaxLength(50).IsRequired().HasDefaultValue("indigo-light");
         builder.HasIndex(x => x.UserName).IsUnique();
     }
 }

@@ -1,0 +1,87 @@
+@model MetaForge.Web.Models.ThemePickerViewModel
+@{
+    var variant = Model.Variant ?? "panel";
+    var isPage = variant == "page";
+    var isCompact = variant == "compact";
+}
+<div class="theme-picker theme-picker--@variant" data-theme-picker-variant="@variant">
+    @if (!isCompact)
+    {
+        <div class="theme-picker-header">
+            <div class="theme-picker-header-text">
+                <h2 class="theme-picker-title">
+                    <i class="fa-solid fa-palette" aria-hidden="true"></i>
+                    Color theme
+                </h2>
+                @if (isPage)
+                {
+                    <p class="theme-picker-subtitle">
+                        Choose how MetaForge looks for your account. Your selection is saved automatically.
+                    </p>
+                }
+                else
+                {
+                    <p class="theme-picker-subtitle">Saved to your profile</p>
+                }
+            </div>
+            <span class="theme-picker-status" id="themePickerStatus" aria-live="polite" hidden>
+                <i class="fa-solid fa-circle-notch fa-spin" aria-hidden="true"></i>
+                <span>Saving</span>
+            </span>
+        </div>
+    }
+
+    <div class="theme-picker-grid@(isCompact ? " theme-picker-grid--compact" : "")"
+         id="@Model.GridId"
+         role="listbox"
+         aria-label="Available color themes">
+        @foreach (var theme in Model.Themes)
+        {
+            var isActive = string.Equals(theme.Key, Model.ActiveThemeKey, StringComparison.OrdinalIgnoreCase);
+            <button type="button"
+                    class="theme-card@(isActive ? " is-active" : "")"
+                    role="option"
+                    aria-selected="@(isActive ? "true" : "false")"
+                    data-theme-key="@theme.Key"
+                    data-theme-dark="@(theme.IsDark ? "true" : "false")"
+                    data-theme-name="@theme.DisplayName"
+                    title="@theme.Description">
+                @if (!isCompact)
+                {
+                    <span class="theme-card-preview" aria-hidden="true"
+                          style="--theme-preview-bg: @theme.BackgroundSwatch; --theme-preview-surface: @theme.SurfaceSwatch; --theme-preview-primary: @theme.PrimarySwatch; --theme-preview-accent: @theme.AccentSwatch;">
+                        <span class="theme-card-preview-bar"></span>
+                        <span class="theme-card-preview-body">
+                            <span class="theme-card-preview-sidebar"></span>
+                            <span class="theme-card-preview-main">
+                                <span class="theme-card-preview-line theme-card-preview-line--long"></span>
+                                <span class="theme-card-preview-line"></span>
+                                <span class="theme-card-preview-chip"></span>
+                            </span>
+                        </span>
+                    </span>
+                }
+                else
+                {
+                    <span class="theme-card-swatch" aria-hidden="true">
+                        <span style="background:@theme.PrimarySwatch"></span>
+                        <span style="background:@theme.AccentSwatch"></span>
+                    </span>
+                }
+                <span class="theme-card-meta">
+                    <span class="theme-card-name">@theme.DisplayName</span>
+                    @if (!isCompact)
+                    {
+                        <span class="theme-card-desc">@theme.Description</span>
+                    }
+                </span>
+                <span class="theme-card-badge@(theme.IsDark ? " theme-card-badge--dark" : " theme-card-badge--light")">
+                    @(theme.IsDark ? "Dark" : "Light")
+                </span>
+                <span class="theme-card-check" aria-hidden="true">
+                    <i class="fa-solid fa-circle-check"></i>
+                </span>
+            </button>
+        }
+    </div>
+</div>

@@ -44,6 +44,7 @@ public static class DependencyInjection
 
         services.AddScoped<ISecurityManagementService, SecurityManagementService>();
         services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<IUserPreferenceService, UserPreferenceService>();
         services.AddScoped<IFormConfigurationService, FormConfigurationService>();
         services.AddScoped<IMenuManagementService, MenuManagementService>();
         services.AddScoped<IMenuSyncService, MenuSyncService>();
