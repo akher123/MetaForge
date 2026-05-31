@@ -7,7 +7,6 @@
     var displayTitle = !string.IsNullOrWhiteSpace(exportLayout?.Title) ? exportLayout!.Title : definition?.Name;
     var showTitleUnderline = exportLayout?.ShowTitleUnderline ?? true;
     var showGeneratedTimestamp = exportLayout?.ShowGeneratedTimestamp ?? true;
-    var reportType = definition?.ReportType ?? "Tabular";
     var entityName = definition?.EntityName ?? "";
     var filterCount = definition?.Filters?.Count ?? 0;
     var columnCount = definition?.Columns?.Count(c => c.IsVisible) ?? 0;
@@ -51,95 +50,76 @@
         var fmt = displayFormat.Trim().ToUpperInvariant();
         return fmt.Length > 0 && "NCPF".Contains(fmt[0]) && (fmt.Length == 1 || char.IsDigit(fmt[1]));
     }
-
-    var reportTypeIcon = reportType switch
-    {
-        "Grouped" => "fa-layer-group",
-        "Summary" => "fa-calculator",
-        _ => "fa-table"
-    };
 }
 
 <div class="report-preview module-page module-page--master app-page-fill">
     <div class="report-preview__sheet">
-        @if (hasHeader)
-        {
-            var headerBandClass = BandLayoutClass(headerLeftText, headerCenterText, headerRightText);
-            <div class="report-preview__band report-preview__band--header@headerBandClass" aria-label="Report header">
-                @if (headerBandClass.Contains("center-only", StringComparison.Ordinal))
-                {
-                    <span class="report-preview__band-item report-preview__band-item--center">@headerCenterText</span>
-                }
-                else
-                {
-                    <span class="report-preview__band-item report-preview__band-item--left">@headerLeftText</span>
-                    <span class="report-preview__band-item report-preview__band-item--center">@headerCenterText</span>
-                    <span class="report-preview__band-item report-preview__band-item--right">@headerRightText</span>
-                }
-            </div>
-        }
-
         <header class="report-preview__masthead">
-            <div class="report-preview__masthead-main">
-                <div class="report-preview__eyebrow">
-                    <span class="report-preview__badge report-preview__badge--type">
-                        <i class="fa-solid @reportTypeIcon me-1" aria-hidden="true"></i>@reportType
-                    </span>
-                    @if (!string.IsNullOrWhiteSpace(entityName))
+            <div class="report-preview__masthead-top@(filterCount == 0 ? " report-preview__masthead-top--actions-only" : "")">
+                @if (filterCount > 0)
+                {
+                    <section class="report-preview__filters" id="reportFilterSection" aria-labelledby="reportFiltersHeading">
+                        <h2 class="visually-hidden" id="reportFiltersHeading">Parameters</h2>
+                        <div class="report-preview__filter-grid row g-2" id="reportFilterPanel"></div>
+                    </section>
+                }
+                <div class="report-preview__toolbar" role="toolbar" aria-label="Report actions">
+                    @if (perms?.CanExport == true)
                     {
-                        <span class="report-preview__badge report-preview__badge--entity">@entityName</span>
+                        <div class="btn-group report-preview__export-group" role="group" aria-label="Export">
+                            <button type="button" class="btn btn-sm btn-export-pdf" id="btnExportPdf" title="Export PDF">
+                                <i class="fa-solid fa-file-pdf me-1"></i>PDF
+                            </button>
+                            <button type="button" class="btn btn-sm btn-export-excel" id="btnExportExcel" title="Export Excel">
+                                <i class="fa-solid fa-file-excel me-1"></i>Excel
+                            </button>
+                        </div>
                     }
-                    @if (filterCount > 0)
-                    {
-                        <span class="report-preview__badge report-preview__badge--muted">@filterCount filter@(filterCount == 1 ? "" : "s")</span>
-                    }
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="btnResetFilters" title="Reset filters">
+                        <i class="fa-solid fa-rotate-left me-1"></i>Reset
+                    </button>
+                    <button type="button" class="btn btn-sm btn-primary report-preview__run-btn" id="btnApplyFilters">
+                        <i class="fa-solid fa-play me-1"></i>Run Report
+                    </button>
                 </div>
-                <h1 class="report-preview__title@(showTitleUnderline ? " report-preview__title--underlined" : "")">@displayTitle</h1>
-                @if (!string.IsNullOrWhiteSpace(definition?.Description))
-                {
-                    <p class="report-preview__subtitle">@definition.Description</p>
-                }
-                @if (showGeneratedTimestamp)
-                {
-                    <p class="report-preview__meta">
-                        <i class="fa-regular fa-clock me-1" aria-hidden="true"></i>
-                        <span>Generated @DateTime.Now.ToString("MMMM d, yyyy 'at' HH:mm")</span>
-                    </p>
-                }
-            </div>
-            <div class="report-preview__toolbar" role="toolbar" aria-label="Report actions">
-                @if (perms?.CanExport == true)
-                {
-                    <div class="btn-group report-preview__export-group" role="group" aria-label="Export">
-                        <button type="button" class="btn btn-sm btn-export-pdf" id="btnExportPdf" title="Export PDF">
-                            <i class="fa-solid fa-file-pdf me-1"></i>PDF
-                        </button>
-                        <button type="button" class="btn btn-sm btn-export-excel" id="btnExportExcel" title="Export Excel">
-                            <i class="fa-solid fa-file-excel me-1"></i>Excel
-                        </button>
-                    </div>
-                }
-                <button type="button" class="btn btn-sm btn-outline-secondary" id="btnResetFilters" title="Reset filters">
-                    <i class="fa-solid fa-rotate-left me-1"></i>Reset
-                </button>
-                <button type="button" class="btn btn-sm btn-primary report-preview__run-btn" id="btnApplyFilters">
-                    <i class="fa-solid fa-play me-1"></i>Run Report
-                </button>
             </div>
         </header>
 
-        @if (filterCount > 0)
-        {
-            <section class="report-preview__filters@(filterCount > 0 ? "" : " d-none")" id="reportFilterSection" aria-labelledby="reportFiltersHeading">
-                <div class="report-preview__section-head">
-                    <h2 class="report-preview__section-title" id="reportFiltersHeading">
-                        <i class="fa-solid fa-sliders me-2" aria-hidden="true"></i>Parameters
-                    </h2>
-                    <p class="report-preview__section-hint mb-0">Adjust criteria and run the report to refresh results.</p>
+        <div class="report-preview__header-zone" aria-label="Report header">
+            @if (hasHeader)
+            {
+                var headerBandClass = BandLayoutClass(headerLeftText, headerCenterText, headerRightText);
+                <div class="report-preview__band report-preview__band--header report-preview__band--middle@headerBandClass">
+                    @if (headerBandClass.Contains("center-only", StringComparison.Ordinal))
+                    {
+                        <span class="report-preview__band-item report-preview__band-item--center">@headerCenterText</span>
+                    }
+                    else
+                    {
+                        <span class="report-preview__band-item report-preview__band-item--left">@headerLeftText</span>
+                        <span class="report-preview__band-item report-preview__band-item--center">@headerCenterText</span>
+                        <span class="report-preview__band-item report-preview__band-item--right">@headerRightText</span>
+                    }
                 </div>
-                <div class="report-preview__filter-grid row g-3" id="reportFilterPanel"></div>
-            </section>
-        }
+            }
+            else
+            {
+                <div class="report-preview__header-fallback">
+                    <h1 class="report-preview__title report-preview__title--centered@(showTitleUnderline ? " report-preview__title--underlined" : "")">@displayTitle</h1>
+                    @if (!string.IsNullOrWhiteSpace(definition?.Description))
+                    {
+                        <p class="report-preview__subtitle report-preview__subtitle--centered">@definition.Description</p>
+                    }
+                    @if (showGeneratedTimestamp)
+                    {
+                        <p class="report-preview__meta report-preview__meta--centered">
+                            <i class="fa-regular fa-clock me-1" aria-hidden="true"></i>
+                            <span>Generated @DateTime.Now.ToString("MMMM d, yyyy 'at' HH:mm")</span>
+                        </p>
+                    }
+                </div>
+            }
+        </div>
 
         <section class="report-preview__results admin-grid-card admin-grid-card--fill" aria-labelledby="reportResultsHeading">
             <div class="report-preview__results-head">
