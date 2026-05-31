@@ -374,4 +374,165 @@ public static class DynamicQueryBuilder
 
         return (IQueryable<T>)genericMethod.Invoke(null, [query, lambda])!;
     }
+
+    /// <summary>
+    /// Applies column filters. Keys may include an operator suffix: PropertyName__gte, PropertyName__contains, etc.
+    /// Supported suffixes: eq (default), ne, contains, startswith, gt, lt, gte, lte, between (value: min|max).
+    /// </summary>
+    public static IQueryable<T> ApplyFilters<T>(IQueryable<T> query, Dictionary<string, string>? filters) where T : class
+    {
+        if (filters == null || filters.Count == 0)
+            return query;
+
+        foreach (var (rawKey, rawValue) in filters)
+        {
+            if (string.IsNullOrWhiteSpace(rawKey) || string.IsNullOrWhiteSpace(rawValue))
+                continue;
+
+            var (propertyName, op) = ParseFilterKey(rawKey);
+            var prop = typeof(T).GetProperty(propertyName, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+            if (prop == null)
+                continue;
+
+            var predicate = BuildFilterPredicate<T>(prop, op, rawValue.Trim());
+            if (predicate == null)
+                continue;
+
+            query = query.Where(predicate);
+        }
+
+        return query;
+    }
+
+    internal static (string PropertyName, string Operator) ParseFilterKey(string rawKey)
+    {
+        const string separator = "__";
+        var index = rawKey.LastIndexOf(separator, StringComparison.Ordinal);
+        if (index <= 0)
+            return (rawKey, "eq");
+
+        var propertyName = rawKey[..index];
+        var op = rawKey[(index + separator.Length)..].ToLowerInvariant();
+        return (propertyName, op);
+    }
+
+    private static Expression<Func<T, bool>>? BuildFilterPredicate<T>(PropertyInfo prop, string op, string rawValue) where T : class
+    {
+        var parameter = Expression.Parameter(typeof(T), "x");
+        var propertyAccess = Expression.Property(parameter, prop);
+        var propertyType = Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType;
+
+        if (op == "between")
+        {
+            var parts = rawValue.Split('|', 2, StringSplitOptions.TrimEntries);
+            if (parts.Length != 2)
+                return null;
+
+            var lower = BuildComparison(propertyAccess, propertyType, parts[0], Expression.GreaterThanOrEqual);
+            var upper = BuildComparison(propertyAccess, propertyType, parts[1], Expression.LessThanOrEqual);
+            if (lower == null || upper == null)
+                return null;
+
+            var combined = Expression.AndAlso(lower, upper);
+            return Expression.Lambda<Func<T, bool>>(combined, parameter);
+        }
+
+        if (op is "contains" or "startswith")
+        {
+            if (propertyType != typeof(string))
+                return null;
+
+            var notNull = Expression.NotEqual(propertyAccess, Expression.Constant(null, typeof(string)));
+            var methodName = op == "contains" ? nameof(string.Contains) : nameof(string.StartsWith);
+            var method = typeof(string).GetMethod(methodName, [typeof(string)])!;
+            var call = Expression.Call(propertyAccess, method, Expression.Constant(rawValue));
+            return Expression.Lambda<Func<T, bool>>(Expression.AndAlso(notNull, call), parameter);
+        }
+
+        Func<Expression, Expression, BinaryExpression> comparisonOp = op switch
+        {
+            "eq" => Expression.Equal,
+            "ne" => Expression.NotEqual,
+            "gt" => Expression.GreaterThan,
+            "lt" => Expression.LessThan,
+            "gte" => Expression.GreaterThanOrEqual,
+            "lte" => Expression.LessThanOrEqual,
+            _ => Expression.Equal
+        };
+
+        var comparison = BuildComparison(propertyAccess, propertyType, rawValue, comparisonOp);
+        return comparison == null
+            ? null
+            : Expression.Lambda<Func<T, bool>>(comparison, parameter);
+    }
+
+    private static BinaryExpression? BuildComparison(
+        MemberExpression propertyAccess,
+        Type propertyType,
+        string rawValue,
+        Func<Expression, Expression, BinaryExpression> comparisonFactory)
+    {
+        if (propertyType == typeof(string))
+        {
+            var constant = Expression.Constant(rawValue);
+            return comparisonFactory(propertyAccess, constant);
+        }
+
+        if (!TryConvertFilterValue(rawValue, propertyType, out var converted))
+            return null;
+
+        var valueExpression = Expression.Constant(converted, propertyType);
+        var left = propertyAccess;
+        if (Nullable.GetUnderlyingType(propertyAccess.Type) != null)
+            left = Expression.Property(propertyAccess, "Value");
+
+        return comparisonFactory(left, valueExpression);
+    }
+
+    internal static bool TryConvertFilterValue(string rawValue, Type targetType, out object? converted)
+    {
+        converted = null;
+        try
+        {
+            if (targetType == typeof(Guid))
+            {
+                if (!Guid.TryParse(rawValue, out var guid))
+                    return false;
+
+                converted = guid;
+                return true;
+            }
+
+            if (targetType.IsEnum)
+            {
+                converted = Enum.Parse(targetType, rawValue, true);
+                return true;
+            }
+
+            if (targetType == typeof(DateTime))
+            {
+                if (!DateTime.TryParse(rawValue, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.RoundtripKind, out var date))
+                    return false;
+
+                converted = date;
+                return true;
+            }
+
+            if (targetType == typeof(DateTimeOffset))
+            {
+                if (!DateTimeOffset.TryParse(rawValue, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.RoundtripKind, out var date))
+                    return false;
+
+                converted = date;
+                return true;
+            }
+
+            converted = Convert.ChangeType(rawValue, targetType, System.Globalization.CultureInfo.InvariantCulture);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
 }

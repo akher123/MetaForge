@@ -75,7 +75,749 @@ public static class DatabaseSeeder
         await EnsureSalesOrderGridActionsAsync(context, logger);
         await EnsureSalesOrderConditionalRulesAsync(context, logger);
         await EnsureFormPermissionsAsync(context, logger);
+        await EnsureSampleReportsAsync(context, logger);
+        await EnsureReportExportLayoutAsync(context, logger);
+        await EnsureReportPermissionsAsync(context, logger);
         await EnsureMenusAsync(scope, logger);
+    }
+
+    private static async Task EnsureSampleReportsAsync(MetaForgeDbContext context, ILogger logger)
+    {
+        var added = 0;
+
+        if (!await context.ForgeReports.AnyAsync(r => r.Code == "customer-list"))
+        {
+            context.ForgeReports.Add(BuildCustomerListReport());
+            added++;
+        }
+
+        if (!await context.ForgeReports.AnyAsync(r => r.Code == "salesorder-list"))
+        {
+            context.ForgeReports.Add(BuildSalesOrderListReport());
+            added++;
+        }
+
+        if (!await context.ForgeReports.AnyAsync(r => r.Code == "salesorders-by-status"))
+        {
+            context.ForgeReports.Add(BuildSalesOrdersByStatusReport());
+            added++;
+        }
+
+        if (!await context.ForgeReports.AnyAsync(r => r.Code == "customers-by-status"))
+        {
+            context.ForgeReports.Add(BuildCustomersByStatusReport());
+            added++;
+        }
+
+        if (!await context.ForgeReports.AnyAsync(r => r.Code == "salesorder-items"))
+        {
+            context.ForgeReports.Add(BuildSalesOrderItemsReport());
+            added++;
+        }
+
+        if (!await context.ForgeReports.AnyAsync(r => r.Code == "sales-orders-dynamic"))
+        {
+            context.ForgeReports.Add(BuildSalesOrdersDynamicReport());
+            added++;
+        }
+
+        if (!await context.ForgeReports.AnyAsync(r => r.Code == "line-items-by-customer"))
+        {
+            context.ForgeReports.Add(BuildLineItemsByCustomerReport());
+            added++;
+        }
+
+        if (added > 0)
+        {
+            await context.SaveChangesAsync();
+            logger.LogInformation("Seeded {Count} sample report(s).", added);
+        }
+
+        await UpgradeSalesOrderItemsToCompositeAsync(context, logger);
+        await EnsureReportFilterControlsAsync(context, logger);
+        await EnsureSampleReportMenusAsync(context, logger);
+    }
+
+    private static async Task EnsureReportFilterControlsAsync(MetaForgeDbContext context, ILogger logger)
+    {
+        var changed = false;
+
+        changed |= await UpgradeReportFiltersAsync(context, "customer-list", f =>
+        {
+            if (f.PropertyName == "Name")
+            {
+                f.ControlType = ReportFilterControlType.TextBox;
+                f.Operator = FilterOperator.Contains;
+            }
+            else if (f.PropertyName == "Status")
+            {
+                f.ControlType = ReportFilterControlType.Dropdown;
+                f.Operator = FilterOperator.Equals;
+                f.Options = "Active,Inactive";
+            }
+        });
+
+        changed |= await UpgradeReportFiltersAsync(context, "salesorder-list", f =>
+        {
+            if (f.PropertyName == "OrderNo")
+            {
+                f.ControlType = ReportFilterControlType.TextBox;
+                f.Operator = FilterOperator.Contains;
+            }
+            else if (f.PropertyName == "Status")
+            {
+                f.ControlType = ReportFilterControlType.Dropdown;
+                f.Operator = FilterOperator.Equals;
+                f.Options = "Draft,Approved,Closed";
+            }
+            else if (f.PropertyName == "OrderDate")
+            {
+                f.ControlType = ReportFilterControlType.DateRange;
+                f.Operator = FilterOperator.Between;
+            }
+            else if (f.PropertyName == "CustomerId")
+            {
+                f.ControlType = ReportFilterControlType.Autocomplete;
+                f.Operator = FilterOperator.Equals;
+                f.LookupEntity = "Customer";
+            }
+        });
+
+        changed |= await EnsureSalesOrderListCustomerFilterAsync(context);
+
+        changed |= await UpgradeReportFiltersAsync(context, "sales-orders-dynamic", f =>
+        {
+            if (f.PropertyName == "Customer.Name")
+            {
+                f.ControlType = ReportFilterControlType.TextBox;
+                f.Operator = FilterOperator.Contains;
+            }
+            else if (f.PropertyName == "Status")
+            {
+                f.ControlType = ReportFilterControlType.Dropdown;
+                f.Operator = FilterOperator.Equals;
+                f.Options = "Draft,Approved,Closed";
+            }
+            else if (f.PropertyName == "OrderDate")
+            {
+                f.ControlType = ReportFilterControlType.DateRange;
+                f.Operator = FilterOperator.Between;
+            }
+        });
+
+        changed |= await UpgradeReportFiltersAsync(context, "salesorder-items", f =>
+        {
+            if (f.PropertyName is "SalesOrder.OrderNo" or "SalesOrder.Customer.Name")
+            {
+                f.ControlType = ReportFilterControlType.TextBox;
+                f.Operator = FilterOperator.Contains;
+            }
+        });
+
+        changed |= await UpgradeReportFiltersAsync(context, "line-items-by-customer", f =>
+        {
+            if (f.PropertyName == "SalesOrder.Customer.Name")
+            {
+                f.ControlType = ReportFilterControlType.TextBox;
+                f.Operator = FilterOperator.Contains;
+            }
+            else if (f.PropertyName == "SalesOrder.OrderDate")
+            {
+                f.ControlType = ReportFilterControlType.DateRange;
+                f.Operator = FilterOperator.Between;
+            }
+        });
+
+        if (changed)
+        {
+            await context.SaveChangesAsync();
+            logger.LogInformation("Upgraded sample report filters with TextBox, Dropdown, Autocomplete, and DateRange controls.");
+        }
+    }
+
+    private static async Task<bool> EnsureSalesOrderListCustomerFilterAsync(MetaForgeDbContext context)
+    {
+        var report = await context.ForgeReports
+            .Include(r => r.Filters)
+            .FirstOrDefaultAsync(r => r.Code == "salesorder-list");
+
+        if (report == null || report.Filters.Any(f => f.PropertyName == "CustomerId"))
+            return false;
+
+        report.Filters.Add(new ForgeReportFilter
+        {
+            PropertyName = "CustomerId",
+            Label = "Customer",
+            Operator = FilterOperator.Equals,
+            ControlType = ReportFilterControlType.Autocomplete,
+            LookupEntity = "Customer",
+            DisplayOrder = report.Filters.Count
+        });
+
+        return true;
+    }
+
+    private static async Task<bool> UpgradeReportFiltersAsync(
+        MetaForgeDbContext context,
+        string reportCode,
+        Action<ForgeReportFilter> configure)
+    {
+        var report = await context.ForgeReports
+            .Include(r => r.Filters)
+            .FirstOrDefaultAsync(r => r.Code == reportCode);
+
+        if (report == null || report.Filters.Count == 0)
+            return false;
+
+        var changed = false;
+        foreach (var filter in report.Filters)
+        {
+            var before = $"{filter.ControlType}|{filter.Operator}|{filter.Options}|{filter.LookupEntity}";
+            configure(filter);
+            if (string.IsNullOrWhiteSpace(filter.ControlType))
+                filter.ControlType = ReportFilterControlType.TextBox;
+            var after = $"{filter.ControlType}|{filter.Operator}|{filter.Options}|{filter.LookupEntity}";
+            if (!string.Equals(before, after, StringComparison.Ordinal))
+                changed = true;
+        }
+
+        return changed;
+    }
+
+    private static async Task UpgradeSalesOrderItemsToCompositeAsync(MetaForgeDbContext context, ILogger logger)
+    {
+        var report = await context.ForgeReports
+            .Include(r => r.Columns)
+            .Include(r => r.Filters)
+            .FirstOrDefaultAsync(r => r.Code == "salesorder-items");
+
+        if (report == null)
+            return;
+
+        if (report.Columns.Any(c => c.PropertyName == "SalesOrder.OrderNo"))
+            return;
+
+        report.Description = "Order line items with related order, customer, and product fields resolved dynamically.";
+        report.Columns.Clear();
+        report.Filters.Clear();
+
+        foreach (var column in BuildSalesOrderItemsReport().Columns)
+            report.Columns.Add(column);
+
+        foreach (var filter in BuildSalesOrderItemsReport().Filters)
+            report.Filters.Add(filter);
+
+        await context.SaveChangesAsync();
+        logger.LogInformation("Upgraded salesorder-items report to dynamic composite columns.");
+    }
+
+    private static async Task EnsureReportExportLayoutAsync(MetaForgeDbContext context, ILogger logger)
+    {
+        var report = await context.ForgeReports
+            .Include(r => r.Signatures)
+            .FirstOrDefaultAsync(r => r.Code == "customer-list");
+
+        if (report == null || report.Signatures.Count > 0)
+            return;
+
+        report.ShowTitleUnderline = true;
+        report.ShowSignatureBlock = true;
+        report.ExportTitle = "Customer List Report";
+        report.HeaderLeft = "MetaForge ERP";
+        report.HeaderCenter = "{Title}";
+        report.HeaderRight = "{Date}";
+        report.FooterLeft = "Confidential";
+        report.FooterCenter = string.Empty;
+        report.FooterRight = "{DateTime}";
+        report.ShowPageNumbers = true;
+        report.ShowGeneratedTimestamp = true;
+        report.Signatures.Add(new ForgeReportSignature { Label = "Prepared By", DisplayOrder = 0 });
+        report.Signatures.Add(new ForgeReportSignature { Label = "Approved By", DisplayOrder = 1 });
+
+        await context.SaveChangesAsync();
+        logger.LogInformation("Sample report export layout ensured for customer-list.");
+    }
+
+    private static ForgeReport BuildCustomerListReport()
+    {
+        var report = new ForgeReport
+        {
+            Code = "customer-list",
+            Name = "Customer List",
+            EntityName = "Customer",
+            GroupName = "Reports",
+            ReportType = ReportType.Tabular,
+            DisplayOrder = 1,
+            IsActive = true,
+            Description = "Tabular list of customers with name and status filters."
+        };
+
+        foreach (var column in new[]
+        {
+            new ForgeReportColumn { PropertyName = "Code", Label = "Customer Code", DisplayOrder = 0, ColumnRole = ReportColumnRole.Detail, AggregateFunction = ReportAggregateFunction.None },
+            new ForgeReportColumn { PropertyName = "Name", Label = "Customer Name", DisplayOrder = 1, ColumnRole = ReportColumnRole.Detail, AggregateFunction = ReportAggregateFunction.None },
+            new ForgeReportColumn { PropertyName = "Email", Label = "Email", DisplayOrder = 2, ColumnRole = ReportColumnRole.Detail, AggregateFunction = ReportAggregateFunction.None },
+            new ForgeReportColumn { PropertyName = "Phone", Label = "Phone", DisplayOrder = 3, ColumnRole = ReportColumnRole.Detail, AggregateFunction = ReportAggregateFunction.None },
+            new ForgeReportColumn { PropertyName = "Status", Label = "Status", DisplayOrder = 4, ColumnRole = ReportColumnRole.Detail, AggregateFunction = ReportAggregateFunction.None },
+            new ForgeReportColumn { PropertyName = "CreditLimit", Label = "Credit Limit", DisplayOrder = 5, ColumnRole = ReportColumnRole.Detail, AggregateFunction = ReportAggregateFunction.None, DisplayFormat = "N2" },
+            new ForgeReportColumn { PropertyName = "PaymentTerms", Label = "Payment Terms", DisplayOrder = 6, ColumnRole = ReportColumnRole.Detail, AggregateFunction = ReportAggregateFunction.None }
+        })
+        {
+            report.Columns.Add(column);
+        }
+
+        foreach (var filter in new[]
+        {
+            new ForgeReportFilter { PropertyName = "Name", Label = "Customer Name", Operator = FilterOperator.Contains, ControlType = ReportFilterControlType.TextBox, DisplayOrder = 0 },
+            new ForgeReportFilter { PropertyName = "Status", Label = "Status", Operator = FilterOperator.Equals, ControlType = ReportFilterControlType.Dropdown, Options = "Active,Inactive", DefaultValue = "Active", DisplayOrder = 1 }
+        })
+        {
+            report.Filters.Add(filter);
+        }
+
+        return report;
+    }
+
+    private static ForgeReport BuildSalesOrderListReport()
+    {
+        var report = new ForgeReport
+        {
+            Code = "salesorder-list",
+            Name = "Sales Order List",
+            EntityName = "SalesOrder",
+            GroupName = "Reports",
+            ReportType = ReportType.Tabular,
+            DisplayOrder = 2,
+            IsActive = true,
+            Description = "Open sales orders with order number and status filters."
+        };
+
+        foreach (var column in new[]
+        {
+            new ForgeReportColumn { PropertyName = "OrderNo", Label = "Order No", DisplayOrder = 0, ColumnRole = ReportColumnRole.Detail, AggregateFunction = ReportAggregateFunction.None },
+            new ForgeReportColumn { PropertyName = "OrderDate", Label = "Order Date", DisplayOrder = 1, ColumnRole = ReportColumnRole.Detail, AggregateFunction = ReportAggregateFunction.None, DisplayFormat = "d" },
+            new ForgeReportColumn { PropertyName = "CustomerId", Label = "Customer", DisplayOrder = 2, ColumnRole = ReportColumnRole.Detail, AggregateFunction = ReportAggregateFunction.None },
+            new ForgeReportColumn { PropertyName = "Status", Label = "Status", DisplayOrder = 3, ColumnRole = ReportColumnRole.Detail, AggregateFunction = ReportAggregateFunction.None },
+            new ForgeReportColumn { PropertyName = "Address", Label = "Ship To", DisplayOrder = 4, ColumnRole = ReportColumnRole.Detail, AggregateFunction = ReportAggregateFunction.None }
+        })
+        {
+            report.Columns.Add(column);
+        }
+
+        foreach (var filter in new[]
+        {
+            new ForgeReportFilter { PropertyName = "OrderNo", Label = "Order No", Operator = FilterOperator.Contains, ControlType = ReportFilterControlType.TextBox, DisplayOrder = 0 },
+            new ForgeReportFilter { PropertyName = "CustomerId", Label = "Customer", Operator = FilterOperator.Equals, ControlType = ReportFilterControlType.Autocomplete, LookupEntity = "Customer", DisplayOrder = 1 },
+            new ForgeReportFilter { PropertyName = "Status", Label = "Status", Operator = FilterOperator.Equals, ControlType = ReportFilterControlType.Dropdown, Options = "Draft,Approved,Closed", DisplayOrder = 2 },
+            new ForgeReportFilter { PropertyName = "OrderDate", Label = "Order Date", Operator = FilterOperator.Between, ControlType = ReportFilterControlType.DateRange, DisplayOrder = 3 }
+        })
+        {
+            report.Filters.Add(filter);
+        }
+
+        return report;
+    }
+
+    private static ForgeReport BuildSalesOrdersByStatusReport()
+    {
+        var report = new ForgeReport
+        {
+            Code = "salesorders-by-status",
+            Name = "Sales Orders by Status",
+            EntityName = "SalesOrder",
+            GroupName = "Reports",
+            ReportType = ReportType.Grouped,
+            DisplayOrder = 3,
+            IsActive = true,
+            Description = "Sales orders grouped by status with order counts and subtotals."
+        };
+
+        report.Groups.Add(new ForgeReportGroup
+        {
+            PropertyName = "Status",
+            Label = "Status",
+            DisplayOrder = 0,
+            ShowGroupHeader = true,
+            ShowSubtotal = true
+        });
+
+        foreach (var column in new[]
+        {
+            new ForgeReportColumn { PropertyName = "OrderNo", Label = "Order No", DisplayOrder = 0, ColumnRole = ReportColumnRole.Detail, AggregateFunction = ReportAggregateFunction.None },
+            new ForgeReportColumn { PropertyName = "OrderDate", Label = "Order Date", DisplayOrder = 1, ColumnRole = ReportColumnRole.Detail, AggregateFunction = ReportAggregateFunction.None, DisplayFormat = "d" },
+            new ForgeReportColumn { PropertyName = "CustomerId", Label = "Customer", DisplayOrder = 2, ColumnRole = ReportColumnRole.Detail, AggregateFunction = ReportAggregateFunction.None },
+            new ForgeReportColumn { PropertyName = "Id", Label = "Order Count", DisplayOrder = 3, ColumnRole = ReportColumnRole.Aggregate, AggregateFunction = ReportAggregateFunction.Count }
+        })
+        {
+            report.Columns.Add(column);
+        }
+
+        report.Summaries.Add(new ForgeReportSummary
+        {
+            PropertyName = "Id",
+            Label = "Total Orders",
+            AggregateFunction = ReportAggregateFunction.Count,
+            DisplayOrder = 0
+        });
+
+        foreach (var filter in new[]
+        {
+            new ForgeReportFilter { PropertyName = "Status", Label = "Status", Operator = FilterOperator.Equals, DisplayOrder = 0 },
+            new ForgeReportFilter { PropertyName = "OrderDate", Label = "From Date", Operator = FilterOperator.GreaterOrEqual, DisplayOrder = 1 }
+        })
+        {
+            report.Filters.Add(filter);
+        }
+
+        return report;
+    }
+
+    private static ForgeReport BuildCustomersByStatusReport()
+    {
+        var report = new ForgeReport
+        {
+            Code = "customers-by-status",
+            Name = "Customers by Status",
+            EntityName = "Customer",
+            GroupName = "Reports",
+            ReportType = ReportType.Summary,
+            DisplayOrder = 4,
+            IsActive = true,
+            Description = "Summary of customers grouped by status with credit limit totals."
+        };
+
+        report.Groups.Add(new ForgeReportGroup
+        {
+            PropertyName = "Status",
+            Label = "Status",
+            DisplayOrder = 0,
+            ShowGroupHeader = false,
+            ShowSubtotal = false
+        });
+
+        foreach (var column in new[]
+        {
+            new ForgeReportColumn { PropertyName = "Status", Label = "Status", DisplayOrder = 0, ColumnRole = ReportColumnRole.Detail, AggregateFunction = ReportAggregateFunction.None },
+            new ForgeReportColumn { PropertyName = "Id", Label = "Customer Count", DisplayOrder = 1, ColumnRole = ReportColumnRole.Aggregate, AggregateFunction = ReportAggregateFunction.Count },
+            new ForgeReportColumn { PropertyName = "CreditLimit", Label = "Total Credit Limit", DisplayOrder = 2, ColumnRole = ReportColumnRole.Aggregate, AggregateFunction = ReportAggregateFunction.Sum, DisplayFormat = "N2" }
+        })
+        {
+            report.Columns.Add(column);
+        }
+
+        report.Summaries.Add(new ForgeReportSummary
+        {
+            PropertyName = "Id",
+            Label = "Total Customers",
+            AggregateFunction = ReportAggregateFunction.Count,
+            DisplayOrder = 0
+        });
+
+        report.Summaries.Add(new ForgeReportSummary
+        {
+            PropertyName = "CreditLimit",
+            Label = "Grand Total Credit",
+            AggregateFunction = ReportAggregateFunction.Sum,
+            DisplayOrder = 1
+        });
+
+        foreach (var filter in new[]
+        {
+            new ForgeReportFilter { PropertyName = "Name", Label = "Customer Name", Operator = FilterOperator.Contains, DisplayOrder = 0 }
+        })
+        {
+            report.Filters.Add(filter);
+        }
+
+        return report;
+    }
+
+    private static ForgeReport BuildSalesOrderItemsReport()
+    {
+        var report = new ForgeReport
+        {
+            Code = "salesorder-items",
+            Name = "Sales Order Items",
+            EntityName = "SalesOrderItem",
+            GroupName = "Reports",
+            ReportType = ReportType.Tabular,
+            DisplayOrder = 5,
+            IsActive = true,
+            Description = "Order line items with related order, customer, and product fields resolved dynamically."
+        };
+
+        foreach (var column in new[]
+        {
+            new ForgeReportColumn { PropertyName = "SalesOrder.OrderNo", Label = "Order No", DisplayOrder = 0, ColumnRole = ReportColumnRole.Detail, AggregateFunction = ReportAggregateFunction.None },
+            new ForgeReportColumn { PropertyName = "SalesOrder.OrderDate", Label = "Order Date", DisplayOrder = 1, ColumnRole = ReportColumnRole.Detail, AggregateFunction = ReportAggregateFunction.None, DisplayFormat = "d" },
+            new ForgeReportColumn { PropertyName = "SalesOrder.Customer.Name", Label = "Customer", DisplayOrder = 2, ColumnRole = ReportColumnRole.Detail, AggregateFunction = ReportAggregateFunction.None },
+            new ForgeReportColumn { PropertyName = "Product.Name", Label = "Product", DisplayOrder = 3, ColumnRole = ReportColumnRole.Detail, AggregateFunction = ReportAggregateFunction.None },
+            new ForgeReportColumn { PropertyName = "Quantity", Label = "Quantity", DisplayOrder = 4, ColumnRole = ReportColumnRole.Detail, AggregateFunction = ReportAggregateFunction.None },
+            new ForgeReportColumn { PropertyName = "UnitPrice", Label = "Unit Price", DisplayOrder = 5, ColumnRole = ReportColumnRole.Detail, AggregateFunction = ReportAggregateFunction.None, DisplayFormat = "N2" },
+            new ForgeReportColumn { PropertyName = "LineTotal", Label = "Line Total", DisplayOrder = 6, ColumnRole = ReportColumnRole.Calculated, AggregateFunction = ReportAggregateFunction.None, DisplayFormat = "N2", Formula = "{Quantity} * {UnitPrice}" }
+        })
+        {
+            report.Columns.Add(column);
+        }
+
+        foreach (var filter in new[]
+        {
+            new ForgeReportFilter { PropertyName = "SalesOrder.OrderNo", Label = "Order No", Operator = FilterOperator.Contains, ControlType = ReportFilterControlType.TextBox, DisplayOrder = 0 },
+            new ForgeReportFilter { PropertyName = "SalesOrder.Customer.Name", Label = "Customer", Operator = FilterOperator.Contains, ControlType = ReportFilterControlType.TextBox, DisplayOrder = 1 }
+        })
+        {
+            report.Filters.Add(filter);
+        }
+
+        return report;
+    }
+
+    private static ForgeReport BuildSalesOrdersDynamicReport()
+    {
+        var report = new ForgeReport
+        {
+            Code = "sales-orders-dynamic",
+            Name = "Sales Orders (Dynamic Query)",
+            EntityName = "SalesOrder",
+            GroupName = "Reports",
+            ReportType = ReportType.Tabular,
+            DisplayOrder = 6,
+            IsActive = true,
+            Description = "Sales orders with customer and country fields resolved via dynamic navigation paths (no SQL view)."
+        };
+
+        foreach (var column in new[]
+        {
+            new ForgeReportColumn { PropertyName = "OrderNo", Label = "Order No", DisplayOrder = 0, ColumnRole = ReportColumnRole.Detail, AggregateFunction = ReportAggregateFunction.None },
+            new ForgeReportColumn { PropertyName = "OrderDate", Label = "Order Date", DisplayOrder = 1, ColumnRole = ReportColumnRole.Detail, AggregateFunction = ReportAggregateFunction.None, DisplayFormat = "d" },
+            new ForgeReportColumn { PropertyName = "Customer.Name", Label = "Customer", DisplayOrder = 2, ColumnRole = ReportColumnRole.Detail, AggregateFunction = ReportAggregateFunction.None },
+            new ForgeReportColumn { PropertyName = "Customer.Email", Label = "Email", DisplayOrder = 3, ColumnRole = ReportColumnRole.Detail, AggregateFunction = ReportAggregateFunction.None },
+            new ForgeReportColumn { PropertyName = "Customer.Country.Name", Label = "Country", DisplayOrder = 4, ColumnRole = ReportColumnRole.Detail, AggregateFunction = ReportAggregateFunction.None },
+            new ForgeReportColumn { PropertyName = "Status", Label = "Status", DisplayOrder = 5, ColumnRole = ReportColumnRole.Detail, AggregateFunction = ReportAggregateFunction.None },
+            new ForgeReportColumn { PropertyName = "Address", Label = "Ship To", DisplayOrder = 6, ColumnRole = ReportColumnRole.Detail, AggregateFunction = ReportAggregateFunction.None }
+        })
+        {
+            report.Columns.Add(column);
+        }
+
+        foreach (var filter in new[]
+        {
+            new ForgeReportFilter { PropertyName = "Customer.Name", Label = "Customer", Operator = FilterOperator.Contains, ControlType = ReportFilterControlType.TextBox, DisplayOrder = 0 },
+            new ForgeReportFilter { PropertyName = "Status", Label = "Status", Operator = FilterOperator.Equals, ControlType = ReportFilterControlType.Dropdown, Options = "Draft,Approved,Closed", DisplayOrder = 1 },
+            new ForgeReportFilter { PropertyName = "OrderDate", Label = "Order Date", Operator = FilterOperator.Between, ControlType = ReportFilterControlType.DateRange, DisplayOrder = 2 }
+        })
+        {
+            report.Filters.Add(filter);
+        }
+
+        return report;
+    }
+
+    private static ForgeReport BuildLineItemsByCustomerReport()
+    {
+        var report = new ForgeReport
+        {
+            Code = "line-items-by-customer",
+            Name = "Line Items by Customer",
+            EntityName = "SalesOrderItem",
+            GroupName = "Reports",
+            ReportType = ReportType.Grouped,
+            DisplayOrder = 7,
+            IsActive = true,
+            Description = "Order lines grouped by customer using dynamic paths across SalesOrder and Customer."
+        };
+
+        report.Groups.Add(new ForgeReportGroup
+        {
+            PropertyName = "SalesOrder.Customer.Name",
+            Label = "Customer",
+            DisplayOrder = 0,
+            ShowGroupHeader = true,
+            ShowSubtotal = true
+        });
+
+        foreach (var column in new[]
+        {
+            new ForgeReportColumn { PropertyName = "SalesOrder.OrderNo", Label = "Order No", DisplayOrder = 0, ColumnRole = ReportColumnRole.Detail, AggregateFunction = ReportAggregateFunction.None },
+            new ForgeReportColumn { PropertyName = "Product.Name", Label = "Product", DisplayOrder = 1, ColumnRole = ReportColumnRole.Detail, AggregateFunction = ReportAggregateFunction.None },
+            new ForgeReportColumn { PropertyName = "Quantity", Label = "Quantity", DisplayOrder = 2, ColumnRole = ReportColumnRole.Detail, AggregateFunction = ReportAggregateFunction.None },
+            new ForgeReportColumn { PropertyName = "UnitPrice", Label = "Unit Price", DisplayOrder = 3, ColumnRole = ReportColumnRole.Detail, AggregateFunction = ReportAggregateFunction.None, DisplayFormat = "N2" },
+            new ForgeReportColumn { PropertyName = "LineTotal", Label = "Line Total", DisplayOrder = 4, ColumnRole = ReportColumnRole.Calculated, AggregateFunction = ReportAggregateFunction.None, DisplayFormat = "N2", Formula = "{Quantity} * {UnitPrice}" },
+            new ForgeReportColumn { PropertyName = "Quantity", Label = "Qty Total", DisplayOrder = 5, ColumnRole = ReportColumnRole.Aggregate, AggregateFunction = ReportAggregateFunction.Sum },
+            new ForgeReportColumn { PropertyName = "LineTotal", Label = "Amount Total", DisplayOrder = 6, ColumnRole = ReportColumnRole.Aggregate, AggregateFunction = ReportAggregateFunction.Sum, DisplayFormat = "N2" }
+        })
+        {
+            report.Columns.Add(column);
+        }
+
+        report.Summaries.Add(new ForgeReportSummary
+        {
+            PropertyName = "Quantity",
+            Label = "Grand Qty",
+            AggregateFunction = ReportAggregateFunction.Sum,
+            DisplayOrder = 0
+        });
+
+        report.Summaries.Add(new ForgeReportSummary
+        {
+            PropertyName = "LineTotal",
+            Label = "Grand Amount",
+            AggregateFunction = ReportAggregateFunction.Sum,
+            DisplayOrder = 1
+        });
+
+        foreach (var filter in new[]
+        {
+            new ForgeReportFilter { PropertyName = "SalesOrder.Customer.Name", Label = "Customer", Operator = FilterOperator.Contains, ControlType = ReportFilterControlType.TextBox, DisplayOrder = 0 },
+            new ForgeReportFilter { PropertyName = "SalesOrder.OrderDate", Label = "Order Date", Operator = FilterOperator.Between, ControlType = ReportFilterControlType.DateRange, DisplayOrder = 1 }
+        })
+        {
+            report.Filters.Add(filter);
+        }
+
+        return report;
+    }
+
+    private static async Task EnsureSampleReportMenusAsync(MetaForgeDbContext context, ILogger logger)
+    {
+        var reportsFolder = await context.ForgeMenus
+            .FirstOrDefaultAsync(m => m.ItemType == MenuItemType.Folder && m.Name == "Reports" && m.ParentId == null);
+
+        if (reportsFolder == null)
+        {
+            reportsFolder = new ForgeMenu
+            {
+                Name = "Reports",
+                ItemType = MenuItemType.Folder,
+                Icon = "fa-chart-column",
+                DisplayOrder = 3,
+                IsActive = true
+            };
+            context.ForgeMenus.Add(reportsFolder);
+            await context.SaveChangesAsync();
+        }
+
+        await EnsureReportMenuLinkAsync(context, reportsFolder.Id, "Customer List", "/Reports/customer-list", 0);
+        await EnsureReportMenuLinkAsync(context, reportsFolder.Id, "Sales Order List", "/Reports/salesorder-list", 1);
+        await EnsureReportMenuLinkAsync(context, reportsFolder.Id, "Sales Orders by Status", "/Reports/salesorders-by-status", 2);
+        await EnsureReportMenuLinkAsync(context, reportsFolder.Id, "Customers by Status", "/Reports/customers-by-status", 3);
+        await EnsureReportMenuLinkAsync(context, reportsFolder.Id, "Sales Order Items", "/Reports/salesorder-items", 4);
+        await EnsureReportMenuLinkAsync(context, reportsFolder.Id, "Sales Orders (Dynamic)", "/Reports/sales-orders-dynamic", 5);
+        await EnsureReportMenuLinkAsync(context, reportsFolder.Id, "Line Items by Customer", "/Reports/line-items-by-customer", 6);
+        await context.SaveChangesAsync();
+        logger.LogInformation("Sample report navigation links ensured.");
+    }
+
+    private static async Task EnsureReportMenuLinkAsync(
+        MetaForgeDbContext context,
+        int parentId,
+        string name,
+        string url,
+        int displayOrder)
+    {
+        if (await context.ForgeMenus.AnyAsync(m => m.ItemType == MenuItemType.Url && m.Url == url))
+            return;
+
+        context.ForgeMenus.Add(new ForgeMenu
+        {
+            ParentId = parentId,
+            Name = name,
+            ItemType = MenuItemType.Url,
+            Url = url,
+            Icon = "fa-chart-column",
+            DisplayOrder = displayOrder,
+            IsActive = true
+        });
+    }
+
+    private static async Task EnsureReportPermissionsAsync(MetaForgeDbContext context, ILogger logger)
+    {
+        var adminRole = await context.Roles.FirstOrDefaultAsync(r => r.Name == "Administrator");
+        if (adminRole == null) return;
+
+        var reports = await context.ForgeReports.Where(r => r.IsActive).AsNoTracking().ToListAsync();
+        var existingPermissions = await context.Permissions.ToListAsync();
+        var permissionByCode = existingPermissions.ToDictionary(p => p.Code, StringComparer.OrdinalIgnoreCase);
+        var adminPermissionIds = await context.RolePermissions
+            .Where(rp => rp.RoleId == adminRole.Id)
+            .Select(rp => rp.PermissionId)
+            .ToHashSetAsync();
+
+        var addedPermissions = 0;
+        var addedAssignments = 0;
+
+        foreach (var (code, name, action) in Shared.Constants.ReportConfigPermissions.All)
+        {
+            if (!permissionByCode.TryGetValue(code, out var permission))
+            {
+                permission = new Permission { FormId = 0, Action = action, Code = code, Name = name };
+                context.Permissions.Add(permission);
+                permissionByCode[code] = permission;
+                addedPermissions++;
+            }
+
+            if (permission.Id > 0 && adminPermissionIds.Contains(permission.Id))
+                continue;
+
+            var alreadyAssigned = permission.Id > 0 && await context.RolePermissions.AnyAsync(
+                rp => rp.RoleId == adminRole.Id && rp.PermissionId == permission.Id);
+            if (alreadyAssigned)
+            {
+                adminPermissionIds.Add(permission.Id);
+                continue;
+            }
+
+            context.RolePermissions.Add(new RolePermission { Role = adminRole, Permission = permission });
+            if (permission.Id > 0)
+                adminPermissionIds.Add(permission.Id);
+            addedAssignments++;
+        }
+
+        foreach (var report in reports)
+        {
+            foreach (var action in Shared.Constants.ReportPermissionAction.All)
+            {
+                var code = $"{report.Code}.{action}";
+                if (!permissionByCode.TryGetValue(code, out var permission))
+                {
+                    permission = new Permission
+                    {
+                        FormId = 0,
+                        Action = action,
+                        Code = code,
+                        Name = $"{report.Name} - {action}"
+                    };
+                    context.Permissions.Add(permission);
+                    permissionByCode[code] = permission;
+                    addedPermissions++;
+                }
+
+                if (permission.Id > 0 && adminPermissionIds.Contains(permission.Id))
+                    continue;
+
+                var alreadyAssigned = permission.Id > 0 && await context.RolePermissions.AnyAsync(
+                    rp => rp.RoleId == adminRole.Id && rp.PermissionId == permission.Id);
+                if (alreadyAssigned)
+                {
+                    adminPermissionIds.Add(permission.Id);
+                    continue;
+                }
+
+                context.RolePermissions.Add(new RolePermission { Role = adminRole, Permission = permission });
+                if (permission.Id > 0)
+                    adminPermissionIds.Add(permission.Id);
+                addedAssignments++;
+            }
+        }
+
+        if (addedPermissions > 0 || addedAssignments > 0)
+        {
+            await context.SaveChangesAsync();
+            logger.LogInformation(
+                "Synced report permissions ({AddedPermissions} new permission(s), {AddedAssignments} admin assignment(s)).",
+                addedPermissions,
+                addedAssignments);
+        }
     }
 
     private static async Task EnsureMenusAsync(IServiceScope scope, ILogger logger)
@@ -90,6 +832,7 @@ public static class DatabaseSeeder
 
             var menuSync = scope.ServiceProvider.GetRequiredService<IMenuSyncService>();
             await menuSync.EnsureDefaultMenusAsync();
+            await menuSync.EnsureSystemAdminMenusAsync();
             logger.LogInformation("Navigation menus ensured.");
         }
         catch (Exception ex)

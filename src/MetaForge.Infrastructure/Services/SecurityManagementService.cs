@@ -352,6 +352,89 @@ public class SecurityManagementService : ISecurityManagementService
             added++;
         }
 
+        foreach (var (code, name, action) in ReportConfigPermissions.All)
+        {
+            if (existingSet.Contains(code)) continue;
+
+            var permission = new Permission
+            {
+                FormId = 0,
+                Action = action,
+                Code = code,
+                Name = name
+            };
+            _dbContext.Permissions.Add(permission);
+
+            if (adminRole != null)
+                _dbContext.RolePermissions.Add(new RolePermission { Role = adminRole, Permission = permission });
+
+            existingSet.Add(code);
+            added++;
+        }
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        if (adminRole != null && added > 0)
+            await _securityStampService.BumpUsersInRoleAsync(adminRole.Id, cancellationToken);
+
+        return added;
+    }
+
+    public async Task<int> SyncReportPermissionsAsync(CancellationToken cancellationToken = default)
+    {
+        var reports = await _unitOfWork.Reports.GetActiveReportsAsync(cancellationToken);
+        var existingPermissions = await _dbContext.Permissions.ToListAsync(cancellationToken);
+        var existingSet = existingPermissions.Select(p => p.Code).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var adminRole = await _dbContext.Roles.FirstOrDefaultAsync(r => r.Name == "Administrator", cancellationToken);
+
+        var added = 0;
+
+        foreach (var report in reports)
+        {
+            foreach (var action in ReportPermissionAction.All)
+            {
+                var code = $"{report.Code}.{action}";
+                if (existingSet.Contains(code))
+                    continue;
+
+                var permission = new Permission
+                {
+                    FormId = 0,
+                    Action = action,
+                    Code = code,
+                    Name = $"{report.Name} - {action}"
+                };
+                _dbContext.Permissions.Add(permission);
+
+                if (adminRole != null)
+                    _dbContext.RolePermissions.Add(new RolePermission { Role = adminRole, Permission = permission });
+
+                existingSet.Add(code);
+                added++;
+            }
+        }
+
+        foreach (var (code, name, action) in ReportConfigPermissions.All)
+        {
+            if (existingSet.Contains(code))
+                continue;
+
+            var permission = new Permission
+            {
+                FormId = 0,
+                Action = action,
+                Code = code,
+                Name = name
+            };
+            _dbContext.Permissions.Add(permission);
+
+            if (adminRole != null)
+                _dbContext.RolePermissions.Add(new RolePermission { Role = adminRole, Permission = permission });
+
+            existingSet.Add(code);
+            added++;
+        }
+
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         if (adminRole != null && added > 0)
@@ -393,7 +476,8 @@ public class SecurityManagementService : ISecurityManagementService
     private static string ResolveCategoryName(string moduleCode, Domain.Metadata.ForgeForm? module)
     {
         if (moduleCode.Equals(SecurityPermissions.FormCode, StringComparison.OrdinalIgnoreCase)
-            || moduleCode.Equals(ConfigPermissions.FormCode, StringComparison.OrdinalIgnoreCase))
+            || moduleCode.Equals(ConfigPermissions.FormCode, StringComparison.OrdinalIgnoreCase)
+            || moduleCode.Equals(ReportConfigPermissions.FormCode, StringComparison.OrdinalIgnoreCase))
         {
             return "System Administration";
         }
@@ -420,5 +504,7 @@ public class SecurityManagementService : ISecurityManagementService
             ? "Security Management"
             : moduleCode.Equals(ConfigPermissions.FormCode, StringComparison.OrdinalIgnoreCase)
                 ? "Form Builder"
-                : char.ToUpper(moduleCode[0]) + moduleCode[1..];
+                : moduleCode.Equals(ReportConfigPermissions.FormCode, StringComparison.OrdinalIgnoreCase)
+                    ? "Report Builder"
+                    : char.ToUpper(moduleCode[0]) + moduleCode[1..];
 }

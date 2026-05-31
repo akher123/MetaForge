@@ -16,7 +16,8 @@ public class FormConfigurationValidationRuleTests
         var unitOfWork = new UnitOfWork(
             context,
             new ForgeFormRepository(context),
-            new ForgeMenuRepository(context));
+            new ForgeMenuRepository(context),
+            new ForgeReportRepository(context));
 
         var discovery = new Mock<IEntityMetadataDiscoveryService>();
         var metadata = new Mock<IFormMetadataService>();

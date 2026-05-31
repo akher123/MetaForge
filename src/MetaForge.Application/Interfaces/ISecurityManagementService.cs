@@ -32,4 +32,6 @@ public interface ISecurityManagementService
     Task<IReadOnlyList<RoleOptionDto>> GetRoleOptionsAsync(CancellationToken cancellationToken = default);
 
     Task<int> SyncFormPermissionsAsync(CancellationToken cancellationToken = default);
+
+    Task<int> SyncReportPermissionsAsync(CancellationToken cancellationToken = default);
 }

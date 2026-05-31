@@ -1,6 +1,8 @@
+using MetaForge.Application.Configuration;
 using MetaForge.Application.Common;
 using MetaForge.Infrastructure.Dynamic;
 using ClosedXML.Excel;
+using Microsoft.Extensions.Options;
 using System.Reflection;
 using System.Text;
 using System.Text.Json;
@@ -70,6 +72,7 @@ public class GenericCrudService : IGenericCrudService
 
         IQueryable<T> query = _dbContext.Set<T>().AsNoTracking();
         query = DynamicQueryBuilder.ApplySearch(query, request.SearchTerm, searchable);
+        query = DynamicQueryBuilder.ApplyFilters(query, request.Filters);
         query = DynamicQueryBuilder.ApplySort(query, request.SortColumn, request.SortDescending);
 
         var total = await query.CountAsync(cancellationToken);
@@ -162,11 +165,16 @@ public class GridService : IGridService
 {
     private readonly IFormMetadataCache _formCache;
     private readonly IGenericCrudService _crudService;
+    private readonly ExportOptions _exportOptions;
 
-    public GridService(IFormMetadataCache formCache, IGenericCrudService crudService)
+    public GridService(
+        IFormMetadataCache formCache,
+        IGenericCrudService crudService,
+        IOptions<ExportOptions> exportOptions)
     {
         _formCache = formCache;
         _crudService = crudService;
+        _exportOptions = exportOptions.Value;
     }
 
     public async Task<GridDefinition?> GetGridDefinitionAsync(string formCode, CancellationToken cancellationToken = default)
@@ -244,7 +252,7 @@ public class GridService : IGridService
 
         request.Entity = grid.Entity;
         request.Page = 1;
-        request.PageSize = int.MaxValue;
+        request.PageSize = Math.Min(_exportOptions.MaxExportRows, int.MaxValue);
 
         var data = await _crudService.GetAllAsync(request, cancellationToken);
 
@@ -276,7 +284,7 @@ public class GridService : IGridService
 
         request.Entity = grid.Entity;
         request.Page = 1;
-        request.PageSize = int.MaxValue;
+        request.PageSize = Math.Min(_exportOptions.MaxExportRows, int.MaxValue);
 
         var data = await _crudService.GetAllAsync(request, cancellationToken);
         var sb = new StringBuilder();

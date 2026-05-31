@@ -10,4 +10,6 @@ public interface IMenuSyncService
     Task DeactivateFormMenuAsync(int formId, CancellationToken cancellationToken = default);
 
     Task EnsureDefaultMenusAsync(CancellationToken cancellationToken = default);
+
+    Task EnsureSystemAdminMenusAsync(CancellationToken cancellationToken = default);
 }

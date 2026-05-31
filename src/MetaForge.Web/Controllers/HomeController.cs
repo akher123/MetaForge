@@ -24,6 +24,7 @@ public class HomeController : Controller
         ViewBag.Menu = await _navigationService.GetMenuAsync(cancellationToken);
         ViewBag.CanViewConfig = await _authorizationService.HasPermissionCodeAsync(User, ConfigPermissions.View, cancellationToken);
         ViewBag.CanManageConfig = await _authorizationService.HasPermissionCodeAsync(User, ConfigPermissions.Manage, cancellationToken);
+        ViewBag.CanViewReportConfig = await _authorizationService.HasPermissionCodeAsync(User, ReportConfigPermissions.View, cancellationToken);
         ViewBag.CanViewSecurity = await _authorizationService.HasPermissionCodeAsync(User, SecurityPermissions.ViewUsers, cancellationToken)
             || await _authorizationService.HasPermissionCodeAsync(User, SecurityPermissions.ViewRoles, cancellationToken)
             || await _authorizationService.HasPermissionCodeAsync(User, SecurityPermissions.ViewPermissions, cancellationToken);

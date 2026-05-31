@@ -4,6 +4,7 @@
     var menu = ViewBag.Menu as IReadOnlyList<MenuGroupDto>;
     var canViewConfig = ViewBag.CanViewConfig == true;
     var canManageConfig = ViewBag.CanManageConfig == true;
+    var canViewReportConfig = ViewBag.CanViewReportConfig == true;
     var canViewSecurity = ViewBag.CanViewSecurity == true;
 
     var menuList = menu?.ToList() ?? new List<MenuGroupDto>();
@@ -94,7 +95,7 @@
         </div>
     </div>
 
-    @if (canViewConfig || canViewSecurity || canManageConfig)
+    @if (canViewConfig || canViewReportConfig || canViewSecurity || canManageConfig)
     {
         <div class="dashboard-section-header">
             <h2 class="h6 fw-bold mb-0">Quick Actions</h2>
@@ -111,6 +112,21 @@
                             <p>Design Master Data and Transaction forms with fields, grids, and validation rules.</p>
                             <a href="/FormBuilder" class="btn btn-primary btn-sm">
                                 <i class="fa-solid fa-arrow-right me-1"></i>Open Form Builder
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+            @if (canViewReportConfig)
+            {
+                <div class="col-md-6 col-xl-4">
+                    <div class="card admin-card dashboard-action-card h-100">
+                        <div class="card-body">
+                            <span class="dashboard-action-icon dashboard-action-icon-builder"><i class="fa-solid fa-chart-column"></i></span>
+                            <h3 class="h6 mb-0 fw-bold">Report Builder</h3>
+                            <p>Configure tabular, grouped, and summary reports with columns, filters, and totals.</p>
+                            <a href="/ReportBuilder" class="btn btn-primary btn-sm">
+                                <i class="fa-solid fa-arrow-right me-1"></i>Open Report Builder
                             </a>
                         </div>
                     </div>

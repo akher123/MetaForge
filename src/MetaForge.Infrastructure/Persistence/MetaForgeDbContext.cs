@@ -17,6 +17,12 @@ public class MetaForgeDbContext : DbContext
     public DbSet<ForgeRelation> ForgeRelations => Set<ForgeRelation>();
     public DbSet<ForgeGridColumn> ForgeGridColumns => Set<ForgeGridColumn>();
     public DbSet<ForgeFormAction> ForgeFormActions => Set<ForgeFormAction>();
+    public DbSet<ForgeReport> ForgeReports => Set<ForgeReport>();
+    public DbSet<ForgeReportColumn> ForgeReportColumns => Set<ForgeReportColumn>();
+    public DbSet<ForgeReportFilter> ForgeReportFilters => Set<ForgeReportFilter>();
+    public DbSet<ForgeReportGroup> ForgeReportGroups => Set<ForgeReportGroup>();
+    public DbSet<ForgeReportSummary> ForgeReportSummaries => Set<ForgeReportSummary>();
+    public DbSet<ForgeReportSignature> ForgeReportSignatures => Set<ForgeReportSignature>();
     public DbSet<ForgeMenu> ForgeMenus => Set<ForgeMenu>();
     public DbSet<LookupConfiguration> LookupConfigurations => Set<LookupConfiguration>();
 

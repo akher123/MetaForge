@@ -1,0 +1,386 @@
+@{
+    ViewData["Title"] = ViewBag.IsEdit == true ? "Edit Report" : "New Report";
+    var isEdit = ViewBag.IsEdit as bool? ?? false;
+    var report = ViewBag.Report as MetaForge.Application.DTOs.ReportConfigDto;
+    var entities = ViewBag.Entities as IReadOnlyList<MetaForge.Application.DTOs.DiscoveredEntityOptionDto>;
+}
+
+<div id="reportBuilderApp"
+     class="form-builder-app module-page form-builder-page"
+     data-is-edit="@isEdit.ToString().ToLower()">
+
+    <div class="page-header module-page-header module-page-header--breadcrumb mb-4">
+        <div class="module-grid-breadcrumb">
+            @await Component.InvokeAsync("Breadcrumb", new { currentPage = isEdit ? "Edit" : "Create" })
+        </div>
+    </div>
+
+    <div class="card admin-card mb-4">
+        <div class="card-header"><i class="fa-solid fa-sliders me-2"></i>Report Setup</div>
+        <div class="card-body">
+            <div class="form-builder-form-section">
+                <div class="form-builder-form-section-title">
+                    <i class="fa-solid fa-database"></i>Data Source
+                </div>
+                <div class="row g-3">
+                    <div class="col-lg-5">
+                        <label class="form-label" for="entitySelect">Database Entity *</label>
+                        <select id="entitySelect" class="form-select" @(isEdit ? "disabled" : "")>
+                            <option value="">— Select Entity —</option>
+                            @if (entities != null)
+                            {
+                                @foreach (var e in entities)
+                                {
+                                    <option value="@e.EntityName">@e.EntityName (@e.TableName)</option>
+                                }
+                            }
+                        </select>
+                        <div class="form-builder-help-text">Reports read from this entity. Multiple reports can share the same entity.</div>
+                    </div>
+                    <div class="col-lg-7">
+                        <label class="form-label">Report Type *</label>
+                        <div class="form-builder-type-options" role="radiogroup" aria-label="Report type">
+                            <label class="form-builder-type-option is-selected" data-type="Tabular">
+                                <input type="radio" name="reportTypeOption" value="Tabular" checked />
+                                <span class="form-builder-type-option-icon type-master"><i class="fa-solid fa-table"></i></span>
+                                <span class="form-builder-type-option-label">Tabular</span>
+                                <span class="form-builder-type-option-desc">Flat list of detail rows.</span>
+                            </label>
+                            <label class="form-builder-type-option" data-type="Grouped">
+                                <input type="radio" name="reportTypeOption" value="Grouped" />
+                                <span class="form-builder-type-option-icon type-detail"><i class="fa-solid fa-layer-group"></i></span>
+                                <span class="form-builder-type-option-label">Grouped</span>
+                                <span class="form-builder-type-option-desc">Group rows with subtotals (Phase 3 runtime).</span>
+                            </label>
+                            <label class="form-builder-type-option" data-type="Summary">
+                                <input type="radio" name="reportTypeOption" value="Summary" />
+                                <span class="form-builder-type-option-icon type-tabular"><i class="fa-solid fa-calculator"></i></span>
+                                <span class="form-builder-type-option-label">Summary</span>
+                                <span class="form-builder-type-option-desc">Aggregate-only totals (Phase 3 runtime).</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-builder-form-section">
+                <div class="form-builder-form-section-title">
+                    <i class="fa-solid fa-tag"></i>Identity
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label" for="groupName">Menu Group</label>
+                        <input type="text" id="groupName" class="form-control" value="Reports" />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label" for="reportCode">Code *</label>
+                        <input type="text" id="reportCode" class="form-control" placeholder="sales-by-customer" />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label" for="reportName">Display Name *</label>
+                        <input type="text" id="reportName" class="form-control" placeholder="Sales by Customer" />
+                    </div>
+                    <div class="col-md-8">
+                        <label class="form-label" for="description">Description</label>
+                        <input type="text" id="description" class="form-control" placeholder="Optional description shown to users" />
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label" for="displayOrder">Order</label>
+                        <input type="number" id="displayOrder" class="form-control" value="0" min="0" />
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-check form-switch mb-2 mt-4">
+                            <input type="checkbox" id="isActive" class="form-check-input" role="switch" checked />
+                            <label class="form-check-label" for="isActive">Active</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-builder-form-section mb-0">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-4">
+                        <label class="form-label" for="entityName">Entity Name</label>
+                        <input type="text" id="entityName" class="form-control" readonly />
+                    </div>
+                    @if (!isEdit)
+                    {
+                        <div class="col-md-4">
+                            <button type="button" id="btnLoadDraft" class="btn btn-outline-primary w-100">
+                                <i class="fa-solid fa-wand-magic-sparkles me-1"></i>Auto-Build from Entity
+                            </button>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <ul class="nav nav-tabs form-builder-tabs mb-3" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tabColumns" type="button" role="tab">
+                <i class="fa-solid fa-table-columns me-1"></i>Columns
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabFilters" type="button" role="tab">
+                <i class="fa-solid fa-filter me-1"></i>Filters
+            </button>
+        </li>
+        <li class="nav-item nav-grouping-tab" role="presentation">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabGroups" type="button" role="tab">
+                <i class="fa-solid fa-layer-group me-1"></i>Grouping
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabSummaries" type="button" role="tab">
+                <i class="fa-solid fa-calculator me-1"></i>Totals
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabLayout" type="button" role="tab">
+                <i class="fa-solid fa-file-export me-1"></i>Export Layout
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content mb-4">
+        <div class="tab-pane fade show active" id="tabColumns" role="tabpanel">
+            <div class="card admin-card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span><i class="fa-solid fa-table-columns me-2"></i>Report Columns</span>
+                    <button type="button" id="btnAddColumn" class="btn btn-sm btn-outline-primary">
+                        <i class="fa-solid fa-plus me-1"></i>Add Column
+                    </button>
+                </div>
+                <div class="card-body p-0 table-responsive">
+                    <datalist id="reportPropertyPathsList"></datalist>
+                    <div class="px-3 pt-2 small text-muted">Use entity properties or dotted navigation paths (e.g. <code>SalesOrder.Customer.Name</code>). Related tables are included automatically.</div>
+                    <table class="table table-sm table-bordered mb-0" id="columnsTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Property</th>
+                                <th>Label</th>
+                                <th>Role</th>
+                                <th>Formula</th>
+                                <th>Format</th>
+                                <th>Aggregate</th>
+                                <th>Visible</th>
+                                <th style="width:90px"></th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="tabFilters" role="tabpanel">
+            <div class="card admin-card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span><i class="fa-solid fa-filter me-2"></i>Runtime Filters</span>
+                    <button type="button" id="btnAddFilter" class="btn btn-sm btn-outline-primary">
+                        <i class="fa-solid fa-plus me-1"></i>Add Filter
+                    </button>
+                </div>
+                <div class="card-body p-0 table-responsive">
+                    <table class="table table-sm table-bordered mb-0" id="filtersTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Property</th>
+                                <th>Label</th>
+                                <th>Control</th>
+                                <th>Operator</th>
+                                <th>Lookup</th>
+                                <th>Options</th>
+                                <th>Default Value</th>
+                                <th>Required</th>
+                                <th style="width:90px"></th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="tabGroups" role="tabpanel">
+            <div class="card admin-card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span><i class="fa-solid fa-layer-group me-2"></i>Group By Levels</span>
+                    <button type="button" id="btnAddGroup" class="btn btn-sm btn-outline-primary">
+                        <i class="fa-solid fa-plus me-1"></i>Add Group
+                    </button>
+                </div>
+                <div class="card-body p-0 table-responsive">
+                    <table class="table table-sm table-bordered mb-0" id="groupsTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Property</th>
+                                <th>Label</th>
+                                <th>Sort Desc</th>
+                                <th>Header</th>
+                                <th>Subtotal</th>
+                                <th style="width:90px"></th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="tabSummaries" role="tabpanel">
+            <div class="card admin-card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span><i class="fa-solid fa-calculator me-2"></i>Grand Totals / Summaries</span>
+                    <button type="button" id="btnAddSummary" class="btn btn-sm btn-outline-primary">
+                        <i class="fa-solid fa-plus me-1"></i>Add Total
+                    </button>
+                </div>
+                <div class="card-body p-0 table-responsive">
+                    <table class="table table-sm table-bordered mb-0" id="summariesTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Property</th>
+                                <th>Label</th>
+                                <th>Function</th>
+                                <th style="width:90px"></th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="tabLayout" role="tabpanel">
+            <div class="card admin-card">
+                <div class="card-header">
+                    <span><i class="fa-solid fa-file-export me-2"></i>PDF / Excel Layout</span>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label" for="exportTitle">Export Title</label>
+                            <input type="text" id="exportTitle" class="form-control" placeholder="Leave blank to use display name" />
+                            <div class="form-text">Shown centered at the top of PDF and Excel exports.</div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-check form-switch mt-4">
+                                <input type="checkbox" id="showTitleUnderline" class="form-check-input" role="switch" checked />
+                                <label class="form-check-label" for="showTitleUnderline">Title underline</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-check form-switch mt-4">
+                                <input type="checkbox" id="showSignatureBlock" class="form-check-input" role="switch" />
+                                <label class="form-check-label" for="showSignatureBlock">Signature block</label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check form-switch">
+                                <input type="checkbox" id="showGeneratedTimestamp" class="form-check-input" role="switch" checked />
+                                <label class="form-check-label" for="showGeneratedTimestamp">Show generated date/time</label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check form-switch">
+                                <input type="checkbox" id="showPageNumbers" class="form-check-input" role="switch" checked />
+                                <label class="form-check-label" for="showPageNumbers">Show page numbers (PDF footer)</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-builder-form-section mb-4">
+                        <div class="form-builder-form-section-title">
+                            <i class="fa-solid fa-heading"></i>Report Header
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label" for="headerLeft">Left</label>
+                                <input type="text" id="headerLeft" class="form-control" placeholder="MetaForge ERP" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label" for="headerCenter">Center</label>
+                                <input type="text" id="headerCenter" class="form-control" placeholder="{Title}" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label" for="headerRight">Right</label>
+                                <input type="text" id="headerRight" class="form-control" placeholder="{Date}" />
+                            </div>
+                        </div>
+                        <div class="form-text mt-2">Tokens: <code>{Title}</code>, <code>{Date}</code>, <code>{DateTime}</code></div>
+                    </div>
+
+                    <div class="form-builder-form-section mb-4">
+                        <div class="form-builder-form-section-title">
+                            <i class="fa-solid fa-shoe-prints"></i>Report Footer
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label" for="footerLeft">Left</label>
+                                <input type="text" id="footerLeft" class="form-control" placeholder="Confidential" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label" for="footerCenter">Center</label>
+                                <input type="text" id="footerCenter" class="form-control" placeholder="Leave blank for page numbers" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label" for="footerRight">Right</label>
+                                <input type="text" id="footerRight" class="form-control" placeholder="{DateTime}" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="signatureSection">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="fw-semibold">Signature Lines</span>
+                            <button type="button" id="btnAddSignature" class="btn btn-sm btn-outline-primary">
+                                <i class="fa-solid fa-plus me-1"></i>Add Signature
+                            </button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered mb-0" id="signaturesTable">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Label</th>
+                                        <th style="width:90px"></th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                        <div class="form-text mt-2">Each label appears above an underline on exported PDF/Excel files.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-builder-help-card mb-3">
+        <i class="fa-solid fa-lightbulb me-2 text-warning"></i>
+        <strong>Tip:</strong> Use <em>Auto-Build</em> to generate columns and filters from the entity.
+        Set column <strong>Role</strong> to Group By or Aggregate for grouped/summary layouts, or <strong>Calculated</strong> with a formula like <code>{Quantity} * {UnitPrice}</code>.
+        Export supports Excel and PDF with grouping, totals, and calculated columns.
+    </div>
+
+    <div class="form-builder-save-bar d-flex flex-wrap gap-2 mb-5">
+        <button type="button" id="btnSaveReport" class="btn btn-primary">
+            <i class="fa-solid fa-floppy-disk me-1"></i>Save Report
+        </button>
+        <a href="/ReportBuilder" class="btn btn-outline-secondary">
+            <i class="fa-solid fa-xmark me-1"></i>Cancel
+        </a>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        window.__reportBuilderData = {
+            report: @Html.Raw(report != null ? System.Text.Json.JsonSerializer.Serialize(report) : "null"),
+            entities: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(entities))
+        };
+    </script>
+    <script src="~/js/metaforge/report-config.js" asp-append-version="true"></script>
+}

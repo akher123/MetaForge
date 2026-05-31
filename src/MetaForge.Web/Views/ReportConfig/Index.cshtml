@@ -1,0 +1,177 @@
+@{
+    ViewData["Title"] = "Report Builder";
+    var reports = ViewBag.Reports as IReadOnlyList<MetaForge.Application.DTOs.ReportConfigListItemDto>;
+    var reportList = reports?.ToList() ?? new List<MetaForge.Application.DTOs.ReportConfigListItemDto>();
+
+    var tabularCount = reportList.Count(r => r.ReportType == "Tabular");
+    var groupedCount = reportList.Count(r => r.ReportType == "Grouped");
+    var summaryCount = reportList.Count(r => r.ReportType == "Summary");
+    var activeCount = reportList.Count(r => r.IsActive);
+
+    string TypeLabel(string reportType) => reportType switch
+    {
+        "Grouped" => "Grouped",
+        "Summary" => "Summary",
+        _ => "Tabular"
+    };
+
+    string TypeKey(string reportType) => reportType.ToLowerInvariant();
+}
+
+<div id="reportBuilderIndexApp" class="app-page-fill admin-hub-page form-builder-page">
+    <div class="row g-3 mb-4 form-builder-stat-grid security-stat-grid">
+        <div class="col-6 col-xl-3">
+            <div class="stat-card stat-primary h-100">
+                <div class="card-body text-center">
+                    <span class="stat-icon stat-icon-screens"><i class="fa-solid fa-chart-column"></i></span>
+                    <div class="stat-value">@reportList.Count</div>
+                    <div class="stat-label">Configured Reports</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-xl-3">
+            <div class="stat-card stat-info h-100">
+                <div class="card-body text-center">
+                    <span class="stat-icon stat-icon-master"><i class="fa-solid fa-table"></i></span>
+                    <div class="stat-value">@tabularCount</div>
+                    <div class="stat-label">Tabular</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-xl-3">
+            <div class="stat-card stat-warning h-100">
+                <div class="card-body text-center">
+                    <span class="stat-icon stat-icon-transaction"><i class="fa-solid fa-layer-group"></i></span>
+                    <div class="stat-value">@groupedCount</div>
+                    <div class="stat-label">Grouped</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-xl-3">
+            <div class="stat-card stat-success h-100">
+                <div class="card-body text-center">
+                    <span class="stat-icon stat-icon-active"><i class="fa-solid fa-circle-check"></i></span>
+                    <div class="stat-value">@activeCount</div>
+                    <div class="stat-label">Active</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-md-12">
+            <div class="card admin-card form-builder-hub-card card-group-master h-100">
+                <div class="card-body">
+                    <span class="form-builder-hub-icon hub-master"><i class="fa-solid fa-chart-column"></i></span>
+                    <h2 class="h6 mb-1 fw-bold">Dynamic Reports</h2>
+                    <p>Design tabular, grouped, and summary reports on any feature entity. Configure columns, filters, grouping, and totals — then export to Excel (runtime in Phase 2).</p>
+                    <a href="/ReportBuilder/Create" class="btn btn-sm btn-outline-primary align-self-start">
+                        <i class="fa-solid fa-wand-magic-sparkles me-1"></i>New Report
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card admin-card admin-grid-card module-grid-card">
+        <div class="card-header module-grid-card-header d-flex align-items-center flex-wrap gap-2">
+            <div class="module-grid-breadcrumb">
+                @await Component.InvokeAsync("Breadcrumb")
+            </div>
+            <div class="d-flex flex-wrap align-items-center gap-2 module-grid-toolbar">
+                <span class="fw-semibold"><i class="fa-solid fa-chart-column me-2"></i>Configured Reports</span>
+                <span class="text-muted small">@reportList.Count report(s)</span>
+                <a class="btn btn-sm btn-primary" href="/ReportBuilder/Create" title="New Report" aria-label="New Report">
+                    <i class="fa-solid fa-plus me-1"></i>New Report
+                </a>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            @if (reportList.Count == 0)
+            {
+                <div class="form-builder-empty-state">
+                    <div class="form-builder-empty-icon" aria-hidden="true"><i class="fa-solid fa-chart-column"></i></div>
+                    <h2 class="h6 mb-2">No reports configured yet</h2>
+                    <p class="mb-3">Pick an entity, auto-build columns and filters, then save your first report.</p>
+                    <a class="btn btn-primary btn-sm" href="/ReportBuilder/Create">
+                        <i class="fa-solid fa-plus me-1"></i>Create First Report
+                    </a>
+                </div>
+            }
+            else
+            {
+                <table class="table table-sm table-striped table-hover table-bordered w-100 mb-0" id="reportsTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Report</th>
+                            <th>Group</th>
+                            <th>Type</th>
+                            <th>Entity</th>
+                            <th>Columns</th>
+                            <th>Filters</th>
+                            <th>Status</th>
+                            <th style="width:120px">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var r in reportList)
+                        {
+                            var typeKey = TypeKey(r.ReportType);
+                            <tr>
+                                <td>
+                                    <div class="form-builder-screen-cell">
+                                        <span class="form-builder-screen-icon type-@typeKey" aria-hidden="true">
+                                            <i class="fa-solid fa-chart-column"></i>
+                                        </span>
+                                        <div>
+                                            <span class="form-builder-screen-name">@r.Name</span>
+                                            <code class="form-builder-screen-code">@r.Code</code>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td><span class="form-builder-group-badge">@r.GroupName</span></td>
+                                <td><span class="form-builder-type-badge type-@typeKey">@TypeLabel(r.ReportType)</span></td>
+                                <td><span class="form-builder-entity-text">@r.EntityName</span></td>
+                                <td><span class="menu-order-badge">@r.ColumnCount</span></td>
+                                <td><span class="menu-order-badge">@r.FilterCount</span></td>
+                                <td>
+                                    @if (r.IsActive)
+                                    {
+                                        <span class="security-status-pill is-active">Active</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="security-status-pill is-inactive">Inactive</span>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="d-flex gap-1">
+                                        <a class="btn btn-sm btn-outline-success btn-icon" href="/Reports/@r.Code" title="Run Report" aria-label="Run Report"><i class="fa-solid fa-play"></i></a>
+                                        <a class="btn btn-sm btn-outline-primary btn-icon" href="/ReportBuilder/Edit/@r.Id" title="Edit Report" aria-label="Edit Report"><i class="fa-solid fa-pen-to-square"></i></a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(function () {
+            if ($('#reportsTable').length) {
+                $('#reportsTable').DataTable({
+                    pageLength: 25,
+                    order: [[0, 'asc']],
+                    processing: false,
+                    metaforgeProgress: false,
+                    columnDefs: [{ orderable: false, targets: -1 }],
+                    language: { search: 'Filter reports:' }
+                });
+            }
+        });
+    </script>
+}

@@ -18,12 +18,14 @@ public static class DependencyInjection
             DatabaseConfiguration.ConfigureDbContext(options, configuration));
 
         services.Configure<MetadataCacheOptions>(configuration.GetSection(MetadataCacheOptions.SectionName));
+        services.Configure<ExportOptions>(configuration.GetSection(ExportOptions.SectionName));
         services.AddMemoryCache();
         services.AddHttpContextAccessor();
 
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IForgeFormRepository, ForgeFormRepository>();
         services.AddScoped<IForgeMenuRepository, ForgeMenuRepository>();
+        services.AddScoped<IForgeReportRepository, ForgeReportRepository>();
         services.AddScoped<IEntityTypeResolver, EntityTypeResolver>();
         services.AddScoped<IFormMetadataCache, FormMetadataCache>();
 
@@ -46,6 +48,8 @@ public static class DependencyInjection
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IUserPreferenceService, UserPreferenceService>();
         services.AddScoped<IFormConfigurationService, FormConfigurationService>();
+        services.AddScoped<IReportConfigurationService, ReportConfigurationService>();
+        services.AddScoped<IReportService, ReportService>();
         services.AddScoped<IMenuManagementService, MenuManagementService>();
         services.AddScoped<IMenuSyncService, MenuSyncService>();
 

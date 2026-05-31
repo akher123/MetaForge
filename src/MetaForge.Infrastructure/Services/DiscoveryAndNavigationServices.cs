@@ -201,6 +201,9 @@ public class NavigationService : INavigationService
         if (await _authorizationService.HasPermissionCodeAsync(user, Shared.Constants.ConfigPermissions.View, cancellationToken))
             menu.SystemItems.Add(new SystemMenuItemDto { Name = "Form Builder", Url = "/FormBuilder" });
 
+        if (await _authorizationService.HasPermissionCodeAsync(user, Shared.Constants.ReportConfigPermissions.View, cancellationToken))
+            menu.SystemItems.Add(new SystemMenuItemDto { Name = "Report Builder", Url = "/ReportBuilder" });
+
         if (await CanViewSecurityAsync(user, cancellationToken))
             menu.SystemItems.Add(new SystemMenuItemDto { Name = "Security", Url = "/Security" });
 
@@ -299,6 +302,14 @@ public class NavigationService : INavigationService
             return true;
         if (url.Contains("FormBuilder", StringComparison.OrdinalIgnoreCase) || url.Contains("ModuleConfig", StringComparison.OrdinalIgnoreCase))
             return await _authorizationService.HasPermissionCodeAsync(user, Shared.Constants.ConfigPermissions.View, cancellationToken);
+        if (url.Contains("ReportBuilder", StringComparison.OrdinalIgnoreCase))
+            return await _authorizationService.HasPermissionCodeAsync(user, Shared.Constants.ReportConfigPermissions.View, cancellationToken);
+        if (url.Contains("/Reports/", StringComparison.OrdinalIgnoreCase))
+        {
+            var code = url.Trim('/').Split('/', StringSplitOptions.RemoveEmptyEntries).LastOrDefault();
+            return !string.IsNullOrWhiteSpace(code)
+                && await _authorizationService.HasPermissionCodeAsync(user, Shared.Constants.ReportPermissions.Run(code), cancellationToken);
+        }
         if (url.Contains("/Menu", StringComparison.OrdinalIgnoreCase))
             return await _authorizationService.HasPermissionCodeAsync(user, Shared.Constants.ConfigPermissions.Manage, cancellationToken);
         if (url.Contains("Security", StringComparison.OrdinalIgnoreCase))
@@ -521,6 +532,25 @@ public class NavigationService : INavigationService
         {
             trail.Add(new NavigationBreadcrumbDto { Text = "Form Builder", IsCurrent = string.IsNullOrWhiteSpace(currentPage) });
             return FinalizeTrail(trail, currentPage, "/FormBuilder");
+        }
+
+        if (string.Equals(targetPath, "/reportbuilder", StringComparison.OrdinalIgnoreCase)
+            || targetPath.StartsWith("/reportbuilder/", StringComparison.OrdinalIgnoreCase))
+        {
+            trail.Add(new NavigationBreadcrumbDto { Text = "Report Builder", IsCurrent = string.IsNullOrWhiteSpace(currentPage) });
+            return FinalizeTrail(trail, currentPage, "/ReportBuilder");
+        }
+
+        if (targetPath.StartsWith("/reports/", StringComparison.OrdinalIgnoreCase))
+        {
+            var segments = targetPath.Trim('/').Split('/', StringSplitOptions.RemoveEmptyEntries);
+            if (segments.Length >= 2)
+            {
+                trail.Add(new NavigationBreadcrumbDto { Text = "Reports", Url = "/ReportBuilder" });
+                var reportName = currentPage ?? FormatPathSegment(segments[1]);
+                trail.Add(new NavigationBreadcrumbDto { Text = reportName, IsCurrent = true });
+                return FinalizeTrail(trail, currentPage, targetPath);
+            }
         }
 
         if (string.Equals(targetPath, "/menu", StringComparison.OrdinalIgnoreCase)

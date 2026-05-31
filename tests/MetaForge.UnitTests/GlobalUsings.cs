@@ -11,4 +11,4 @@ global using MetaForge.Infrastructure.Services;
 global using Microsoft.EntityFrameworkCore;
 global using Microsoft.Extensions.Caching.Memory;
 global using Moq;
-global using Xunit;
+global using MetaForge.Shared.Exceptions;

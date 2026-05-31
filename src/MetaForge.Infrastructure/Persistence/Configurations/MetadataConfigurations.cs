@@ -63,6 +63,102 @@ public class ForgeGridColumnConfiguration : IEntityTypeConfiguration<ForgeGridCo
     }
 }
 
+public class ForgeReportConfiguration : IEntityTypeConfiguration<ForgeReport>
+{
+    public void Configure(EntityTypeBuilder<ForgeReport> builder)
+    {
+        builder.ToTable("ForgeReports");
+        builder.HasKey(x => x.Id);
+        builder.Property(x => x.Code).HasMaxLength(100).IsRequired();
+        builder.Property(x => x.Name).HasMaxLength(200).IsRequired();
+        builder.Property(x => x.EntityName).HasMaxLength(200).IsRequired();
+        builder.Property(x => x.GroupName).HasMaxLength(100);
+        builder.Property(x => x.ReportType).HasConversion<string>().HasMaxLength(50).IsRequired();
+        builder.Property(x => x.Description).HasMaxLength(500);
+        builder.Property(x => x.ExportTitle).HasMaxLength(200);
+        builder.Property(x => x.ShowTitleUnderline).HasDefaultValue(true);
+        builder.Property(x => x.ShowSignatureBlock).HasDefaultValue(false);
+        builder.Property(x => x.HeaderLeft).HasMaxLength(500);
+        builder.Property(x => x.HeaderCenter).HasMaxLength(500);
+        builder.Property(x => x.HeaderRight).HasMaxLength(500);
+        builder.Property(x => x.FooterLeft).HasMaxLength(500);
+        builder.Property(x => x.FooterCenter).HasMaxLength(500);
+        builder.Property(x => x.FooterRight).HasMaxLength(500);
+        builder.Property(x => x.ShowPageNumbers).HasDefaultValue(true);
+        builder.Property(x => x.ShowGeneratedTimestamp).HasDefaultValue(true);
+        builder.HasIndex(x => x.Code).IsUnique();
+        builder.HasMany(x => x.Columns).WithOne(x => x.Report).HasForeignKey(x => x.ReportId);
+        builder.HasMany(x => x.Filters).WithOne(x => x.Report).HasForeignKey(x => x.ReportId);
+        builder.HasMany(x => x.Groups).WithOne(x => x.Report).HasForeignKey(x => x.ReportId);
+        builder.HasMany(x => x.Summaries).WithOne(x => x.Report).HasForeignKey(x => x.ReportId);
+        builder.HasMany(x => x.Signatures).WithOne(x => x.Report).HasForeignKey(x => x.ReportId);
+    }
+}
+
+public class ForgeReportSignatureConfiguration : IEntityTypeConfiguration<ForgeReportSignature>
+{
+    public void Configure(EntityTypeBuilder<ForgeReportSignature> builder)
+    {
+        builder.ToTable("ForgeReportSignatures");
+        builder.HasKey(x => x.Id);
+        builder.Property(x => x.Label).HasMaxLength(200).IsRequired();
+    }
+}
+
+public class ForgeReportColumnConfiguration : IEntityTypeConfiguration<ForgeReportColumn>
+{
+    public void Configure(EntityTypeBuilder<ForgeReportColumn> builder)
+    {
+        builder.ToTable("ForgeReportColumns");
+        builder.HasKey(x => x.Id);
+        builder.Property(x => x.PropertyName).HasMaxLength(200).IsRequired();
+        builder.Property(x => x.Label).HasMaxLength(200).IsRequired();
+        builder.Property(x => x.ColumnRole).HasConversion<string>().HasMaxLength(50).IsRequired();
+        builder.Property(x => x.AggregateFunction).HasConversion<string>().HasMaxLength(50).IsRequired();
+        builder.Property(x => x.DisplayFormat).HasMaxLength(100);
+        builder.Property(x => x.Formula).HasMaxLength(500);
+    }
+}
+
+public class ForgeReportFilterConfiguration : IEntityTypeConfiguration<ForgeReportFilter>
+{
+    public void Configure(EntityTypeBuilder<ForgeReportFilter> builder)
+    {
+        builder.ToTable("ForgeReportFilters");
+        builder.HasKey(x => x.Id);
+        builder.Property(x => x.PropertyName).HasMaxLength(200).IsRequired();
+        builder.Property(x => x.Label).HasMaxLength(200).IsRequired();
+        builder.Property(x => x.Operator).HasConversion<string>().HasMaxLength(50).IsRequired();
+        builder.Property(x => x.ControlType).HasConversion<string>().HasMaxLength(50).IsRequired().HasDefaultValue(ReportFilterControlType.TextBox);
+        builder.Property(x => x.LookupEntity).HasMaxLength(200);
+        builder.Property(x => x.Options).HasMaxLength(1000);
+        builder.Property(x => x.DefaultValue).HasMaxLength(500);
+    }
+}
+
+public class ForgeReportGroupConfiguration : IEntityTypeConfiguration<ForgeReportGroup>
+{
+    public void Configure(EntityTypeBuilder<ForgeReportGroup> builder)
+    {
+        builder.ToTable("ForgeReportGroups");
+        builder.HasKey(x => x.Id);
+        builder.Property(x => x.PropertyName).HasMaxLength(200).IsRequired();
+        builder.Property(x => x.Label).HasMaxLength(200).IsRequired();
+    }
+}
+
+public class ForgeReportSummaryConfiguration : IEntityTypeConfiguration<ForgeReportSummary>
+{
+    public void Configure(EntityTypeBuilder<ForgeReportSummary> builder)
+    {
+        builder.ToTable("ForgeReportSummaries");
+        builder.HasKey(x => x.Id);
+        builder.Property(x => x.PropertyName).HasMaxLength(200).IsRequired();
+        builder.Property(x => x.Label).HasMaxLength(200).IsRequired();
+        builder.Property(x => x.AggregateFunction).HasConversion<string>().HasMaxLength(50).IsRequired();
+    }
+}
+
 public class ForgeFormActionConfiguration : IEntityTypeConfiguration<ForgeFormAction>
 {
     public void Configure(EntityTypeBuilder<ForgeFormAction> builder)

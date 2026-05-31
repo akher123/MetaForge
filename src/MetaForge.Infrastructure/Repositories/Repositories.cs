@@ -73,6 +73,69 @@ public class ForgeFormRepository : IForgeFormRepository
         await _context.ForgeForms.AnyAsync(m => m.EntityName == entityName && (!excludeId.HasValue || m.Id != excludeId.Value), cancellationToken);
 }
 
+public class ForgeReportRepository : IForgeReportRepository
+{
+    private readonly MetaForgeDbContext _context;
+
+    public ForgeReportRepository(MetaForgeDbContext context) => _context = context;
+
+    public async Task<ForgeReport?> GetByIdAsync(int id, CancellationToken cancellationToken = default) =>
+        await _context.ForgeReports
+            .Include(r => r.Columns.OrderBy(c => c.DisplayOrder))
+            .Include(r => r.Filters.OrderBy(f => f.DisplayOrder))
+            .Include(r => r.Groups.OrderBy(g => g.DisplayOrder))
+            .Include(r => r.Summaries.OrderBy(s => s.DisplayOrder))
+            .Include(r => r.Signatures.OrderBy(s => s.DisplayOrder))
+            .AsNoTracking()
+            .FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
+
+    public async Task<IReadOnlyList<ForgeReport>> GetAllAsync(CancellationToken cancellationToken = default) =>
+        await _context.ForgeReports
+            .Include(r => r.Columns)
+            .Include(r => r.Filters)
+            .AsNoTracking()
+            .OrderBy(r => r.GroupName)
+            .ThenBy(r => r.DisplayOrder)
+            .ToListAsync(cancellationToken);
+
+    public async Task AddAsync(ForgeReport entity, CancellationToken cancellationToken = default) =>
+        await _context.ForgeReports.AddAsync(entity, cancellationToken);
+
+    public void Update(ForgeReport entity) => _context.ForgeReports.Update(entity);
+
+    public void Remove(ForgeReport entity) => _context.ForgeReports.Remove(entity);
+
+    public async Task<ForgeReport?> GetByCodeAsync(string code, CancellationToken cancellationToken = default) =>
+        await _context.ForgeReports
+            .Include(r => r.Columns.OrderBy(c => c.DisplayOrder))
+            .Include(r => r.Filters.OrderBy(f => f.DisplayOrder))
+            .Include(r => r.Groups.OrderBy(g => g.DisplayOrder))
+            .Include(r => r.Summaries.OrderBy(s => s.DisplayOrder))
+            .Include(r => r.Signatures.OrderBy(s => s.DisplayOrder))
+            .AsNoTracking()
+            .FirstOrDefaultAsync(r => r.Code == code, cancellationToken);
+
+    public async Task<IReadOnlyList<ForgeReport>> GetActiveReportsAsync(CancellationToken cancellationToken = default) =>
+        await _context.ForgeReports
+            .Where(r => r.IsActive)
+            .OrderBy(r => r.GroupName)
+            .ThenBy(r => r.DisplayOrder)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+
+    public async Task<ForgeReport?> GetByIdTrackedAsync(int id, CancellationToken cancellationToken = default) =>
+        await _context.ForgeReports
+            .Include(r => r.Columns)
+            .Include(r => r.Filters)
+            .Include(r => r.Groups)
+            .Include(r => r.Summaries)
+            .Include(r => r.Signatures)
+            .FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
+
+    public async Task<bool> ExistsByCodeAsync(string code, int? excludeId = null, CancellationToken cancellationToken = default) =>
+        await _context.ForgeReports.AnyAsync(r => r.Code == code && (!excludeId.HasValue || r.Id != excludeId.Value), cancellationToken);
+}
+
 public class ForgeMenuRepository : IForgeMenuRepository
 {
     private readonly MetaForgeDbContext _context;
@@ -141,16 +204,23 @@ public class UnitOfWork : IUnitOfWork
 {
     private readonly MetaForgeDbContext _context;
 
-    public UnitOfWork(MetaForgeDbContext context, IForgeFormRepository forms, IForgeMenuRepository menus)
+    public UnitOfWork(
+        MetaForgeDbContext context,
+        IForgeFormRepository forms,
+        IForgeMenuRepository menus,
+        IForgeReportRepository reports)
     {
         _context = context;
         Forms = forms;
         Menus = menus;
+        Reports = reports;
     }
 
     public IForgeFormRepository Forms { get; }
 
     public IForgeMenuRepository Menus { get; }
+
+    public IForgeReportRepository Reports { get; }
 
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default) =>
         _context.SaveChangesAsync(cancellationToken);

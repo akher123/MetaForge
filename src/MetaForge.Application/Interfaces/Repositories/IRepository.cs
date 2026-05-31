@@ -53,6 +53,20 @@ public interface IForgeMenuRepository : IRepository<ForgeMenu>
 }
 
 /// <summary>
+/// Admin report repository.
+/// </summary>
+public interface IForgeReportRepository : IRepository<ForgeReport>
+{
+    Task<ForgeReport?> GetByCodeAsync(string code, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<ForgeReport>> GetActiveReportsAsync(CancellationToken cancellationToken = default);
+
+    Task<ForgeReport?> GetByIdTrackedAsync(int id, CancellationToken cancellationToken = default);
+
+    Task<bool> ExistsByCodeAsync(string code, int? excludeId = null, CancellationToken cancellationToken = default);
+}
+
+/// <summary>
 /// Unit of work for transactional operations.
 /// </summary>
 public interface IUnitOfWork
@@ -60,6 +74,8 @@ public interface IUnitOfWork
     IForgeFormRepository Forms { get; }
 
     IForgeMenuRepository Menus { get; }
+
+    IForgeReportRepository Reports { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
