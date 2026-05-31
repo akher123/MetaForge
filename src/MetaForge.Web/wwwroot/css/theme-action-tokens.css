@@ -7,6 +7,11 @@
   --dv-action-danger-hover-bg: #4338ca;
   --dv-action-danger-hover-fg: #ffffff;
   --dv-action-danger-soft: #eef2ff;
+  --dv-action-export-excel-bg: #eef2ff;
+  --dv-action-export-excel-fg: #4338ca;
+  --dv-action-export-excel-border: #a5b4fc;
+  --dv-action-export-excel-hover-bg: #4338ca;
+  --dv-action-export-excel-hover-fg: #ffffff;
 }
 
 html[data-theme="indigo-light"] {
@@ -127,4 +132,13 @@ html[data-theme="midnight-dark"] {
   --dv-action-danger-soft: rgba(96, 165, 250, 0.16);
   --bs-danger: #60a5fa;
   --bs-danger-rgb: 96, 165, 250;
+}
+
+/* Export Excel — theme-tinted soft outline (follows each palette) */
+html[data-theme] {
+  --dv-action-export-excel-bg: var(--dv-action-danger-bg);
+  --dv-action-export-excel-fg: var(--dv-action-danger-fg);
+  --dv-action-export-excel-border: var(--dv-action-danger-border);
+  --dv-action-export-excel-hover-bg: var(--dv-action-danger-hover-bg);
+  --dv-action-export-excel-hover-fg: var(--dv-action-danger-hover-fg);
 }

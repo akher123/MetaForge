@@ -182,9 +182,49 @@ html[data-theme$="-dark"] .sidebar-icon {
   color: var(--dv-indigo-500);
 }
 
-/* Breadcrumbs */
-html[data-theme$="-dark"] .breadcrumb-item a {
-  color: var(--dv-link);
+/* Breadcrumbs — rectangle arrow trail (→) */
+html[data-theme$="-dark"] .mf-breadcrumb {
+  --mf-bc-link-bg: color-mix(in srgb, var(--dv-primary) 22%, var(--dv-surface-muted));
+  --mf-bc-link-hover-bg: color-mix(in srgb, var(--dv-primary) 32%, var(--dv-surface));
+  --mf-bc-label-bg: color-mix(in srgb, var(--dv-primary) 16%, var(--dv-surface-alt));
+  --mf-bc-current-bg: var(--dv-primary-dark);
+  --mf-bc-notch-bg: var(--dv-surface);
+}
+
+html[data-theme$="-dark"] .module-page--transaction .mf-breadcrumb {
+  --mf-bc-link-bg: color-mix(in srgb, #7c3aed 22%, var(--dv-surface-muted));
+  --mf-bc-link-hover-bg: color-mix(in srgb, #7c3aed 32%, var(--dv-surface));
+  --mf-bc-label-bg: color-mix(in srgb, #7c3aed 16%, var(--dv-surface-alt));
+  --mf-bc-current-bg: #6d28d9;
+}
+
+html[data-theme$="-dark"] .mf-breadcrumb__segment--link {
+  color: var(--dv-text-secondary);
+}
+
+html[data-theme$="-dark"] .mf-breadcrumb__segment--link:hover {
+  color: var(--dv-primary-light);
+}
+
+html[data-theme$="-dark"] .mf-breadcrumb__segment--label {
+  color: var(--dv-text-muted);
+}
+
+html[data-theme$="-dark"] .mf-breadcrumb__segment--current {
+  color: #fff;
+}
+
+html[data-theme$="-dark"] .module-page--transaction .mf-breadcrumb__segment--link:hover {
+  color: #a78bfa;
+}
+
+html[data-theme$="-dark"] .module-grid-card-header .mf-breadcrumb,
+html[data-theme$="-dark"] .page-breadcrumb-bar .mf-breadcrumb {
+  --mf-bc-notch-bg: var(--dv-surface-header, var(--dv-surface));
+}
+
+html[data-theme$="-dark"] .security-page-header-zone .mf-breadcrumb {
+  --mf-bc-notch-bg: var(--dv-surface);
 }
 
 html[data-theme$="-dark"] .breadcrumb-item,
@@ -213,6 +253,20 @@ html[data-theme$="-dark"] .btn-outline-secondary {
 html[data-theme$="-dark"] .btn-outline-secondary:hover {
   color: var(--dv-text) !important;
   background-color: var(--dv-surface-muted) !important;
+}
+
+html[data-theme$="-dark"] .btn-export-csv {
+  color: var(--dv-text-secondary) !important;
+  border-color: var(--dv-border-strong) !important;
+  background-color: var(--dv-surface-muted) !important;
+}
+
+html[data-theme$="-dark"] .btn-export-csv:hover,
+html[data-theme$="-dark"] .btn-export-csv:focus,
+html[data-theme$="-dark"] .btn-export-csv:active {
+  color: var(--dv-primary-light) !important;
+  background-color: var(--dv-surface-hover) !important;
+  border-color: var(--dv-primary) !important;
 }
 
 html[data-theme$="-dark"] .btn-light {

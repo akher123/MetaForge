@@ -332,3 +332,73 @@ html[data-theme] .btn-remove-row i,
 html[data-theme] .btn-remove-detail i {
   color: inherit !important;
 }
+
+html[data-theme] .btn-export-excel,
+html[data-theme] .module-grid-toolbar .btn-export-excel {
+  --bs-btn-color: var(--dv-action-export-excel-fg);
+  --bs-btn-border-color: var(--dv-action-export-excel-border);
+  --bs-btn-bg: var(--dv-action-export-excel-bg);
+  --bs-btn-hover-color: var(--dv-action-export-excel-hover-fg);
+  --bs-btn-hover-bg: var(--dv-action-export-excel-hover-bg);
+  --bs-btn-hover-border-color: var(--dv-action-export-excel-hover-bg);
+  --bs-btn-active-color: var(--dv-action-export-excel-hover-fg);
+  --bs-btn-active-bg: var(--dv-action-export-excel-hover-bg);
+  --bs-btn-active-border-color: var(--dv-action-export-excel-hover-bg);
+  --bs-btn-focus-shadow-rgb: var(--bs-primary-rgb);
+  color: var(--dv-action-export-excel-fg) !important;
+  border-color: var(--dv-action-export-excel-border) !important;
+  background-color: var(--dv-action-export-excel-bg) !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+
+html[data-theme] .btn-export-excel:hover,
+html[data-theme] .btn-export-excel:focus,
+html[data-theme] .btn-export-excel:active,
+html[data-theme] .module-grid-toolbar .btn-export-excel:hover,
+html[data-theme] .module-grid-toolbar .btn-export-excel:focus,
+html[data-theme] .module-grid-toolbar .btn-export-excel:active {
+  color: var(--dv-action-export-excel-hover-fg) !important;
+  background-color: var(--dv-action-export-excel-hover-bg) !important;
+  border-color: var(--dv-action-export-excel-hover-bg) !important;
+  background-image: none !important;
+}
+
+html[data-theme] .btn-export-excel i {
+  color: inherit !important;
+}
+
+html[data-theme] .btn-export-csv,
+html[data-theme] .module-grid-toolbar .btn-export-csv {
+  --bs-btn-color: var(--dv-text-secondary);
+  --bs-btn-border-color: var(--dv-border-strong);
+  --bs-btn-bg: var(--dv-surface);
+  --bs-btn-hover-color: var(--dv-primary-dark);
+  --bs-btn-hover-bg: var(--dv-surface-hover);
+  --bs-btn-hover-border-color: var(--dv-primary);
+  --bs-btn-active-color: var(--dv-primary-dark);
+  --bs-btn-active-bg: var(--dv-surface-hover);
+  --bs-btn-active-border-color: var(--dv-primary);
+  --bs-btn-focus-shadow-rgb: var(--bs-primary-rgb);
+  color: var(--dv-text-secondary) !important;
+  border-color: var(--dv-border-strong) !important;
+  background-color: var(--dv-surface) !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+
+html[data-theme] .btn-export-csv:hover,
+html[data-theme] .btn-export-csv:focus,
+html[data-theme] .btn-export-csv:active,
+html[data-theme] .module-grid-toolbar .btn-export-csv:hover,
+html[data-theme] .module-grid-toolbar .btn-export-csv:focus,
+html[data-theme] .module-grid-toolbar .btn-export-csv:active {
+  color: var(--dv-primary-dark) !important;
+  background-color: var(--dv-surface-hover) !important;
+  border-color: var(--dv-primary) !important;
+  background-image: none !important;
+}
+
+html[data-theme] .btn-export-csv i {
+  color: inherit !important;
+}

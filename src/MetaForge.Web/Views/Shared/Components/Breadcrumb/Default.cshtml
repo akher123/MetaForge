@@ -2,21 +2,37 @@
 
 @if (Model is not null && Model.Count > 0)
 {
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb mb-0">
-            @foreach (var item in Model)
+    <nav class="mf-breadcrumb mf-breadcrumb--right" aria-label="breadcrumb" dir="ltr">
+        <ol class="mf-breadcrumb__list breadcrumb mb-0">
+            @for (var i = 0; i < Model.Count; i++)
             {
+                var item = Model[i];
+                var isFirst = i == 0;
+                var isDashboard = isFirst && string.Equals(item.Text, "Dashboard", StringComparison.OrdinalIgnoreCase);
+
                 if (item.IsCurrent)
                 {
-                    <li class="breadcrumb-item active" aria-current="page">@item.Text</li>
+                    <li class="mf-breadcrumb__item breadcrumb-item active" aria-current="page">
+                        <span class="mf-breadcrumb__segment mf-breadcrumb__segment--current">@item.Text</span>
+                    </li>
                 }
                 else if (item.IsLink)
                 {
-                    <li class="breadcrumb-item"><a href="@item.Url">@item.Text</a></li>
+                    <li class="mf-breadcrumb__item breadcrumb-item">
+                        <a href="@item.Url" class="mf-breadcrumb__segment mf-breadcrumb__segment--link">
+                            @if (isDashboard)
+                            {
+                                <i class="fa-solid fa-house mf-breadcrumb__home-icon" aria-hidden="true"></i>
+                            }
+                            @item.Text
+                        </a>
+                    </li>
                 }
                 else
                 {
-                    <li class="breadcrumb-item breadcrumb-item-label">@item.Text</li>
+                    <li class="mf-breadcrumb__item breadcrumb-item breadcrumb-item-label">
+                        <span class="mf-breadcrumb__segment mf-breadcrumb__segment--label">@item.Text</span>
+                    </li>
                 }
             }
         </ol>
