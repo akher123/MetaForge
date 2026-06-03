@@ -3,134 +3,215 @@
     ViewData["Title"] = "Home";
 }
 
-<section class="hero-section hero-section--simple">
+<section class="hero-section landing-hero" aria-labelledby="hero-title">
     <div class="hero-bg" aria-hidden="true">
         <div class="hero-orb hero-orb-1"></div>
         <div class="hero-orb hero-orb-2"></div>
     </div>
     <div class="container position-relative">
-        <div class="hero-simple text-center">
-            <div class="hero-badge">
-                <i class="fa-brands fa-microsoft me-2"></i>
-                .NET 10 &middot; ASP.NET Core MVC &middot; EF Core
+        <div class="landing-hero-grid">
+            <div class="landing-hero-copy">
+                <p class="hero-badge">
+                    <i class="fa-brands fa-microsoft me-2" aria-hidden="true"></i>
+                    Built for .NET 10, ASP.NET Core MVC, and EF Core
+                </p>
+                <h1 class="hero-title" id="hero-title">Ship admin screens from metadata, not markup</h1>
+                <p class="hero-subtitle">
+                    MetaForge is a metadata-driven admin platform. Configure forms, grids, menus, and permissions in the database —
+                    then render CRUD and master-detail modules from your EF Core entities at runtime.
+                </p>
+                <div class="hero-actions">
+                    <a asp-controller="Account" asp-action="Login" class="btn btn-hero-primary btn-lg">
+                        <i class="fa-solid fa-right-to-bracket me-2" aria-hidden="true"></i>Sign in to dashboard
+                    </a>
+                    <a href="#overview" class="btn btn-hero-outline btn-lg">
+                        Explore features<span class="mf-sr-only"> of MetaForge</span>
+                    </a>
+                </div>
+                <dl class="hero-highlights" aria-label="Platform highlights">
+                    <div class="hero-highlight">
+                        <dt>Runtime UI</dt>
+                        <dd>Forms and grids from <code>ForgeForm</code> metadata</dd>
+                    </div>
+                    <div class="hero-highlight">
+                        <dt>Security</dt>
+                        <dd>Cookie auth with role and form-level RBAC</dd>
+                    </div>
+                    <div class="hero-highlight">
+                        <dt>Architecture</dt>
+                        <dd>Clean Architecture solution you can extend</dd>
+                    </div>
+                </dl>
             </div>
-            <h1 class="hero-title">MetaForge</h1>
-            <p class="hero-subtitle mx-auto">
-                A metadata-driven admin platform. Define forms, grids, menus, and permissions in the database —
-                then run CRUD and master-detail screens from your EF Core entities without building each view by hand.
-            </p>
-            <div class="hero-actions justify-content-center">
-                <a asp-controller="Account" asp-action="Login" class="btn btn-hero-primary btn-lg">
-                    <i class="fa-solid fa-right-to-bracket me-2"></i>Sign In
-                </a>
-                <a href="#overview" class="btn btn-hero-outline btn-lg">Learn more</a>
-            </div>
+            <aside class="landing-hero-aside" aria-label="What you can do with MetaForge">
+                <ul class="hero-checklist">
+                    <li>
+                        <span class="hero-checklist-icon" aria-hidden="true"><i class="fa-solid fa-check"></i></span>
+                        <span>Discover EF Core entities and bootstrap the Form Builder</span>
+                    </li>
+                    <li>
+                        <span class="hero-checklist-icon" aria-hidden="true"><i class="fa-solid fa-check"></i></span>
+                        <span>Publish dynamic modules without hand-coding every list and edit view</span>
+                    </li>
+                    <li>
+                        <span class="hero-checklist-icon" aria-hidden="true"><i class="fa-solid fa-check"></i></span>
+                        <span>Try the included ERP demo data after sign-in</span>
+                    </li>
+                </ul>
+            </aside>
         </div>
     </div>
 </section>
 
-<section class="trust-strip">
+<aside class="trust-strip" aria-label="Technology stack">
     <div class="container">
         <div class="trust-strip-inner">
-            <span class="trust-label">Built with</span>
-            <ul class="trust-items">
-                <li><i class="fa-solid fa-layer-group"></i> Clean Architecture</li>
-                <li><i class="fa-solid fa-database"></i> SQL Server + EF Core</li>
-                <li><i class="fa-solid fa-lock"></i> Cookie auth &amp; RBAC</li>
-                <li><i class="fa-solid fa-code"></i> Dynamic Module UI</li>
+            <p class="trust-label" id="trust-label">Built with</p>
+            <ul class="trust-items" aria-labelledby="trust-label">
+                <li><i class="fa-solid fa-layer-group" aria-hidden="true"></i> Clean Architecture</li>
+                <li><i class="fa-solid fa-database" aria-hidden="true"></i> SQL Server and EF Core</li>
+                <li><i class="fa-solid fa-lock" aria-hidden="true"></i> Cookie authentication and RBAC</li>
+                <li><i class="fa-solid fa-code" aria-hidden="true"></i> Dynamic module UI</li>
             </ul>
         </div>
     </div>
-</section>
+</aside>
 
-<section id="overview" class="overview-section">
+<section id="overview" class="overview-section landing-section" aria-labelledby="overview-title">
     <div class="container">
-        <div class="section-header text-center">
-            <span class="section-eyebrow">Overview</span>
-            <h2 class="section-title">What MetaForge provides</h2>
+        <header class="section-header text-center">
+            <p class="section-eyebrow">Platform features</p>
+            <h2 class="section-title" id="overview-title">Everything you need for a metadata-first admin shell</h2>
             <p class="section-subtitle">
-                The platform is the framework; your business tables and screens are features you add on top.
+                MetaForge is the framework. Your business entities, screens, and menus are features you add on top.
             </p>
-        </div>
-        <div class="row g-4 justify-content-center">
-            <div class="col-md-6 col-lg-3">
-                <article class="simple-card">
-                    <div class="simple-card-icon"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
-                    <h3>Dynamic UI</h3>
-                    <p>Forms and grids render from <code>ForgeForm</code> and <code>ForgeField</code> metadata at runtime.</p>
+        </header>
+        <div class="row g-4">
+            <div class="col-md-6 col-xl-3">
+                <article class="feature-card-a11y" aria-labelledby="card-dynamic-ui">
+                    <div class="feature-card-a11y-icon" aria-hidden="true"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+                    <div class="feature-card-a11y-body">
+                        <h3 id="card-dynamic-ui">Dynamic UI</h3>
+                        <p>Render forms and data grids from <code>ForgeForm</code> and <code>ForgeField</code> definitions stored in SQL Server.</p>
+                    </div>
                 </article>
             </div>
-            <div class="col-md-6 col-lg-3">
-                <article class="simple-card">
-                    <div class="simple-card-icon"><i class="fa-solid fa-magnifying-glass"></i></div>
-                    <h3>Entity discovery</h3>
-                    <p>Scan EF Core entities to bootstrap fields, relations, and columns in the Form Builder.</p>
+            <div class="col-md-6 col-xl-3">
+                <article class="feature-card-a11y" aria-labelledby="card-discovery">
+                    <div class="feature-card-a11y-icon" aria-hidden="true"><i class="fa-solid fa-magnifying-glass"></i></div>
+                    <div class="feature-card-a11y-body">
+                        <h3 id="card-discovery">Entity discovery</h3>
+                        <p>Scan EF Core models to generate fields, relations, and columns in the Form Builder automatically.</p>
+                    </div>
                 </article>
             </div>
-            <div class="col-md-6 col-lg-3">
-                <article class="simple-card">
-                    <div class="simple-card-icon"><i class="fa-solid fa-diagram-project"></i></div>
-                    <h3>Master-detail</h3>
-                    <p>Header and line-item screens with lookups, validation, and atomic save.</p>
+            <div class="col-md-6 col-xl-3">
+                <article class="feature-card-a11y" aria-labelledby="card-master-detail">
+                    <div class="feature-card-a11y-icon" aria-hidden="true"><i class="fa-solid fa-diagram-project"></i></div>
+                    <div class="feature-card-a11y-body">
+                        <h3 id="card-master-detail">Master-detail</h3>
+                        <p>Build header and line-item screens with lookups, validation rules, and atomic save operations.</p>
+                    </div>
                 </article>
             </div>
-            <div class="col-md-6 col-lg-3">
-                <article class="simple-card">
-                    <div class="simple-card-icon"><i class="fa-solid fa-user-shield"></i></div>
-                    <h3>Security</h3>
-                    <p>Users, roles, and form-level permissions for view, create, edit, delete, and export.</p>
+            <div class="col-md-6 col-xl-3">
+                <article class="feature-card-a11y" aria-labelledby="card-security">
+                    <div class="feature-card-a11y-icon" aria-hidden="true"><i class="fa-solid fa-user-shield"></i></div>
+                    <div class="feature-card-a11y-body">
+                        <h3 id="card-security">Security and audit</h3>
+                        <p>Manage users, roles, and per-form permissions for view, create, edit, delete, and export actions.</p>
+                    </div>
                 </article>
             </div>
         </div>
     </div>
 </section>
 
-<section id="layers" class="layers-section">
+<section id="how-it-works" class="steps-section landing-section landing-steps" aria-labelledby="steps-title">
+    <div class="container">
+        <header class="section-header text-center">
+            <p class="section-eyebrow">How it works</p>
+            <h2 class="section-title" id="steps-title">From entity to screen in three steps</h2>
+            <p class="section-subtitle">
+                Reduce repetitive MVC work while keeping full control over your domain model and infrastructure.
+            </p>
+        </header>
+        <ol class="landing-step-list">
+            <li class="landing-step">
+                <span class="landing-step-number" aria-hidden="true">1</span>
+                <div class="landing-step-content">
+                    <h3>Model your domain</h3>
+                    <p>Add EF Core entities in <code>MetaForge.Domain</code> and register them with the application DbContext.</p>
+                </div>
+            </li>
+            <li class="landing-step">
+                <span class="landing-step-number" aria-hidden="true">2</span>
+                <div class="landing-step-content">
+                    <h3>Configure metadata</h3>
+                    <p>Use entity discovery and the Form Builder to define fields, grids, menus, and permission rules.</p>
+                </div>
+            </li>
+            <li class="landing-step">
+                <span class="landing-step-number" aria-hidden="true">3</span>
+                <div class="landing-step-content">
+                    <h3>Run dynamic modules</h3>
+                    <p>MetaForge.Web renders CRUD and master-detail screens at runtime — no per-entity Razor views required.</p>
+                </div>
+            </li>
+        </ol>
+    </div>
+</section>
+
+<section id="layers" class="layers-section landing-section" aria-labelledby="layers-title">
     <div class="container">
         <div class="row g-5 align-items-start">
             <div class="col-lg-5">
-                <span class="section-eyebrow">Solution</span>
-                <h2 class="section-title">Project layers</h2>
-                <p class="section-lead">
-                    Dependencies point inward: Domain has no infrastructure references;
-                    Web hosts MVC, the Form Builder, and the REST API.
-                </p>
+                <header>
+                    <p class="section-eyebrow">Solution structure</p>
+                    <h2 class="section-title" id="layers-title">Clean Architecture layers</h2>
+                    <p class="section-lead">
+                        Dependencies point inward. Domain has no infrastructure references; the Web project hosts MVC,
+                        the Form Builder, dynamic modules, and the REST API.
+                    </p>
+                </header>
             </div>
             <div class="col-lg-7">
-                <ul class="layer-list">
+                <ol class="layer-list layer-list--ordered" aria-label="MetaForge projects from presentation to domain">
                     <li class="layer-item">
                         <span class="layer-name">MetaForge.Web</span>
-                        <span class="layer-desc">MVC shell, dynamic modules, security UI, API</span>
+                        <span class="layer-desc">MVC shell, dynamic modules, security UI, and API endpoints</span>
                     </li>
                     <li class="layer-item">
                         <span class="layer-name">MetaForge.Infrastructure</span>
-                        <span class="layer-desc">EF Core, repositories, generic CRUD, discovery</span>
+                        <span class="layer-desc">EF Core, repositories, generic CRUD services, and discovery</span>
                     </li>
                     <li class="layer-item">
                         <span class="layer-name">MetaForge.Application</span>
-                        <span class="layer-desc">Interfaces, DTOs, service contracts</span>
+                        <span class="layer-desc">Interfaces, DTOs, and application service contracts</span>
                     </li>
                     <li class="layer-item layer-item--domain">
                         <span class="layer-name">MetaForge.Domain</span>
-                        <span class="layer-desc">Metadata model, RBAC, audit, feature entities</span>
+                        <span class="layer-desc">Metadata model, RBAC entities, audit, and business features</span>
                     </li>
-                </ul>
+                </ol>
             </div>
         </div>
     </div>
 </section>
 
-<section class="cta-section">
+<section id="get-started" class="cta-section landing-section" aria-labelledby="cta-title">
     <div class="container">
         <div class="cta-card cta-card--simple">
             <div class="cta-content mx-auto text-center">
-                <h2>Try the sample app</h2>
-                <p>Sign in to explore modules, the Form Builder, and the included ERP demo data.</p>
+                <h2 id="cta-title">Try the sample application</h2>
+                <p>Sign in to explore dynamic modules, the Form Builder, role permissions, and the ERP demo dataset.</p>
                 <a asp-controller="Account" asp-action="Login" class="btn btn-cta-primary btn-lg">
-                    <i class="fa-solid fa-gauge-high me-2"></i>Open Dashboard
+                    <i class="fa-solid fa-gauge-high me-2" aria-hidden="true"></i>Open dashboard
                 </a>
-                <p class="demo-credentials">
-                    Demo: <code>admin</code> / <code>admin</code>
+                <p class="demo-credentials" id="demo-credentials-label">
+                    <span class="demo-credentials-label">Demo sign-in:</span>
+                    username <code>admin</code>,
+                    password <code>admin</code>
                 </p>
             </div>
         </div>

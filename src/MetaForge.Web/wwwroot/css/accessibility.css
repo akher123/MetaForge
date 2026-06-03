@@ -1,0 +1,110 @@
+/* ==========================================================================
+   MetaForge — WCAG 2.1 AA accessibility foundation
+   Shared across app shell (site.css), landing, and auth layouts.
+   ========================================================================== */
+
+:root {
+    /* Focus — 3:1 minimum against adjacent colors (2.4.7) */
+    --mf-focus-ring: #4338ca;
+    --mf-focus-ring-light: #22d3ee;
+    --mf-focus-outline-width: 3px;
+    --mf-focus-outline-offset: 2px;
+
+    /*
+     * Text contrast on light surfaces (1.4.3 — 4.5:1 normal, 3:1 large)
+     * Prefer slate-600+ for body/muted copy on #fff and slate-50.
+     */
+    --mf-a11y-text-muted: #475569;
+    --mf-a11y-text-subtle: #64748b;
+    --mf-a11y-text-on-dark: #cbd5e1;
+    --mf-a11y-text-on-dark-muted: #94a3b8;
+}
+
+/* Skip link — bypass blocks (2.4.1) */
+.mf-skip-link {
+    position: absolute;
+    top: -100%;
+    left: 1rem;
+    z-index: 9999;
+    padding: 0.5rem 1rem;
+    background: #1e293b;
+    color: #fff;
+    border-radius: 8px;
+    font-weight: 600;
+    text-decoration: none;
+    line-height: 1.4;
+}
+
+.mf-skip-link:focus,
+.mf-skip-link:focus-visible {
+    top: 0.75rem;
+    outline: var(--mf-focus-outline-width) solid var(--mf-focus-ring-light);
+    outline-offset: var(--mf-focus-outline-offset);
+}
+
+/* Visible focus for keyboard users (2.4.7) */
+body.landing-body :focus-visible,
+body.auth-body :focus-visible {
+    outline: var(--mf-focus-outline-width) solid var(--mf-focus-ring);
+    outline-offset: var(--mf-focus-outline-offset);
+}
+
+body.landing-body .btn:focus:not(:focus-visible),
+body.auth-body .btn:focus:not(:focus-visible) {
+    box-shadow: none;
+}
+
+body.landing-body .btn:focus-visible,
+body.auth-body .btn:focus-visible,
+body.landing-body .form-control:focus-visible,
+body.auth-body .form-control:focus-visible {
+    box-shadow: 0 0 0 var(--mf-focus-outline-width) rgba(67, 56, 202, 0.35);
+}
+
+/* Dark CTA surfaces need a lighter focus ring */
+body.landing-body .cta-card :focus-visible {
+    outline-color: var(--mf-focus-ring-light);
+}
+
+/* Screen-reader only text (1.3.1) */
+.mf-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+.mf-sr-only-focusable:focus,
+.mf-sr-only-focusable:active {
+    position: static;
+    width: auto;
+    height: auto;
+    margin: 0;
+    overflow: visible;
+    clip: auto;
+    white-space: normal;
+}
+
+/* Respect reduced motion (2.3.3) */
+@media (prefers-reduced-motion: reduce) {
+    html:focus-within {
+        scroll-behavior: auto;
+    }
+
+    body.landing-body *,
+    body.landing-body *::before,
+    body.landing-body *::after,
+    body.auth-body *,
+    body.auth-body *::before,
+    body.auth-body *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}

@@ -145,10 +145,18 @@
             if (isMobileSidebar()) {
                 syncMobileBackdrop(true);
             }
+            const mobileToggle = document.querySelector('.app-navbar-toggler');
+            if (mobileToggle) {
+                mobileToggle.setAttribute('aria-label', 'Close navigation menu');
+            }
         });
 
         sidebar.addEventListener('hidden.bs.collapse', function () {
             syncMobileBackdrop(false);
+            const mobileToggle = document.querySelector('.app-navbar-toggler');
+            if (mobileToggle) {
+                mobileToggle.setAttribute('aria-label', 'Open navigation menu');
+            }
         });
 
         if (backdrop) {

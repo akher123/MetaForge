@@ -27,7 +27,8 @@
 <html lang="en" data-theme="@userThemeKey" data-bs-theme="@(themeIsDark ? "dark" : "light")">
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
     <title>@ViewData["Title"] - MetaForge</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css" />
@@ -37,6 +38,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="~/css/accessibility.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/themes.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/top-progress.css" asp-append-version="true" />
@@ -69,102 +71,120 @@
     }
 </head>
 <body class="metaforge-app">
-    <a href="#main-content" class="skip-link">Skip to main content</a>
+    <a href="#main-content" class="mf-skip-link">Skip to main content</a>
     <header>
-        <nav class="navbar navbar-expand-lg navbar-dark app-navbar">
+        <nav class="navbar navbar-expand-lg navbar-dark app-navbar" aria-label="Application">
             <div class="container-fluid app-navbar-inner">
-                @if (isAuthenticated && sidebarMenu.Count > 0)
-                {
-                    <button type="button"
-                            class="sidebar-collapse-toggle d-none d-lg-inline-flex"
-                            id="sidebarCollapseToggle"
-                            aria-controls="sidebarNav"
-                            aria-expanded="true"
-                            aria-label="Collapse sidebar menu"
-                            title="Toggle sidebar menu">
-                        <span class="sidebar-hamburger" aria-hidden="true">
-                            <span class="sidebar-hamburger-line"></span>
-                            <span class="sidebar-hamburger-line"></span>
-                            <span class="sidebar-hamburger-line"></span>
-                        </span>
-                    </button>
-                }
-                <a class="navbar-brand me-auto" asp-controller="Home" asp-action="Dashboard">Meta<span>Forge</span></a>
-                <button class="navbar-toggler d-lg-none" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarNav" aria-controls="sidebarNav" aria-expanded="false" aria-label="Toggle navigation menu">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                @if (isAuthenticated)
-                {
-                    <ul class="navbar-nav ms-2 align-items-center gap-1">
-                        <li class="nav-item dropdown app-theme-menu">
-                            <button type="button"
-                                    class="app-theme-trigger"
-                                    id="appThemeTrigger"
-                                    data-bs-toggle="dropdown"
-                                    data-bs-auto-close="outside"
-                                    aria-expanded="false"
-                                    aria-haspopup="listbox"
-                                    aria-label="Change color theme, current: @activeThemeName"
-                                    title="Appearance: @activeThemeName">
-                                <span class="app-theme-trigger-icon" aria-hidden="true">
-                                    <i class="fa-solid fa-palette"></i>
-                                </span>
-                                <span class="app-theme-trigger-label d-none d-xl-inline">@activeThemeName</span>
-                            </button>
-                            <div class="dropdown-menu dropdown-menu-end app-theme-panel" aria-labelledby="appThemeTrigger">
-                                @await Html.PartialAsync("_ThemePicker", themePickerModel)
-                            </div>
-                        </li>
-                        <li class="nav-item dropdown app-user-menu">
-                            <button type="button"
-                                    class="app-user-trigger dropdown-toggle"
-                                    data-bs-toggle="dropdown"
-                                    aria-expanded="false"
-                                    aria-label="Account menu for @User.Identity!.Name">
-                                <span class="app-user-avatar" aria-hidden="true">
-                                    <i class="fa-solid fa-user"></i>
-                                </span>
-                                <span class="app-user-name">@User.Identity!.Name</span>
-                                <i class="fa-solid fa-chevron-down app-user-chevron" aria-hidden="true"></i>
-                            </button>
-                            <div class="dropdown-menu dropdown-menu-end app-user-dropdown">
-                                <div class="app-user-dropdown-header">
-                                    <span class="app-user-dropdown-avatar" aria-hidden="true">
-                                        <i class="fa-solid fa-user"></i>
-                                    </span>
-                                    <div class="app-user-dropdown-meta">
-                                        <span class="app-user-dropdown-name">@User.Identity!.Name</span>
-                                        <span class="app-user-dropdown-status">Signed in</span>
-                                    </div>
-                                </div>
-                                <div class="dropdown-divider app-user-dropdown-divider"></div>
-                                <a class="app-user-dropdown-link" asp-controller="Account" asp-action="Appearance">
-                                    <span class="app-user-dropdown-link-icon" aria-hidden="true">
-                                        <i class="fa-solid fa-palette"></i>
-                                    </span>
-                                    <span class="app-user-dropdown-link-text">
-                                        <span class="app-user-dropdown-link-label">Appearance</span>
-                                        <span class="app-user-dropdown-link-hint">@activeThemeName</span>
-                                    </span>
-                                    <i class="fa-solid fa-chevron-right app-user-dropdown-link-chevron" aria-hidden="true"></i>
-                                </a>
-                                <div class="dropdown-divider app-user-dropdown-divider"></div>
-                                <form asp-controller="Account" asp-action="Logout" method="post" class="app-user-signout-form">
-                                    @Html.AntiForgeryToken()
-                                    <button type="submit" class="app-user-signout-btn">
-                                        <span class="app-user-signout-icon" aria-hidden="true">
-                                            <i class="fa-solid fa-right-from-bracket"></i>
+                <div class="app-navbar-start">
+                    @if (isAuthenticated && sidebarMenu.Count > 0)
+                    {
+                        <button type="button"
+                                class="sidebar-collapse-toggle d-none d-lg-inline-flex"
+                                id="sidebarCollapseToggle"
+                                aria-controls="sidebarNav"
+                                aria-expanded="true"
+                                aria-label="Collapse sidebar menu"
+                                title="Toggle sidebar menu">
+                            <span class="sidebar-hamburger" aria-hidden="true">
+                                <span class="sidebar-hamburger-line"></span>
+                                <span class="sidebar-hamburger-line"></span>
+                                <span class="sidebar-hamburger-line"></span>
+                            </span>
+                        </button>
+                    }
+                    <a class="navbar-brand" asp-controller="Home" asp-action="Dashboard">
+                        Meta<span>Forge</span>
+                    </a>
+                </div>
+
+                <div class="app-navbar-end">
+                    @if (isAuthenticated && sidebarMenu.Count > 0)
+                    {
+                        <button class="navbar-toggler app-navbar-toggler d-lg-none"
+                                type="button"
+                                data-bs-toggle="collapse"
+                                data-bs-target="#sidebarNav"
+                                aria-controls="sidebarNav"
+                                aria-expanded="false"
+                                aria-label="Open navigation menu">
+                            <span class="navbar-toggler-icon"></span>
+                        </button>
+                    }
+                    @if (isAuthenticated)
+                    {
+                        <div class="app-navbar-actions">
+                            <ul class="navbar-nav align-items-center">
+                                <li class="nav-item dropdown app-theme-menu">
+                                    <button type="button"
+                                            class="app-theme-trigger"
+                                            id="appThemeTrigger"
+                                            data-bs-toggle="dropdown"
+                                            data-bs-auto-close="outside"
+                                            aria-expanded="false"
+                                            aria-haspopup="listbox"
+                                            aria-label="Change color theme, current: @activeThemeName"
+                                            title="Appearance: @activeThemeName">
+                                        <span class="app-theme-trigger-icon" aria-hidden="true">
+                                            <i class="fa-solid fa-palette"></i>
                                         </span>
-                                        <span class="app-user-signout-text">
-                                            <span class="app-user-signout-label">Sign out</span>
-                                            <span class="app-user-signout-hint">End your session</span>
-                                        </span>
+                                        <span class="app-theme-trigger-label d-none d-xl-inline">@activeThemeName</span>
                                     </button>
-                                </form>
-                            </div>
-                        </li>
-                    </ul>
-                }
+                                    <div class="dropdown-menu dropdown-menu-end app-theme-panel" aria-labelledby="appThemeTrigger">
+                                        @await Html.PartialAsync("_ThemePicker", themePickerModel)
+                                    </div>
+                                </li>
+                                <li class="nav-item dropdown app-user-menu">
+                                    <button type="button"
+                                            class="app-user-trigger dropdown-toggle"
+                                            data-bs-toggle="dropdown"
+                                            aria-expanded="false"
+                                            aria-label="Account menu for @User.Identity!.Name">
+                                        <span class="app-user-avatar" aria-hidden="true">
+                                            <i class="fa-solid fa-user"></i>
+                                        </span>
+                                        <span class="app-user-name d-none d-md-inline">@User.Identity!.Name</span>
+                                        <i class="fa-solid fa-chevron-down app-user-chevron d-none d-md-inline" aria-hidden="true"></i>
+                                    </button>
+                                    <div class="dropdown-menu dropdown-menu-end app-user-dropdown">
+                                        <div class="app-user-dropdown-header">
+                                            <span class="app-user-dropdown-avatar" aria-hidden="true">
+                                                <i class="fa-solid fa-user"></i>
+                                            </span>
+                                            <div class="app-user-dropdown-meta">
+                                                <span class="app-user-dropdown-name">@User.Identity!.Name</span>
+                                                <span class="app-user-dropdown-status">Signed in</span>
+                                            </div>
+                                        </div>
+                                        <div class="dropdown-divider app-user-dropdown-divider"></div>
+                                        <a class="app-user-dropdown-link" asp-controller="Account" asp-action="Appearance">
+                                            <span class="app-user-dropdown-link-icon" aria-hidden="true">
+                                                <i class="fa-solid fa-palette"></i>
+                                            </span>
+                                            <span class="app-user-dropdown-link-text">
+                                                <span class="app-user-dropdown-link-label">Appearance</span>
+                                                <span class="app-user-dropdown-link-hint">@activeThemeName</span>
+                                            </span>
+                                            <i class="fa-solid fa-chevron-right app-user-dropdown-link-chevron" aria-hidden="true"></i>
+                                        </a>
+                                        <div class="dropdown-divider app-user-dropdown-divider"></div>
+                                        <form asp-controller="Account" asp-action="Logout" method="post" class="app-user-signout-form">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="app-user-signout-btn">
+                                                <span class="app-user-signout-icon" aria-hidden="true">
+                                                    <i class="fa-solid fa-right-from-bracket"></i>
+                                                </span>
+                                                <span class="app-user-signout-text">
+                                                    <span class="app-user-signout-label">Sign out</span>
+                                                    <span class="app-user-signout-hint">End your session</span>
+                                                </span>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    }
+                </div>
             </div>
         </nav>
         <div id="topProgress" class="top-progress" aria-hidden="true" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Page loading">
@@ -182,12 +202,13 @@
         }
         <div class="app-content">
             @await Html.PartialAsync("_AppAlerts")
-            <main id="main-content" role="main" class="app-main">
+            <main id="main-content" role="main" class="app-main" tabindex="-1">
                 @RenderBody()
             </main>
             <footer class="app-footer py-3">
-                <div class="text-center">
-                    &copy; 2026 MetaForge &mdash; MetaForge Admin Platform (.NET 10)
+                <div class="app-footer-inner text-center">
+                    <span class="app-footer-full">&copy; 2026 MetaForge &mdash; MetaForge Admin Platform (.NET 10)</span>
+                    <span class="app-footer-short">&copy; 2026 MetaForge</span>
                 </div>
             </footer>
         </div>

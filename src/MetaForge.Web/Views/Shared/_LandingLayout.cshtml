@@ -3,24 +3,26 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="MetaForge — metadata-driven ASP.NET Core admin platform for .NET 10." />
+    <meta name="description" content="MetaForge — metadata-driven ASP.NET Core admin platform for .NET 10. Ship CRUD and master-detail screens from EF Core entities and database metadata." />
+    <meta name="color-scheme" content="light" />
     <title>@ViewData["Title"] - MetaForge</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="~/css/accessibility.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/landing.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/top-progress.css" asp-append-version="true" />
 </head>
 <body class="landing-body">
-    <a href="#main-content" class="landing-skip">Skip to content</a>
+    <a href="#main-content" class="mf-skip-link">Skip to main content</a>
 
     <header class="landing-header">
-        <nav class="navbar navbar-expand-lg landing-nav">
+        <nav class="navbar navbar-expand-lg landing-nav" aria-label="Primary">
             <div class="container">
-                <a class="navbar-brand landing-brand" asp-controller="Home" asp-action="Landing">
-                    <span class="landing-brand-mark"><i class="fa-solid fa-bolt"></i></span>
+                <a class="navbar-brand landing-brand" asp-controller="Home" asp-action="Landing" aria-label="MetaForge home">
+                    <span class="landing-brand-mark" aria-hidden="true"><i class="fa-solid fa-bolt"></i></span>
                     <span class="landing-brand-text">Meta<span class="landing-brand-accent">Forge</span></span>
                 </a>
                 <button class="navbar-toggler landing-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#landingNav" aria-controls="landingNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -28,11 +30,13 @@
                 </button>
                 <div class="collapse navbar-collapse" id="landingNav">
                     <ul class="navbar-nav ms-auto align-items-lg-center">
-                        <li class="nav-item"><a class="nav-link" href="#overview">Overview</a></li>
-                        <li class="nav-item"><a class="nav-link" href="#layers">Layers</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#overview">Features</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#how-it-works">How it works</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#layers">Architecture</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#get-started">Get started</a></li>
                         <li class="nav-item ms-lg-2">
                             <a class="btn btn-signin" asp-controller="Account" asp-action="Login">
-                                <i class="fa-solid fa-right-to-bracket me-2"></i>Sign In
+                                <i class="fa-solid fa-right-to-bracket me-2" aria-hidden="true"></i>Sign In
                             </a>
                         </li>
                     </ul>
@@ -44,15 +48,15 @@
         </div>
     </header>
 
-    <main id="main-content">
+    <main id="main-content" role="main" tabindex="-1">
         @RenderBody()
     </main>
 
-    <footer class="landing-footer">
+    <footer class="landing-footer" role="contentinfo">
         <div class="container">
             <div class="landing-footer-inner">
                 <div class="landing-footer-brand">
-                    <span class="landing-brand-mark landing-brand-mark-sm"><i class="fa-solid fa-bolt"></i></span>
+                    <span class="landing-brand-mark landing-brand-mark-sm" aria-hidden="true"><i class="fa-solid fa-bolt"></i></span>
                     <span>MetaForge</span>
                 </div>
                 <p class="landing-footer-tagline">Metadata-driven admin platform for .NET 10</p>
