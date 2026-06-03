@@ -513,9 +513,7 @@ const MasterDetail = (function () {
     }
 
     function formatDateValue(value) {
-        if (!value) return '';
-        const dt = new Date(value);
-        return isNaN(dt.getTime()) ? value : dt.toISOString().slice(0, 10);
+        return MetaForgeGridDisplayFormat.formatDateInputValue(value);
     }
 
     function formatDateTimeValue(value) {

@@ -98,6 +98,21 @@ const MetaForgeGridDisplayFormat = (function () {
         return applyPreset(dt, formatKey || getDefaultForControlType(controlType));
     }
 
+    /** yyyy-MM-dd for input type="date" — local calendar date, not UTC (avoids off-by-one day). */
+    function formatDateInputValue(value) {
+        if (value == null || value === '') return '';
+        if (value instanceof Date) {
+            return isNaN(value.getTime()) ? '' : formatWithTokens(value, 'yyyy-MM-dd');
+        }
+        const s = String(value).trim();
+        const dateOnly = s.match(/^(\d{4}-\d{2}-\d{2})/);
+        if (dateOnly && (s.length === 10 || s[10] === 'T' || s[10] === ' ')) {
+            return dateOnly[1];
+        }
+        const dt = parseDate(value);
+        return dt ? formatWithTokens(dt, 'yyyy-MM-dd') : s;
+    }
+
     function buildSelectOptions(selected) {
         const sel = (selected || '').toString();
         return PRESETS.map(p =>
@@ -111,6 +126,7 @@ const MetaForgeGridDisplayFormat = (function () {
         isTemporalControlType,
         resolveFormatKey,
         formatValue,
+        formatDateInputValue,
         buildSelectOptions
     };
 })();

@@ -784,8 +784,7 @@ const DynamicForm = (function () {
             } else if (controlType === 'DateTime' && value) {
                 $el.val(formatDateTimeLocal(value));
             } else if (controlType === 'Date' && value) {
-                const dt = new Date(value);
-                $el.val(isNaN(dt.getTime()) ? value : dt.toISOString().slice(0, 10));
+                $el.val(MetaForgeGridDisplayFormat.formatDateInputValue(value));
             } else {
                 $el.val(value);
             }
