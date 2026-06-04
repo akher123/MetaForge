@@ -192,6 +192,47 @@
     min-height: 2.75rem;
 }
 
+@media (max-width: 991.98px) {
+    .landing-nav .container {
+        padding-left: max(1rem, env(safe-area-inset-left, 0px));
+        padding-right: max(1rem, env(safe-area-inset-right, 0px));
+    }
+
+    .landing-nav .navbar-collapse {
+        margin-top: 0.75rem;
+        padding: 0.75rem;
+        background: #fff;
+        border: 1px solid var(--mf-border-ui);
+        border-radius: var(--mf-radius-md);
+        box-shadow: var(--mf-shadow-md);
+    }
+
+    .landing-nav .navbar-nav {
+        gap: 0.25rem;
+        width: 100%;
+    }
+
+    .landing-nav .nav-item {
+        width: 100%;
+    }
+
+    .landing-nav .nav-link {
+        width: 100%;
+        justify-content: flex-start;
+        border-radius: var(--mf-radius-sm);
+    }
+
+    .landing-nav .nav-item.ms-lg-2 {
+        margin-left: 0 !important;
+        margin-top: 0.35rem;
+    }
+
+    .landing-nav .btn-signin {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
 .btn-signin {
     background: var(--mf-indigo-700);
     color: #fff !important;

@@ -102,8 +102,7 @@
                     {
                         <button class="navbar-toggler app-navbar-toggler d-lg-none"
                                 type="button"
-                                data-bs-toggle="collapse"
-                                data-bs-target="#sidebarNav"
+                                id="sidebarMobileToggle"
                                 aria-controls="sidebarNav"
                                 aria-expanded="false"
                                 aria-label="Open navigation menu">
@@ -196,7 +195,7 @@
         @if (isAuthenticated && sidebarMenu.Count > 0)
         {
             <div class="app-sidebar-backdrop" id="sidebarBackdrop" aria-hidden="true"></div>
-            <aside class="app-sidebar-wrapper collapse d-lg-block" id="sidebarNav">
+            <aside class="app-sidebar-wrapper app-sidebar-drawer d-lg-block" id="sidebarNav">
                 @await Html.PartialAsync("_SidebarMenu", sidebarMenu)
             </aside>
         }

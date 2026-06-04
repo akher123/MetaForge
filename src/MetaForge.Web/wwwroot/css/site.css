@@ -201,6 +201,10 @@ body.metaforge-app > .app-layout {
 body.admin-app > header,
 body.metaforge-app > header {
   flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 1050;
+  width: 100%;
 }
 
 a {
@@ -842,6 +846,15 @@ html.sidebar-collapsed .sidebar-tree-children {
     position: relative;
   }
 
+  .app-navbar-end {
+    gap: 0.25rem;
+  }
+
+  .app-navbar-toggler {
+    order: -1;
+    margin-right: 0.15rem;
+  }
+
   .app-sidebar-backdrop {
     position: fixed;
     inset: 0;
@@ -863,9 +876,10 @@ html.sidebar-collapsed .sidebar-tree-children {
 
   body.sidebar-drawer-open {
     overflow: hidden;
+    touch-action: none;
   }
 
-  .app-sidebar-wrapper {
+  .app-sidebar-drawer {
     position: fixed;
     top: var(--app-navbar-height);
     left: 0;
@@ -876,28 +890,32 @@ html.sidebar-collapsed .sidebar-tree-children {
     border-right: 1px solid var(--dv-border);
     border-bottom: none;
     box-shadow: var(--dv-shadow-lg);
-    transform: translateX(-105%);
-    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  .app-sidebar-wrapper.collapse:not(.show) {
     display: block !important;
-    height: auto;
+    height: auto !important;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+    transform: translateX(-105%);
+    visibility: hidden;
+    pointer-events: none;
+    transition:
+      transform 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+      visibility 0.28s ease;
   }
 
-  .app-sidebar-wrapper.collapse.show,
-  .app-sidebar-wrapper.collapsing {
+  .app-sidebar-drawer.show {
     transform: translateX(0);
+    visibility: visible;
+    pointer-events: auto;
   }
 
   .app-content {
     padding-left: max(0.75rem, env(safe-area-inset-left, 0px));
     padding-right: max(0.75rem, env(safe-area-inset-right, 0px));
     width: 100%;
-  }
-
-  .app-sidebar-wrapper {
-    padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+    flex: 1 1 auto;
   }
 
   .app-page-fill {
@@ -917,15 +935,18 @@ html.sidebar-collapsed .sidebar-tree-children {
     -webkit-overflow-scrolling: touch;
   }
 
-  html.sidebar-collapsed .app-sidebar-wrapper {
+  html.sidebar-collapsed .app-sidebar-drawer {
     width: min(288px, 88vw);
     padding: 1rem 0.75rem;
     transform: translateX(-105%);
+    visibility: hidden;
+    pointer-events: none;
   }
 
-  html.sidebar-collapsed .app-sidebar-wrapper.collapse.show,
-  html.sidebar-collapsed .app-sidebar-wrapper.collapsing {
+  html.sidebar-collapsed .app-sidebar-drawer.show {
     transform: translateX(0);
+    visibility: visible;
+    pointer-events: auto;
   }
 
   html.sidebar-collapsed .sidebar-label,
@@ -3742,6 +3763,12 @@ code {
   .app-sidebar-backdrop {
     display: none !important;
   }
+
+  .app-sidebar-drawer {
+    visibility: visible;
+    pointer-events: auto;
+    transform: none;
+  }
 }
 
 @media (max-width: 1199.98px) {
@@ -4082,6 +4109,26 @@ code {
   gap: 0.35rem;
   margin: 0;
   padding: 0;
+}
+
+@media (max-width: 767.98px) {
+  .security-page-header-zone .security-subnav {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    padding-bottom: 0.5rem;
+    margin-right: -0.25rem;
+    mask-image: linear-gradient(90deg, #000 92%, transparent);
+  }
+
+  .security-subnav .nav-item {
+    flex: 0 0 auto;
+  }
+
+  .security-subnav .nav-link {
+    white-space: nowrap;
+  }
 }
 
 .security-subnav .nav-link {
