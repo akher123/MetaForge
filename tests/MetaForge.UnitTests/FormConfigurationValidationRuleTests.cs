@@ -1,4 +1,5 @@
 using MetaForge.Application.DTOs;
+using MetaForge.Application.Interfaces;
 using MetaForge.Infrastructure.Repositories;
 using MetaForge.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
@@ -31,12 +32,18 @@ public class FormConfigurationValidationRuleTests
         metadata.Setup(m => m.InvalidateCacheAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
+        var lookup = new Mock<ILookupService>();
+        lookup.Setup(l => l.InvalidateCacheAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
         var service = new FormConfigurationService(
             unitOfWork,
+            context,
             discovery.Object,
             metadata.Object,
             security.Object,
-            menuSync.Object);
+            menuSync.Object,
+            lookup.Object);
 
         var formId = await service.SaveFormAsync(new FormConfigDto
         {

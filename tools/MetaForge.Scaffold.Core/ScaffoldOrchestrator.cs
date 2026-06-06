@@ -146,12 +146,17 @@ public sealed class ScaffoldOrchestrator
         CancellationToken cancellationToken)
     {
         var infra = Path.Combine(root, options.InfrastructureProject);
-        var web = Path.Combine(root, options.WebProject);
+        var context = options.DbContextName;
+        var outputDir = options.MigrationOutputDir;
 
+        // Use Infrastructure as startup project: it hosts IDesignTimeDbContextFactory and
+        // EF Design packages. Web's pre-build port-cleanup target can fail under dotnet ef.
         var psi = new System.Diagnostics.ProcessStartInfo
         {
             FileName = "dotnet",
-            Arguments = $"ef migrations add {migrationName} --project \"{infra}\" --startup-project \"{web}\"",
+            Arguments =
+                $"ef migrations add {migrationName} --project \"{infra}\" --startup-project \"{infra}\" " +
+                $"--output-dir \"{outputDir}\" --context {context}",
             WorkingDirectory = root,
             UseShellExecute = false,
             RedirectStandardOutput = true,
@@ -161,11 +166,13 @@ public sealed class ScaffoldOrchestrator
         using var process = System.Diagnostics.Process.Start(psi)
             ?? throw new InvalidOperationException("Failed to start dotnet ef.");
 
-        var stdout = await process.StandardOutput.ReadToEndAsync(cancellationToken);
-        var stderr = await process.StandardError.ReadToEndAsync(cancellationToken);
+        var stdoutTask = process.StandardOutput.ReadToEndAsync(cancellationToken);
+        var stderrTask = process.StandardError.ReadToEndAsync(cancellationToken);
         await process.WaitForExitAsync(cancellationToken);
 
-        var output = string.Join(Environment.NewLine, new[] { stdout, stderr }.Where(s => !string.IsNullOrWhiteSpace(s)));
+        var output = string.Join(
+            Environment.NewLine,
+            new[] { await stdoutTask, await stderrTask }.Where(s => !string.IsNullOrWhiteSpace(s)));
 
         if (process.ExitCode != 0)
             throw new InvalidOperationException(

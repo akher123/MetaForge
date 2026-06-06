@@ -1,6 +1,5 @@
 using MetaForge.Domain.Audit;
-using MetaForge.Domain.Business;
-using MetaForge.Domain.Metadata;
+using MetaForge.Domain.Features;
 using MetaForge.Domain.Security;
 
 namespace MetaForge.Infrastructure.Persistence;
@@ -49,6 +48,12 @@ public class MetaForgeDbContext : DbContext
     public DbSet<Teacher> Teachers => Set<Teacher>();
 
     public DbSet<Semester> Semesters => Set<Semester>();
+
+    public DbSet<VehicleType> VehicleTypes => Set<VehicleType>();
+
+    public DbSet<Vehicle> Vehicles => Set<Vehicle>();
+
+    public DbSet<MaintenanceRecord> MaintenanceRecords => Set<MaintenanceRecord>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

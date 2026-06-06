@@ -1,4 +1,5 @@
 using MetaForge.Application.Validation;
+using MetaForge.Infrastructure.Dynamic;
 using MetaForge.Infrastructure.Validation;
 using MetaForge.Shared.Constants;
 
@@ -10,23 +11,29 @@ namespace MetaForge.Infrastructure.Services;
 public class FormConfigurationService : IFormConfigurationService
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly MetaForgeDbContext _dbContext;
     private readonly IEntityMetadataDiscoveryService _discoveryService;
     private readonly IFormMetadataService _formMetadataService;
     private readonly ISecurityManagementService _securityManagementService;
     private readonly IMenuSyncService _menuSyncService;
+    private readonly ILookupService _lookupService;
 
     public FormConfigurationService(
         IUnitOfWork unitOfWork,
+        MetaForgeDbContext dbContext,
         IEntityMetadataDiscoveryService discoveryService,
         IFormMetadataService formMetadataService,
         ISecurityManagementService securityManagementService,
-        IMenuSyncService menuSyncService)
+        IMenuSyncService menuSyncService,
+        ILookupService lookupService)
     {
         _unitOfWork = unitOfWork;
+        _dbContext = dbContext;
         _discoveryService = discoveryService;
         _formMetadataService = formMetadataService;
         _securityManagementService = securityManagementService;
         _menuSyncService = menuSyncService;
+        _lookupService = lookupService;
     }
 
     public async Task<IReadOnlyList<FormConfigListItemDto>> GetAllFormsAsync(CancellationToken cancellationToken = default)
@@ -52,13 +59,23 @@ public class FormConfigurationService : IFormConfigurationService
     public async Task<FormConfigDto?> GetFormAsync(int id, CancellationToken cancellationToken = default)
     {
         var module = await _unitOfWork.Forms.GetByIdAsync(id, cancellationToken);
-        return module == null ? null : MapToDto(module);
+        if (module == null)
+            return null;
+
+        var dto = MapToDto(module);
+        await EnrichLookupFieldSettingsAsync(dto, cancellationToken);
+        return dto;
     }
 
     public async Task<FormConfigDto?> GetFormByEntityAsync(string entityName, CancellationToken cancellationToken = default)
     {
         var module = await _unitOfWork.Forms.GetByEntityNameAsync(entityName, cancellationToken);
-        return module == null ? null : MapToDto(module);
+        if (module == null)
+            return null;
+
+        var dto = MapToDto(module);
+        await EnrichLookupFieldSettingsAsync(dto, cancellationToken);
+        return dto;
     }
 
     public async Task<FormBuilderScreenDto> GetScreenAsync(int id, CancellationToken cancellationToken = default)
@@ -102,7 +119,7 @@ public class FormConfigurationService : IFormConfigurationService
         }).ToList();
     }
 
-    public Task<FormConfigDto> BuildDraftAsync(string entityName, string groupName, CancellationToken cancellationToken = default)
+    public async Task<FormConfigDto> BuildDraftAsync(string entityName, string groupName, CancellationToken cancellationToken = default)
     {
         var metadata = _discoveryService.Discover(entityName)
             ?? throw new NotFoundException($"Entity '{entityName}' was not found.");
@@ -118,21 +135,31 @@ public class FormConfigurationService : IFormConfigurationService
             IsActive = true,
             Fields = metadata.Properties
                 .Where(p => !p.IsKey && p.Name != "Id")
-                .Select((p, i) => new FormFieldConfigDto
+                .Select((p, i) =>
                 {
-                    PropertyName = p.Name,
-                    Label = SplitPascalCase(p.Name),
-                    ControlType = InferControlType(p.ClrType, p.Name),
-                    IsRequired = !p.IsNullable && !p.IsForeignKey,
-                    IsVisible = true,
-                    DisplayOrder = i,
-                    LookupEntity = p.IsForeignKey ? p.Name.Replace("Id", "", StringComparison.Ordinal) : null,
-                    ValidationRule = p.Name.Contains("Email", StringComparison.OrdinalIgnoreCase)
-                        ? FieldValidationRuleEngine.Serialize(new FieldValidationRuleSet
-                        {
-                            Rules = [new FieldValidationRuleDefinition { Type = ValidationRuleTypes.Email }]
-                        })
-                        : null
+                    var lookupEntity = p.IsForeignKey ? p.Name.Replace("Id", "", StringComparison.Ordinal) : null;
+                    return new FormFieldConfigDto
+                    {
+                        PropertyName = p.Name,
+                        Label = SplitPascalCase(p.Name),
+                        ControlType = InferControlType(p.ClrType, p.Name),
+                        IsRequired = !p.IsNullable && !p.IsForeignKey,
+                        IsVisible = true,
+                        DisplayOrder = i,
+                        LookupEntity = lookupEntity,
+                        LookupTextField = lookupEntity == null
+                            ? null
+                            : InferLookupTextFieldForEntity(lookupEntity),
+                        LookupValueField = lookupEntity == null
+                            ? null
+                            : LookupFieldResolver.DefaultValueField,
+                        ValidationRule = p.Name.Contains("Email", StringComparison.OrdinalIgnoreCase)
+                            ? FieldValidationRuleEngine.Serialize(new FieldValidationRuleSet
+                            {
+                                Rules = [new FieldValidationRuleDefinition { Type = ValidationRuleTypes.Email }]
+                            })
+                            : null
+                    };
                 }).ToList(),
             GridColumns = metadata.Properties
                 .Where(p => p.IsKey || !p.IsForeignKey || p.Name.EndsWith("Id"))
@@ -156,7 +183,8 @@ public class FormConfigurationService : IFormConfigurationService
             }).ToList()
         };
 
-        return Task.FromResult(draft);
+        await EnrichLookupFieldSettingsAsync(draft, cancellationToken);
+        return draft;
     }
 
     public async Task<FormSchemaSyncPreviewDto> GetSchemaSyncPreviewAsync(int formId, CancellationToken cancellationToken = default)
@@ -311,6 +339,7 @@ public class FormConfigurationService : IFormConfigurationService
         }
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+        await SyncLookupConfigurationsAsync(config.Fields, cancellationToken);
         await _formMetadataService.InvalidateCacheAsync(module.Code, module.EntityName, cancellationToken);
         if (!string.IsNullOrEmpty(previousEntityName)
             && !previousEntityName.Equals(module.EntityName, StringComparison.OrdinalIgnoreCase))
@@ -404,6 +433,101 @@ public class FormConfigurationService : IFormConfigurationService
 
         return masterId;
     }
+
+    private async Task EnrichLookupFieldSettingsAsync(FormConfigDto config, CancellationToken cancellationToken)
+    {
+        var lookupEntities = config.Fields
+            .Where(f => !string.IsNullOrWhiteSpace(f.LookupEntity))
+            .Select(f => f.LookupEntity!.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (lookupEntities.Count == 0)
+            return;
+
+        var configs = await _dbContext.LookupConfigurations
+            .AsNoTracking()
+            .Where(c => lookupEntities.Contains(c.EntityName) && c.IsActive)
+            .ToListAsync(cancellationToken);
+
+        var configByEntity = configs.ToDictionary(c => c.EntityName, StringComparer.OrdinalIgnoreCase);
+
+        foreach (var field in config.Fields.Where(f => !string.IsNullOrWhiteSpace(f.LookupEntity)))
+        {
+            var entityName = field.LookupEntity!.Trim();
+            if (configByEntity.TryGetValue(entityName, out var lookupConfig))
+            {
+                field.LookupTextField ??= lookupConfig.TextField;
+                field.LookupValueField ??= lookupConfig.ValueField;
+                continue;
+            }
+
+            field.LookupTextField ??= InferLookupTextFieldForEntity(entityName);
+            field.LookupValueField ??= LookupFieldResolver.DefaultValueField;
+        }
+    }
+
+    private async Task SyncLookupConfigurationsAsync(
+        IEnumerable<FormFieldConfigDto> fields,
+        CancellationToken cancellationToken)
+    {
+        var lookupFields = fields
+            .Where(f => !string.IsNullOrWhiteSpace(f.LookupEntity)
+                && IsLookupControlType(f.ControlType))
+            .GroupBy(f => f.LookupEntity!.Trim(), StringComparer.OrdinalIgnoreCase);
+
+        foreach (var group in lookupFields)
+        {
+            var entityName = group.Key;
+            var sourceField = group.LastOrDefault(f => !string.IsNullOrWhiteSpace(f.LookupTextField))
+                ?? group.Last();
+
+            var textField = string.IsNullOrWhiteSpace(sourceField.LookupTextField)
+                ? InferLookupTextFieldForEntity(entityName)
+                : sourceField.LookupTextField.Trim();
+
+            var valueField = string.IsNullOrWhiteSpace(sourceField.LookupValueField)
+                ? LookupFieldResolver.DefaultValueField
+                : sourceField.LookupValueField.Trim();
+
+            var existing = await _dbContext.LookupConfigurations
+                .FirstOrDefaultAsync(c => c.EntityName == entityName, cancellationToken);
+
+            if (existing == null)
+            {
+                _dbContext.LookupConfigurations.Add(new LookupConfiguration
+                {
+                    EntityName = entityName,
+                    TextField = textField,
+                    ValueField = valueField,
+                    IsActive = true
+                });
+            }
+            else
+            {
+                existing.TextField = textField;
+                existing.ValueField = valueField;
+                existing.IsActive = true;
+            }
+
+            await _lookupService.InvalidateCacheAsync(entityName, cancellationToken);
+        }
+
+        if (lookupFields.Any())
+            await _dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    private string InferLookupTextFieldForEntity(string entityName)
+    {
+        var metadata = _discoveryService.Discover(entityName);
+        return metadata == null
+            ? LookupFieldResolver.DefaultTextField
+            : LookupFieldResolver.InferTextField(metadata);
+    }
+
+    private static bool IsLookupControlType(string? controlType) =>
+        string.Equals(controlType, ControlType.Dropdown, StringComparison.OrdinalIgnoreCase)
+        || string.Equals(controlType, ControlType.Autocomplete, StringComparison.OrdinalIgnoreCase);
 
     public async Task DeleteFormAsync(int id, CancellationToken cancellationToken = default)
     {

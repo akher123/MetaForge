@@ -63,6 +63,69 @@ const FormBuilder = (function () {
         refreshPreviews();
     }
 
+    function inferLookupTextField(entityName) {
+        if (!entityName) return 'Name';
+        const entity = state.entities.find(e =>
+            (e.EntityName ?? e.entityName)?.toLowerCase() === entityName.toLowerCase());
+        const props = entity?.Metadata?.Properties ?? entity?.metadata?.properties ?? [];
+        const preferred = ['Name', 'Title', 'Code', 'Description', 'Label', 'DisplayName', 'OrderNo', 'VehicleNumber'];
+        for (const candidate of preferred) {
+            const prop = props.find(p =>
+                (p.Name ?? p.name) === candidate
+                && (p.ClrType ?? p.clrType ?? '').includes('String')
+                && !(p.IsNullable ?? p.isNullable));
+            if (prop) return candidate;
+        }
+        for (const candidate of preferred) {
+            const prop = props.find(p =>
+                (p.Name ?? p.name) === candidate
+                && (p.ClrType ?? p.clrType ?? '').includes('String'));
+            if (prop) return candidate;
+        }
+        const first = props.find(p => {
+            const name = p.Name ?? p.name ?? '';
+            const clr = p.ClrType ?? p.clrType ?? '';
+            return clr.includes('String')
+                && !(p.IsNullable ?? p.isNullable)
+                && !(p.IsForeignKey ?? p.isForeignKey)
+                && !(p.IsKey ?? p.isKey)
+                && !name.endsWith('Id')
+                && name !== 'Id'
+                && name !== 'CreatedBy'
+                && name !== 'ModifiedBy';
+        });
+        if (first) return first.Name ?? first.name;
+        const fallback = props.find(p => {
+            const name = p.Name ?? p.name ?? '';
+            const clr = p.ClrType ?? p.clrType ?? '';
+            return clr.includes('String')
+                && !name.endsWith('Id')
+                && name !== 'Id'
+                && name !== 'CreatedBy'
+                && name !== 'ModifiedBy';
+        });
+        return fallback ? (fallback.Name ?? fallback.name) : 'Name';
+    }
+
+    function syncLookupDisplayFields($row) {
+        const lookupEntity = $row.find('.field-lookup').val()?.trim();
+        const $text = $row.find('.field-lookup-text');
+        const $value = $row.find('.field-lookup-value');
+        const isLookup = ['Dropdown', 'Autocomplete'].includes($row.find('.field-control').val());
+
+        $text.prop('disabled', !isLookup || !lookupEntity);
+        $value.prop('disabled', !isLookup || !lookupEntity);
+
+        if (!isLookup || !lookupEntity) return;
+
+        if (!$text.val()?.trim()) {
+            $text.val(inferLookupTextField(lookupEntity));
+        }
+        if (!$value.val()?.trim()) {
+            $value.val('Id');
+        }
+    }
+
     function bindEvents() {
         $('#btnLoadDraft').on('click', loadDraftFromEntity);
         $('#entitySelect').on('change', onEntitySelected);
@@ -111,6 +174,9 @@ const FormBuilder = (function () {
 
         $(document).on('change', '#masterFieldsTable input, #masterFieldsTable select', refreshMasterPreview);
         $(document).on('change', '#detailFieldsTable input, #detailFieldsTable select', refreshDetailPreview);
+        $(document).on('change blur', '#masterFieldsTable .field-lookup, #masterFieldsTable .field-control, #detailFieldsTable .field-lookup, #detailFieldsTable .field-control', function () {
+            syncLookupDisplayFields($(this).closest('tr'));
+        });
         $(document).on('change', '#relationsTable select, #relationsTable input', syncDetailFromRelations);
     }
 
@@ -348,6 +414,8 @@ const FormBuilder = (function () {
                 <td><select class="form-select form-select-sm field-control">${controlOptions}</select></td>
                 <td><input type="text" class="form-control form-control-sm field-section" value="${esc(field.SectionName ?? field.sectionName ?? '')}" placeholder="optional" /></td>
                 <td><input type="text" class="form-control form-control-sm field-lookup" value="${esc(field.LookupEntity ?? field.lookupEntity ?? '')}" placeholder="e.g. Country" /></td>
+                <td><input type="text" class="form-control form-control-sm field-lookup-text" value="${esc(field.LookupTextField ?? field.lookupTextField ?? '')}" placeholder="Name or {Code} - {Name}" title="Single field, comma-separated fields, or template" /></td>
+                <td><input type="text" class="form-control form-control-sm field-lookup-value" value="${esc(field.LookupValueField ?? field.lookupValueField ?? '')}" placeholder="Id" title="Property stored as the field value" /></td>
                 <td><input type="text" class="form-control form-control-sm field-cascade-parent" value="${esc(field.LookupParentField ?? field.lookupParentField ?? '')}" placeholder="e.g. CountryId" /></td>
                 <td><input type="text" class="form-control form-control-sm field-cascade-filter" value="${esc(field.LookupFilterField ?? field.lookupFilterField ?? '')}" placeholder="optional" /></td>
                 <td class="text-center"><input type="checkbox" class="form-check-input field-required" ${(field.IsRequired ?? field.isRequired) ? 'checked' : ''} /></td>
@@ -371,6 +439,8 @@ const FormBuilder = (function () {
         } else {
             $row.find('.field-conditional').val(conditionalRule);
         }
+
+        syncLookupDisplayFields($row);
 
         if (triggerPreview && previewFn) previewFn();
     }
@@ -504,6 +574,8 @@ const FormBuilder = (function () {
                 ControlType: $(this).find('.field-control').val(),
                 SectionName: $(this).find('.field-section').val()?.trim() || null,
                 LookupEntity: $(this).find('.field-lookup').val()?.trim() || null,
+                LookupTextField: $(this).find('.field-lookup-text').val()?.trim() || null,
+                LookupValueField: $(this).find('.field-lookup-value').val()?.trim() || null,
                 LookupParentField: $(this).find('.field-cascade-parent').val()?.trim() || null,
                 LookupFilterField: $(this).find('.field-cascade-filter').val()?.trim() || null,
                 IsRequired: $(this).find('.field-required').is(':checked'),

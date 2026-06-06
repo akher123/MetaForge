@@ -109,7 +109,65 @@ public class FormConfigurationTabbedFormTests
         Assert.Equal(FormType.Tabbed.ToString(), screen.Master.FormType);
     }
 
-    private static FormConfigurationService CreateService(MetaForgeDbContext context)
+    [Fact]
+    public async Task SaveFormAsync_PersistsLookupDisplayFieldConfiguration()
+    {
+        await using var context = CreateContext();
+        var discovery = new Mock<IEntityMetadataDiscoveryService>();
+        discovery.Setup(d => d.Discover("Vehicle"))
+            .Returns(new EntityMetadataDto
+            {
+                EntityName = "Vehicle",
+                Properties =
+                [
+                    new EntityPropertyMetadataDto { Name = "Id", ClrType = "System.Int32", IsKey = true },
+                    new EntityPropertyMetadataDto { Name = "VehicleNumber", ClrType = "System.String" }
+                ]
+            });
+
+        var service = CreateService(context, discovery.Object);
+
+        await service.SaveFormAsync(new FormConfigDto
+        {
+            Code = "fueltransaction",
+            Name = "Fuel Transaction",
+            EntityName = "FuelTransaction",
+            TableName = "FuelTransactions",
+            GroupName = "Transaction",
+            FormType = FormType.Master.ToString(),
+            IsActive = true,
+            Fields =
+            [
+                new FormFieldConfigDto
+                {
+                    PropertyName = "VehicleId",
+                    Label = "Vehicle",
+                    ControlType = ControlType.Autocomplete,
+                    LookupEntity = "Vehicle",
+                    LookupTextField = "VehicleNumber",
+                    LookupValueField = "Id",
+                    IsVisible = true
+                }
+            ],
+            GridColumns =
+            [
+                new FormGridColumnConfigDto
+                {
+                    PropertyName = "VehicleId",
+                    Label = "Vehicle",
+                    IsVisible = true
+                }
+            ]
+        });
+
+        var lookupConfig = await context.LookupConfigurations.SingleAsync(c => c.EntityName == "Vehicle");
+        Assert.Equal("VehicleNumber", lookupConfig.TextField);
+        Assert.Equal("Id", lookupConfig.ValueField);
+    }
+
+    private static FormConfigurationService CreateService(
+        MetaForgeDbContext context,
+        IEntityMetadataDiscoveryService? discoveryService = null)
     {
         var unitOfWork = new UnitOfWork(
             context,
@@ -118,6 +176,12 @@ public class FormConfigurationTabbedFormTests
             new ForgeReportRepository(context));
 
         var discovery = new Mock<IEntityMetadataDiscoveryService>();
+        if (discoveryService != null)
+            discovery.Setup(d => d.Discover(It.IsAny<string>()))
+                .Returns((string name) => discoveryService.Discover(name));
+        else
+            discovery.Setup(d => d.Discover(It.IsAny<string>())).Returns((EntityMetadataDto?)null);
+
         var metadata = new Mock<IFormMetadataService>();
         var security = new Mock<ISecurityManagementService>();
         var menuSync = new Mock<IMenuSyncService>();
@@ -129,12 +193,18 @@ public class FormConfigurationTabbedFormTests
         metadata.Setup(m => m.InvalidateCacheAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
+        var lookup = new Mock<ILookupService>();
+        lookup.Setup(l => l.InvalidateCacheAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
         return new FormConfigurationService(
             unitOfWork,
-            discovery.Object,
+            context,
+            discoveryService ?? discovery.Object,
             metadata.Object,
             security.Object,
-            menuSync.Object);
+            menuSync.Object,
+            lookup.Object);
     }
 
     private static MetaForgeDbContext CreateContext()

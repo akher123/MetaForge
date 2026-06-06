@@ -60,6 +60,12 @@ public class FormFieldConfigDto
 
     public string? LookupFilterField { get; set; }
 
+    /// <summary>Property on the lookup entity shown in dropdown/autocomplete (defaults to Name).</summary>
+    public string? LookupTextField { get; set; }
+
+    /// <summary>Property on the lookup entity stored as the field value (defaults to Id).</summary>
+    public string? LookupValueField { get; set; }
+
     public string? SectionName { get; set; }
 }
 

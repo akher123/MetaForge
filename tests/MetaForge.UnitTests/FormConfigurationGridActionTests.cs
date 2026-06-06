@@ -1,4 +1,5 @@
 using MetaForge.Application.DTOs;
+using MetaForge.Application.Interfaces;
 using MetaForge.Domain.Enums;
 using MetaForge.Infrastructure.Repositories;
 using MetaForge.Infrastructure.Services;
@@ -94,12 +95,18 @@ public class FormConfigurationGridActionTests
         metadata.Setup(m => m.InvalidateCacheAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
+        var lookup = new Mock<ILookupService>();
+        lookup.Setup(l => l.InvalidateCacheAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
         return new FormConfigurationService(
             unitOfWork,
+            context,
             discovery.Object,
             metadata.Object,
             security.Object,
-            menuSync.Object);
+            menuSync.Object,
+            lookup.Object);
     }
 
     private static MetaForgeDbContext CreateContext()

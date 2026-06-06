@@ -24,6 +24,10 @@ public sealed class ScaffoldOptions
 
     public string WebProject { get; set; } = "src/MetaForge.Web/MetaForge.Web.csproj";
 
+    public string MigrationOutputDir { get; set; } = "Persistence/Migrations";
+
+    public string DbContextName { get; set; } = "MetaForgeDbContext";
+
     public bool IncludeNavigations { get; set; }
 
     public bool DryRun { get; set; }
