@@ -15,6 +15,6 @@ public class MaintenanceRecord : BaseEntity
     public DateTime? NextServiceDate { get; set; }
     public decimal? NextServiceOdometer { get; set; }
     public Vehicle? Vehicle { get; set; }
-    public MaintenanceRecord? MaintenanceType { get; set; }
+    public MaintenanceType? MaintenanceType { get; set; }
     public Vendor? Vendor { get; set; }
 }
