@@ -50,6 +50,7 @@ const DynamicForm = (function () {
         clearFieldErrors($form);
         bindFieldErrorClear($form);
         bindConditionalLogic($form);
+        bindFileUpload($form);
         applyAllConditionalStates($form);
         if (opts.initLookups !== false && typeof MetaForgeLookups !== 'undefined') {
             return initLookupsForScope($form, getFields(), null).then(function () {
@@ -79,6 +80,7 @@ const DynamicForm = (function () {
 
         appendFields($target, fields, previewLayout);
         bindConditionalLogic($target);
+        bindFileUpload($target);
         applyPreviewFieldStates($target, isPreviewMode);
 
         if (opts.initLookups === false || typeof MetaForgeLookups === 'undefined') {
@@ -181,7 +183,7 @@ const DynamicForm = (function () {
 
     function isFullWidthField(field) {
         const controlType = field.ControlType ?? field.controlType ?? 'TextBox';
-        return controlType === 'TextArea' || controlType === 'Checkbox';
+        return controlType === 'TextArea' || controlType === 'Checkbox' || controlType === 'FileUpload';
     }
 
     function appendFieldColumn($container, field) {
@@ -361,6 +363,9 @@ const DynamicForm = (function () {
             case 'Autocomplete':
                 controlHtml = `<select class="form-select admin-form-control lookup-autocomplete" name="${name}" data-lookup="${lookupEntity || (name || '').replace(/Id$/, '')}" ${cascadeAttrs} ${required} ${disabled}></select>`;
                 break;
+            case 'FileUpload':
+                controlHtml = buildFileUploadControl(name, !!(field.IsReadOnly ?? field.isReadOnly));
+                break;
             case 'Hidden':
                 return `<input type="hidden" name="${name}" />`;
             default:
@@ -376,6 +381,214 @@ const DynamicForm = (function () {
                 ${controlHtml}
                 <div class="invalid-feedback" data-field-error="${name}"></div>
             </div>`;
+    }
+
+    const FILE_UPLOAD_ENDPOINT = '/api/metaforge/files/upload';
+    const FILE_UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
+    const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'];
+
+    function buildFileUploadControl(name, isReadOnly) {
+        const disabled = isReadOnly ? 'disabled' : '';
+        const maxMb = Math.round(FILE_UPLOAD_MAX_BYTES / (1024 * 1024));
+        return `
+            <div class="mf-file-upload" data-file-upload="${name}">
+                <input type="hidden" name="${name}" />
+                <label class="mf-file-dropzone" data-file-drop>
+                    <input type="file" class="mf-file-input" ${disabled} />
+                    <span class="mf-file-dropzone-inner">
+                        <i class="fa-solid fa-cloud-arrow-up mf-file-dropzone-icon" aria-hidden="true"></i>
+                        <span class="mf-file-dropzone-text">Drop a file here or <span class="mf-file-dropzone-browse">browse</span></span>
+                        <span class="mf-file-dropzone-hint">Up to ${maxMb} MB</span>
+                    </span>
+                </label>
+                <div class="mf-file-progress" data-file-progress hidden>
+                    <div class="mf-file-progress-bar" data-file-progress-bar></div>
+                </div>
+                <div class="mf-file-preview" data-file-preview hidden></div>
+            </div>`;
+    }
+
+    function isImageUrl(url) {
+        if (!url) return false;
+        const clean = String(url).split('?')[0].split('#')[0];
+        const ext = clean.includes('.') ? clean.split('.').pop().toLowerCase() : '';
+        return IMAGE_EXTENSIONS.includes(ext);
+    }
+
+    function fileNameFromUrl(url) {
+        if (!url) return '';
+        const clean = String(url).split('?')[0].split('#')[0];
+        const segment = clean.substring(clean.lastIndexOf('/') + 1);
+        try {
+            return decodeURIComponent(segment);
+        } catch (e) {
+            return segment;
+        }
+    }
+
+    function formatFileSize(bytes) {
+        if (bytes == null || isNaN(bytes)) return '';
+        if (bytes < 1024) return `${bytes} B`;
+        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+        return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    }
+
+    function renderFilePreview($upload, info) {
+        const $preview = $upload.find('[data-file-preview]');
+        const url = info?.url;
+
+        if (!url) {
+            $preview.empty().attr('hidden', 'hidden');
+            $upload.removeClass('mf-file-upload--has-file');
+            return;
+        }
+
+        const fileName = info.fileName || fileNameFromUrl(url);
+        const isImage = info.isImage != null ? !!info.isImage : isImageUrl(url);
+        const sizeText = info.size ? formatFileSize(info.size) : '';
+        const safeUrl = escapeHtml(url);
+        const safeName = escapeHtml(fileName);
+
+        const thumb = isImage
+            ? `<a href="${safeUrl}" target="_blank" rel="noopener" class="mf-file-thumb-link">
+                   <img src="${safeUrl}" alt="${safeName}" class="mf-file-thumb" /></a>`
+            : `<span class="mf-file-thumb mf-file-thumb--icon"><i class="fa-solid fa-file-lines" aria-hidden="true"></i></span>`;
+
+        $preview.html(`
+            ${thumb}
+            <div class="mf-file-meta">
+                <a href="${safeUrl}" target="_blank" rel="noopener" class="mf-file-name" title="${safeName}">${safeName}</a>
+                ${sizeText ? `<span class="mf-file-size">${escapeHtml(sizeText)}</span>` : ''}
+            </div>
+            <button type="button" class="mf-file-remove" data-file-remove title="Remove file" aria-label="Remove file">
+                <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+            </button>
+        `).removeAttr('hidden');
+
+        $upload.addClass('mf-file-upload--has-file');
+    }
+
+    function setFileUploadValue($upload, info) {
+        const url = info?.url ?? '';
+        const $hidden = $upload.find('input[type="hidden"]').first();
+        $hidden.val(url);
+        renderFilePreview($upload, url ? info : null);
+    }
+
+    function showFileUploadProgress($upload, percent) {
+        const $progress = $upload.find('[data-file-progress]');
+        const $bar = $upload.find('[data-file-progress-bar]');
+        if (percent == null) {
+            $progress.attr('hidden', 'hidden');
+            $bar.css('width', '0%');
+            return;
+        }
+        $progress.removeAttr('hidden');
+        $bar.css('width', `${Math.max(0, Math.min(100, percent))}%`);
+    }
+
+    function clearUploadFieldError($upload) {
+        const name = $upload.attr('data-file-upload');
+        if (!name) return;
+        const $wrap = $upload.closest('.field-control-wrap');
+        $upload.closest('.field-control-wrap, .admin-form-field').removeClass('is-invalid');
+        $wrap.removeClass('is-invalid');
+        $wrap.find(`[data-field-error="${name}"]`).text('').hide();
+    }
+
+    function uploadFile($upload, file) {
+        if (!file) return;
+
+        const $root = $upload.closest('form, .dynamic-form, body');
+
+        if (file.size > FILE_UPLOAD_MAX_BYTES) {
+            const name = $upload.attr('data-file-upload');
+            showFieldError($root, name, `File exceeds the maximum allowed size of ${Math.round(FILE_UPLOAD_MAX_BYTES / (1024 * 1024))} MB.`);
+            return;
+        }
+
+        clearUploadFieldError($upload);
+        $upload.addClass('mf-file-upload--uploading');
+        showFileUploadProgress($upload, 0);
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        $.ajax({
+            url: FILE_UPLOAD_ENDPOINT,
+            method: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            xhr: function () {
+                const xhr = new window.XMLHttpRequest();
+                xhr.upload.addEventListener('progress', function (e) {
+                    if (e.lengthComputable) {
+                        showFileUploadProgress($upload, Math.round((e.loaded / e.total) * 100));
+                    }
+                });
+                return xhr;
+            }
+        }).done(function (result) {
+            setFileUploadValue($upload, {
+                url: result.url ?? result.Url,
+                fileName: result.fileName ?? result.FileName,
+                size: result.size ?? result.Size,
+                isImage: result.isImage ?? result.IsImage
+            });
+            applyAllConditionalStates($root);
+        }).fail(function (xhr) {
+            const name = $upload.attr('data-file-upload');
+            const message = xhr?.responseJSON?.error ?? 'File upload failed. Please try again.';
+            showFieldError($root, name, message);
+        }).always(function () {
+            $upload.removeClass('mf-file-upload--uploading');
+            showFileUploadProgress($upload, null);
+            $upload.find('.mf-file-input').val('');
+        });
+    }
+
+    function bindFileUpload($scope) {
+        const $root = $scope ? $($scope) : $form;
+        if (!$root.length) return;
+
+        $root.off('.metaforgeFileUpload');
+
+        $root.on('change.metaforgeFileUpload', '.mf-file-input', function () {
+            const file = this.files && this.files[0];
+            if (file) {
+                uploadFile($(this).closest('.mf-file-upload'), file);
+            }
+        });
+
+        $root.on('click.metaforgeFileUpload', '[data-file-remove]', function (e) {
+            e.preventDefault();
+            const $upload = $(this).closest('.mf-file-upload');
+            setFileUploadValue($upload, null);
+            applyAllConditionalStates($root);
+        });
+
+        $root.on('dragover.metaforgeFileUpload dragenter.metaforgeFileUpload', '[data-file-drop]', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            $(this).closest('.mf-file-upload').addClass('mf-file-upload--dragover');
+        });
+
+        $root.on('dragleave.metaforgeFileUpload dragend.metaforgeFileUpload drop.metaforgeFileUpload', '[data-file-drop]', function () {
+            $(this).closest('.mf-file-upload').removeClass('mf-file-upload--dragover');
+        });
+
+        $root.on('drop.metaforgeFileUpload', '[data-file-drop]', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const $dropzone = $(this);
+            if ($dropzone.find('.mf-file-input').prop('disabled')) return;
+            const dt = e.originalEvent?.dataTransfer;
+            const file = dt?.files && dt.files[0];
+            if (file) {
+                uploadFile($dropzone.closest('.mf-file-upload'), file);
+            }
+        });
     }
 
     function findFieldContainer($scope, fieldName) {
@@ -785,6 +998,9 @@ const DynamicForm = (function () {
                 $el.val(formatDateTimeLocal(value));
             } else if (controlType === 'Date' && value) {
                 $el.val(MetaForgeGridDisplayFormat.formatDateInputValue(value));
+            } else if (controlType === 'FileUpload') {
+                $el.val(value);
+                setFileUploadValue($el.closest('.mf-file-upload'), { url: value });
             } else {
                 $el.val(value);
             }
@@ -847,12 +1063,20 @@ const DynamicForm = (function () {
             });
     }
 
+    function clearFilePreviews($scope) {
+        const $root = $scope ? $($scope) : $form;
+        $root.find('.mf-file-upload').each(function () {
+            setFileUploadValue($(this), null);
+        });
+    }
+
     function showNew() {
         recordId = null;
         clearFieldErrors($form);
         if ($form[0]?.reset) {
             $form[0].reset();
         }
+        clearFilePreviews($form);
         applyAllConditionalStates($form);
         if (typeof MetaForgeLookups !== 'undefined') {
             return initLookupsForScope($form, getFields()).then(function () {
@@ -868,6 +1092,7 @@ const DynamicForm = (function () {
         if ($form[0]?.reset) {
             $form[0].reset();
         }
+        clearFilePreviews($form);
         destroyLookups($form);
     }
 

@@ -18,4 +18,25 @@ public static class AppConstants
     public const string SecurityStampClaimType = "AspNet.Identity.SecurityStamp";
 
     public const string AuthorizationSnapshotCacheKeyPrefix = "auth:snapshot:";
+
+    /// <summary>Root folder (relative to wwwroot) where uploaded files are stored.</summary>
+    public const string UploadsFolderName = "uploads";
+
+    /// <summary>Maximum allowed size for an uploaded file, in bytes (10 MB).</summary>
+    public const long MaxUploadFileSizeBytes = 10 * 1024 * 1024;
+
+    /// <summary>File extensions that are rendered as image thumbnails in the dynamic form.</summary>
+    public static readonly IReadOnlyCollection<string> ImageFileExtensions =
+        new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".svg"
+        };
+
+    /// <summary>File extensions blocked from upload for security reasons.</summary>
+    public static readonly IReadOnlyCollection<string> BlockedUploadExtensions =
+        new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ".exe", ".dll", ".bat", ".cmd", ".com", ".msi", ".sh", ".ps1",
+            ".js", ".jar", ".vbs", ".scr", ".cpl", ".reg"
+        };
 }
