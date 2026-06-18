@@ -15,11 +15,18 @@ public static class ControlType
     public const string Autocomplete = "Autocomplete";
     public const string Radio = "Radio";
     public const string FileUpload = "FileUpload";
+
+    /// <summary>HTML rich text editor for long formatted content on any form field.</summary>
+    public const string RichText = "RichText";
+
     public const string Hidden = "Hidden";
 
     public static readonly IReadOnlyList<string> All =
     [
         TextBox, TextArea, Number, Date, DateTime,
-        Checkbox, Dropdown, Autocomplete, Radio, FileUpload, Hidden
+        Checkbox, Dropdown, Autocomplete, Radio, FileUpload, RichText, Hidden
     ];
+
+    public static bool IsRichText(string? controlType) =>
+        string.Equals(controlType, RichText, StringComparison.OrdinalIgnoreCase);
 }

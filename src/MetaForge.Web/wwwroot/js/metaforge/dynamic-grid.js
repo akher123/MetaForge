@@ -359,6 +359,9 @@ const DynamicGrid = (function () {
                     let text = data;
                     if (hasTemporalFormat && typeof MetaForgeGridDisplayFormat !== 'undefined') {
                         text = MetaForgeGridDisplayFormat.formatValue(data, displayFormat, controlType);
+                    } else if (MetaForgeControlTypes.isRichText(controlType) && typeof MetaForgeGridDisplayFormat !== 'undefined') {
+                        text = MetaForgeGridDisplayFormat.stripHtml(data);
+                        return escapeHtml(String(text));
                     }
 
                     if (lookupEntity) {

@@ -2,7 +2,7 @@
  * Form Builder — design master and detail forms for admin screens.
  */
 const FormBuilder = (function () {
-    const CONTROL_TYPES = ['TextBox', 'TextArea', 'Number', 'Date', 'DateTime', 'Checkbox', 'Dropdown', 'Autocomplete', 'Radio', 'FileUpload', 'Hidden'];
+    const CONTROL_TYPES = MetaForgeControlTypes.ALL;
     const RELATION_TYPES = ['OneToOne', 'OneToMany', 'ManyToOne'];
     const GRID_ACTION_PLACEMENTS = ['Row', 'Toolbar'];
     const GRID_HANDLER_TYPES = ['Api', 'Redirect', 'Script'];

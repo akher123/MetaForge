@@ -1912,6 +1912,55 @@ html[data-theme$="-dark"] body.metaforge-app .form-select {
   border-color: var(--bs-form-invalid-border-color, #dc3545) !important;
 }
 
+/* ── Rich text editor control ─────────────────────────────────────────── */
+
+.mf-rich-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  width: 100%;
+}
+
+.mf-rich-text-editor {
+  min-height: 220px;
+  background: var(--bs-body-bg, #fff);
+  border-bottom-left-radius: var(--bs-border-radius);
+  border-bottom-right-radius: var(--bs-border-radius);
+}
+
+.mf-rich-text--compact .mf-rich-text-editor {
+  min-height: 140px;
+}
+
+.mf-rich-text .ql-toolbar.ql-snow {
+  border-color: var(--dv-border-strong, var(--bs-border-color));
+  border-top-left-radius: var(--bs-border-radius);
+  border-top-right-radius: var(--bs-border-radius);
+  background: var(--bs-tertiary-bg, var(--bs-body-bg));
+}
+
+.mf-rich-text .ql-container.ql-snow {
+  border-color: var(--dv-border-strong, var(--bs-border-color));
+  font-family: inherit;
+  font-size: 0.95rem;
+}
+
+.mf-rich-text--readonly .ql-toolbar {
+  opacity: 0.65;
+  pointer-events: none;
+}
+
+.mf-rich-text--readonly .ql-editor {
+  background: var(--bs-secondary-bg, rgba(0, 0, 0, 0.03));
+}
+
+.field-control-wrap.is-invalid .mf-rich-text .ql-container,
+.field-control-wrap.is-invalid .mf-rich-text .ql-toolbar,
+.detail-field-wrap.is-invalid .mf-rich-text .ql-container,
+.detail-field-wrap.is-invalid .mf-rich-text .ql-toolbar {
+  border-color: var(--bs-form-invalid-border-color, #dc3545);
+}
+
 /* ── File upload control ──────────────────────────────────────────────── */
 
 .mf-file-upload {

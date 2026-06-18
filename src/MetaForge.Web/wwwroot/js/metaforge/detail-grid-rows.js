@@ -67,7 +67,7 @@ const MetaForgeDetailRows = (function () {
 
     function getDisplayValue(row, field, rawValue) {
         const name = field.PropertyName ?? field.propertyName;
-        const controlType = field.ControlType ?? field.controlType ?? 'TextBox';
+        const controlType = MetaForgeControlTypes.normalize(field.ControlType ?? field.controlType);
         const val = rawValue ?? row[name];
 
         if (val == null || val === '') return '—';
@@ -94,6 +94,11 @@ const MetaForgeDetailRows = (function () {
             return Number.isNaN(num) ? String(val) : num.toLocaleString(undefined, { maximumFractionDigits: 4 });
         }
 
+        if (MetaForgeControlTypes.isRichText(controlType) && typeof MetaForgeGridDisplayFormat !== 'undefined') {
+            const text = MetaForgeGridDisplayFormat.stripHtml(val);
+            return text || '—';
+        }
+
         return String(val);
     }
 
@@ -106,7 +111,7 @@ const MetaForgeDetailRows = (function () {
     function buildInlineControl(field, index, value, options) {
         const opts = options || {};
         const name = field.PropertyName ?? field.propertyName;
-        const controlType = field.ControlType ?? field.controlType ?? 'TextBox';
+        const controlType = MetaForgeControlTypes.normalize(field.ControlType ?? field.controlType);
         const lookupEntity = getLookupEntity(field);
         const readOnly = opts.readOnly === true;
         const required = (field.IsRequired ?? field.isRequired) ? 'required' : '';
@@ -120,6 +125,12 @@ const MetaForgeDetailRows = (function () {
         switch (controlType) {
             case 'TextArea':
                 controlHtml = `<textarea class="form-control form-control-sm detail-input admin-form-control" ${dataAttrs} rows="2" ${readonly} ${required}>${escapeHtml(val)}</textarea>`;
+                break;
+            case MetaForgeControlTypes.RichText:
+                controlHtml = `<div class="mf-rich-text mf-rich-text--compact" data-rich-text="${escapeAttr(name)}">
+                    <input type="hidden" class="detail-input" ${dataAttrs} value="${escapeAttr(val)}" ${required} />
+                    <div class="mf-rich-text-editor"></div>
+                </div>`;
                 break;
             case 'Number':
                 controlHtml = `<input type="number" step="any" class="form-control form-control-sm detail-input admin-form-control detail-number" ${dataAttrs} value="${escapeAttr(val)}" ${readonly} ${required} />`;
@@ -219,7 +230,7 @@ const MetaForgeDetailRows = (function () {
 
     function syncDisplayFromInput(row, field, $input) {
         const name = field.PropertyName ?? field.propertyName;
-        const controlType = field.ControlType ?? field.controlType ?? 'TextBox';
+        const controlType = MetaForgeControlTypes.normalize(field.ControlType ?? field.controlType);
 
         if (controlType === 'Dropdown' || controlType === 'Autocomplete') {
             row.__display = row.__display || {};

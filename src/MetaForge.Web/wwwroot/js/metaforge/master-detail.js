@@ -170,6 +170,9 @@ const MasterDetail = (function () {
         });
 
         initLookups($body);
+        if (typeof MetaForgeRichText !== 'undefined') {
+            MetaForgeRichText.initScope($body);
+        }
         updateSummary();
     }
 

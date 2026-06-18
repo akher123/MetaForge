@@ -113,6 +113,13 @@ const MetaForgeGridDisplayFormat = (function () {
         return dt ? formatWithTokens(dt, 'yyyy-MM-dd') : s;
     }
 
+    function stripHtml(value) {
+        if (value == null || value === '') return '';
+        const el = document.createElement('div');
+        el.innerHTML = String(value);
+        return (el.textContent || el.innerText || '').trim();
+    }
+
     function buildSelectOptions(selected) {
         const sel = (selected || '').toString();
         return PRESETS.map(p =>
@@ -127,6 +134,7 @@ const MetaForgeGridDisplayFormat = (function () {
         resolveFormatKey,
         formatValue,
         formatDateInputValue,
-        buildSelectOptions
+        buildSelectOptions,
+        stripHtml
     };
 })();

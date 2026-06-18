@@ -19,6 +19,9 @@ const DynamicForm = (function () {
         if (typeof MetaForgeLookups !== 'undefined') {
             MetaForgeLookups.destroyFormLookups($scope);
         }
+        if (typeof MetaForgeRichText !== 'undefined') {
+            MetaForgeRichText.destroyScope($scope);
+        }
     }
 
     function resolveLayoutMode(definition, opts) {
@@ -51,6 +54,7 @@ const DynamicForm = (function () {
         bindFieldErrorClear($form);
         bindConditionalLogic($form);
         bindFileUpload($form);
+        bindRichTextEditors($form);
         applyAllConditionalStates($form);
         if (opts.initLookups !== false && typeof MetaForgeLookups !== 'undefined') {
             return initLookupsForScope($form, getFields(), null).then(function () {
@@ -81,6 +85,7 @@ const DynamicForm = (function () {
         appendFields($target, fields, previewLayout);
         bindConditionalLogic($target);
         bindFileUpload($target);
+        bindRichTextEditors($target);
         applyPreviewFieldStates($target, isPreviewMode);
 
         if (opts.initLookups === false || typeof MetaForgeLookups === 'undefined') {
@@ -182,13 +187,13 @@ const DynamicForm = (function () {
     }
 
     function isFullWidthField(field) {
-        const controlType = field.ControlType ?? field.controlType ?? 'TextBox';
-        return controlType === 'TextArea' || controlType === 'Checkbox' || controlType === 'FileUpload';
+        const controlType = MetaForgeControlTypes.normalize(field.ControlType ?? field.controlType);
+        return MetaForgeControlTypes.isFullWidth(controlType);
     }
 
     function appendFieldColumn($container, field) {
         const name = field.PropertyName ?? field.propertyName;
-        const controlType = field.ControlType ?? field.controlType ?? 'TextBox';
+        const controlType = MetaForgeControlTypes.normalize(field.ControlType ?? field.controlType);
         const isRequired = field.IsRequired ?? field.isRequired;
         const label = field.Label ?? field.label;
 
@@ -277,7 +282,7 @@ const DynamicForm = (function () {
         const visibleFields = [];
 
         fields.forEach(field => {
-            const controlType = field.ControlType ?? field.controlType ?? 'TextBox';
+            const controlType = MetaForgeControlTypes.normalize(field.ControlType ?? field.controlType);
             const isVisible = field.IsVisible ?? field.isVisible;
             if (controlType === 'Hidden' || isVisible === false) {
                 hiddenFields.push(field);
@@ -336,7 +341,7 @@ const DynamicForm = (function () {
         const readonly = (field.IsReadOnly ?? field.isReadOnly) ? 'readonly' : '';
         const required = (field.IsRequired ?? field.isRequired) ? 'required' : '';
         const disabled = (field.IsReadOnly ?? field.isReadOnly) ? 'disabled' : '';
-        const controlType = field.ControlType ?? field.controlType ?? 'TextBox';
+        const controlType = MetaForgeControlTypes.normalize(field.ControlType ?? field.controlType);
         const lookupEntity = field.LookupEntity ?? field.lookupEntity;
         const cascadeAttrs = typeof MetaForgeLookups !== 'undefined' ? MetaForgeLookups.cascadeAttrs(field) : '';
         let controlHtml;
@@ -345,6 +350,14 @@ const DynamicForm = (function () {
             case 'TextArea':
                 controlHtml = `<textarea class="form-control admin-form-control" name="${name}" ${readonly} ${required} rows="3"></textarea>`;
                 break;
+            case MetaForgeControlTypes.RichText: {
+                const rtReadonly = (field.IsReadOnly ?? field.isReadOnly) ? 'data-readonly="true"' : '';
+                controlHtml = `<div class="mf-rich-text" data-rich-text="${name}" ${rtReadonly}>
+                    <input type="hidden" name="${name}" ${required} />
+                    <div class="mf-rich-text-editor"></div>
+                </div>`;
+                break;
+            }
             case 'Number':
                 controlHtml = `<input type="number" step="any" class="form-control admin-form-control" name="${name}" ${readonly} ${required} />`;
                 break;
@@ -548,6 +561,11 @@ const DynamicForm = (function () {
         });
     }
 
+    function bindRichTextEditors($scope) {
+        if (typeof MetaForgeRichText === 'undefined') return;
+        MetaForgeRichText.initScope($scope ? $($scope) : $form);
+    }
+
     function bindFileUpload($scope) {
         const $root = $scope ? $($scope) : $form;
         if (!$root.length) return;
@@ -620,7 +638,7 @@ const DynamicForm = (function () {
 
         getFields().forEach(function (field) {
             const name = field.PropertyName ?? field.propertyName;
-            const controlType = field.ControlType ?? field.controlType ?? 'TextBox';
+            const controlType = MetaForgeControlTypes.normalize(field.ControlType ?? field.controlType);
             if (controlType === 'Hidden') return;
 
             const configuredVisible = field.IsVisible ?? field.isVisible ?? true;
@@ -635,7 +653,7 @@ const DynamicForm = (function () {
         if (typeof FieldConditionalEngine === 'undefined') return;
 
         const name = field.PropertyName ?? field.propertyName;
-        const controlType = field.ControlType ?? field.controlType ?? 'TextBox';
+        const controlType = MetaForgeControlTypes.normalize(field.ControlType ?? field.controlType);
         if (controlType === 'Hidden') return;
 
         const data = collectFormData($scope);
@@ -660,6 +678,10 @@ const DynamicForm = (function () {
                 } else {
                     $input.removeAttr('tabindex');
                     $s2.removeClass('pe-none field-readonly-select');
+                }
+            } else if ($input.closest('.mf-rich-text').length) {
+                if (typeof MetaForgeRichText !== 'undefined') {
+                    MetaForgeRichText.setReadOnly($input.closest('.mf-rich-text'), state.readOnly);
                 }
             } else if ($input.hasClass('form-check-input')) {
                 $input.prop('disabled', state.readOnly);
@@ -689,7 +711,7 @@ const DynamicForm = (function () {
     function bindConditionalLogic($scope) {
         const $root = $scope ? $($scope) : $form;
         $root.off('.conditionalLogic');
-        $root.on('input.conditionalLogic change.conditionalLogic', '.form-control, .form-select, .form-check-input', function () {
+        $root.on('input.conditionalLogic change.conditionalLogic', '.form-control, .form-select, .form-check-input, .mf-rich-text input[type="hidden"]', function () {
             applyAllConditionalStates($root);
         });
     }
@@ -701,6 +723,11 @@ const DynamicForm = (function () {
     function findFieldInput($scope, fieldName) {
         const $wrap = findFieldWrap($scope, fieldName);
         if ($wrap.length) {
+            const $richText = $wrap.find('.mf-rich-text');
+            if ($richText.length) {
+                return $richText.find('input[type="hidden"]').first();
+            }
+
             const $input = $wrap.find('.form-control, .form-select, .form-check-input').first();
             if ($input.length) return $input;
         }
@@ -836,7 +863,7 @@ const DynamicForm = (function () {
         (fields || []).forEach(function (field) {
             const name = field.PropertyName ?? field.propertyName;
             const label = field.Label ?? field.label ?? name;
-            const controlType = field.ControlType ?? field.controlType ?? 'TextBox';
+            const controlType = MetaForgeControlTypes.normalize(field.ControlType ?? field.controlType);
 
             let isRequired = field.IsRequired ?? field.isRequired;
             let isVisible = field.IsVisible ?? field.isVisible ?? true;
@@ -850,7 +877,7 @@ const DynamicForm = (function () {
             if (!isRequired || !isVisible || controlType === 'Hidden') return;
 
             const val = formData[name];
-            const isLookup = controlType === 'Dropdown' || controlType === 'Autocomplete'
+            const isLookup = MetaForgeControlTypes.isLookup(controlType)
                 || (name.endsWith('Id') && name !== 'Id');
 
             if (isLookup) {
@@ -858,6 +885,13 @@ const DynamicForm = (function () {
                 if (!num || num <= 0) errors[name] = `${label} is required.`;
             } else if (controlType === 'Checkbox') {
                 if (val !== true && val !== 'true' && val !== 1 && val !== '1') {
+                    errors[name] = `${label} is required.`;
+                }
+            } else if (MetaForgeControlTypes.isRichText(controlType)) {
+                const isEmpty = typeof MetaForgeRichText !== 'undefined'
+                    ? MetaForgeRichText.isEmptyHtml(val)
+                    : (val == null || String(val).trim() === '');
+                if (isEmpty) {
                     errors[name] = `${label} is required.`;
                 }
             } else if (val == null || String(val).trim() === '') {
@@ -871,7 +905,7 @@ const DynamicForm = (function () {
     function bindFieldErrorClear($scope) {
         const $root = $scope ? $($scope) : $form;
         $root.off('.fieldValidationClear');
-        $root.on('input.fieldValidationClear change.fieldValidationClear', '.form-control, .form-select, .form-check-input', function () {
+        $root.on('input.fieldValidationClear change.fieldValidationClear', '.form-control, .form-select, .form-check-input, .mf-rich-text input[type="hidden"]', function () {
             const name = $(this).attr('name');
             if (!name) return;
 
@@ -911,7 +945,7 @@ const DynamicForm = (function () {
     }
 
     function readFieldValue($el, field) {
-        const controlType = field?.ControlType ?? field?.controlType ?? 'TextBox';
+        const controlType = MetaForgeControlTypes.normalize(field?.ControlType ?? field?.controlType);
 
         if ($el.attr('type') === 'checkbox') {
             return $el.is(':checked');
@@ -927,7 +961,7 @@ const DynamicForm = (function () {
             return Number.isNaN(num) ? null : num;
         }
 
-        if ((controlType === 'Dropdown' || controlType === 'Autocomplete') && (field?.PropertyName ?? field?.propertyName ?? '').endsWith('Id')) {
+        if ((MetaForgeControlTypes.isLookup(controlType)) && (field?.PropertyName ?? field?.propertyName ?? '').endsWith('Id')) {
             const num = parseInt(raw, 10);
             return Number.isNaN(num) || num === 0 ? null : num;
         }
@@ -990,7 +1024,7 @@ const DynamicForm = (function () {
             if ($el.is('select')) return;
 
             const field = getField(name);
-            const controlType = field?.ControlType ?? field?.controlType ?? 'TextBox';
+            const controlType = MetaForgeControlTypes.normalize(field?.ControlType ?? field?.controlType);
 
             if ($el.attr('type') === 'checkbox') {
                 $el.prop('checked', !!value);
@@ -1001,6 +1035,13 @@ const DynamicForm = (function () {
             } else if (controlType === 'FileUpload') {
                 $el.val(value);
                 setFileUploadValue($el.closest('.mf-file-upload'), { url: value });
+            } else if (MetaForgeControlTypes.isRichText(controlType)) {
+                const $richText = $el.closest('.mf-rich-text');
+                if ($richText.length && typeof MetaForgeRichText !== 'undefined') {
+                    MetaForgeRichText.setValue($richText, value);
+                } else {
+                    $el.val(value);
+                }
             } else {
                 $el.val(value);
             }

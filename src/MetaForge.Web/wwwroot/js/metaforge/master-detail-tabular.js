@@ -230,6 +230,9 @@ const MasterDetailTabular = (function () {
                 $body.append(buildDetailRow(section, row, index, fields));
             });
             initLookups($body, key);
+            if (typeof MetaForgeRichText !== 'undefined') {
+                MetaForgeRichText.initScope($body);
+            }
         }
 
         updateSectionCount(key);
