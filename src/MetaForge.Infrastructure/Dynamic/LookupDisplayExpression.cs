@@ -12,7 +12,8 @@ public enum LookupDisplayMode
 }
 
 /// <summary>
-/// Parses and formats lookup display text from one or more entity properties.
+/// Parses and formats lookup display text from one or more entity properties,
+/// including navigation property paths such as <c>Vehicle.VehicleNumber</c>.
 /// </summary>
 public sealed partial class LookupDisplayExpression
 {
@@ -76,23 +77,28 @@ public sealed partial class LookupDisplayExpression
         };
     }
 
-    public IReadOnlyList<PropertyInfo> GetSearchableProperties(Type entityType) =>
-        PropertyNames
-            .Select(entityType.GetProperty)
-            .Where(p => p != null && p.PropertyType == typeof(string))
-            .Cast<PropertyInfo>()
+    public IReadOnlyList<LookupPropertyPath> GetSearchablePaths(Type entityType) =>
+        ResolvePaths(entityType)
+            .Where(path => path.IsStringLeaf)
             .ToList();
 
-    public PropertyInfo? GetPrimaryOrderProperty(Type entityType)
+    public LookupPropertyPath? GetPrimaryOrderPath(Type entityType) =>
+        ResolvePaths(entityType).FirstOrDefault();
+
+    public IReadOnlyList<string> GetIncludePaths(Type entityType) =>
+        ResolvePaths(entityType)
+            .SelectMany(path => path.GetIncludePaths())
+            .Distinct(StringComparer.Ordinal)
+            .OrderBy(path => path, StringComparer.Ordinal)
+            .ToList();
+
+    private IEnumerable<LookupPropertyPath> ResolvePaths(Type entityType)
     {
         foreach (var name in PropertyNames)
         {
-            var property = entityType.GetProperty(name);
-            if (property != null)
-                return property;
+            if (LookupPropertyPath.TryParse(entityType, name, out var path) && path != null)
+                yield return path;
         }
-
-        return null;
     }
 
     private static LookupDisplayExpression FromInferred(Type entityType)
@@ -111,7 +117,7 @@ public sealed partial class LookupDisplayExpression
         var propertyNames = PropertyTokenRegex()
             .Matches(template)
             .Select(m => m.Groups[1].Value.Trim())
-            .Where(name => entityType.GetProperty(name) != null)
+            .Where(name => LookupPropertyPath.TryParse(entityType, name, out _))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
 
@@ -130,7 +136,7 @@ public sealed partial class LookupDisplayExpression
     {
         var propertyNames = configured
             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .Where(name => entityType.GetProperty(name) != null)
+            .Where(name => LookupPropertyPath.TryParse(entityType, name, out _))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
 
@@ -173,7 +179,9 @@ public sealed partial class LookupDisplayExpression
     }
 
     private static string GetPropertyText(object entity, Type entityType, string propertyName) =>
-        entityType.GetProperty(propertyName)?.GetValue(entity)?.ToString() ?? string.Empty;
+        LookupPropertyPath.TryParse(entityType, propertyName, out var path) && path != null
+            ? path.GetText(entity)
+            : string.Empty;
 
     [GeneratedRegex(@"\{([^}]+)\}", RegexOptions.Compiled)]
     private static partial Regex PropertyTokenRegex();

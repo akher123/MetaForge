@@ -1,3 +1,5 @@
+using MetaForge.Domain.Features;
+
 namespace MetaForge.UnitTests;
 
 public class LookupServiceTests
@@ -124,6 +126,139 @@ public class LookupServiceTests
         var items = await service.GetLookupItemsAsync("Product");
 
         Assert.True(items.Count <= 100);
+    }
+
+    [Fact]
+    public async Task SearchLookupItemsAsync_UsesNavigationPropertyDisplayText_WhenFilteredByDriver()
+    {
+        var options = new DbContextOptionsBuilder<MetaForgeDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+
+        await using var context = new MetaForgeDbContext(options);
+
+        var driver = new Driver
+        {
+            EmployeeCode = "D001",
+            FirstName = "Jane",
+            LastName = "Driver",
+            IsActive = true,
+            CreatedDate = DateTime.UtcNow
+        };
+        var vehicle = new Vehicle
+        {
+            VehicleNumber = "VH-001",
+            Name = "Fleet Truck",
+            VehicleTypeId = 1,
+            VehicleMakeId = 1,
+            VehicleModelId = 1,
+            VehicleStatusId = 1,
+            CurrentOdometer = 0,
+            IsDeleted = false
+        };
+
+        context.Set<Driver>().Add(driver);
+        context.Vehicles.Add(vehicle);
+        await context.SaveChangesAsync();
+
+        context.Set<VehicleAssignment>().Add(new VehicleAssignment
+        {
+            DriverId = driver.Id,
+            VehicleId = vehicle.Id,
+            AssignedDate = DateTime.UtcNow,
+            Vehicle = vehicle
+        });
+        context.LookupConfigurations.Add(new LookupConfiguration
+        {
+            EntityName = "VehicleAssignment",
+            ValueField = "VehicleId",
+            TextField = "Vehicle.VehicleNumber",
+            IsActive = true
+        });
+        await context.SaveChangesAsync();
+
+        var service = new LookupService(context, new EntityTypeResolver(context), new MemoryCache(new MemoryCacheOptions()));
+
+        var results = await service.SearchLookupItemsAsync(
+            "VehicleAssignment",
+            filterField: "DriverId",
+            filterValue: driver.Id.ToString());
+
+        Assert.Single(results.Items);
+        Assert.Equal(vehicle.Id.ToString(), results.Items[0].Value);
+        Assert.Equal("VH-001", results.Items[0].Text);
+
+        var selected = await service.GetLookupItemByValueAsync("VehicleAssignment", vehicle.Id.ToString());
+        Assert.NotNull(selected);
+        Assert.Equal("VH-001", selected!.Text);
+    }
+
+    [Fact]
+    public async Task SearchLookupItemsAsync_DeduplicatesByValueField()
+    {
+        var options = new DbContextOptionsBuilder<MetaForgeDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+
+        await using var context = new MetaForgeDbContext(options);
+
+        var driver = new Driver
+        {
+            EmployeeCode = "D002",
+            FirstName = "John",
+            LastName = "Driver",
+            IsActive = true,
+            CreatedDate = DateTime.UtcNow
+        };
+        var vehicle = new Vehicle
+        {
+            VehicleNumber = "VH-002",
+            VehicleTypeId = 1,
+            VehicleMakeId = 1,
+            VehicleModelId = 1,
+            VehicleStatusId = 1,
+            CurrentOdometer = 0,
+            IsDeleted = false
+        };
+
+        context.Set<Driver>().Add(driver);
+        context.Vehicles.Add(vehicle);
+        await context.SaveChangesAsync();
+
+        context.Set<VehicleAssignment>().AddRange(
+            new VehicleAssignment
+            {
+                DriverId = driver.Id,
+                VehicleId = vehicle.Id,
+                AssignedDate = DateTime.UtcNow.AddDays(-10),
+                AssignmentReason = "Initial",
+                Vehicle = vehicle
+            },
+            new VehicleAssignment
+            {
+                DriverId = driver.Id,
+                VehicleId = vehicle.Id,
+                AssignedDate = DateTime.UtcNow,
+                AssignmentReason = "Renewed",
+                Vehicle = vehicle
+            });
+        context.LookupConfigurations.Add(new LookupConfiguration
+        {
+            EntityName = "VehicleAssignment",
+            ValueField = "VehicleId",
+            TextField = "Vehicle.VehicleNumber",
+            IsActive = true
+        });
+        await context.SaveChangesAsync();
+
+        var service = new LookupService(context, new EntityTypeResolver(context), new MemoryCache(new MemoryCacheOptions()));
+        var results = await service.SearchLookupItemsAsync(
+            "VehicleAssignment",
+            filterField: "DriverId",
+            filterValue: driver.Id.ToString());
+
+        Assert.Single(results.Items);
+        Assert.Equal(vehicle.Id.ToString(), results.Items[0].Value);
     }
 }
 

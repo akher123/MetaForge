@@ -162,7 +162,7 @@ public class LookupService : ILookupService
         var valueField = LookupFieldResolver.ResolveValueField(entityType, config?.ValueField);
         var display = LookupDisplayExpression.Create(entityType, config?.TextField);
 
-        var query = BuildBaseQuery(entityType);
+        var query = BuildBaseQuery(entityType, display);
 
         if (!string.IsNullOrWhiteSpace(filterField) && !string.IsNullOrWhiteSpace(filterValue))
         {
@@ -178,7 +178,7 @@ public class LookupService : ILookupService
 
         var items = await ToListAsync(query, entityType, cancellationToken);
 
-        return items.Cast<object>().Select(i => MapLookupItem(i, entityType, valueField, display)).ToList();
+        return DeduplicateByValue(items.Cast<object>().Select(i => MapLookupItem(i, entityType, valueField, display)).ToList());
     }
 
     private async Task<LookupSearchResultDto> LoadLookupSearchAsync(
@@ -198,7 +198,7 @@ public class LookupService : ILookupService
         var valueField = LookupFieldResolver.ResolveValueField(entityType, config?.ValueField);
         var display = LookupDisplayExpression.Create(entityType, config?.TextField);
 
-        var query = BuildBaseQuery(entityType);
+        var query = BuildBaseQuery(entityType, display);
 
         if (!string.IsNullOrWhiteSpace(filterField) && !string.IsNullOrWhiteSpace(filterValue))
         {
@@ -219,7 +219,7 @@ public class LookupService : ILookupService
         query = ApplyTake(query, entityType, take + 1);
 
         var items = await ToListAsync(query, entityType, cancellationToken);
-        var mapped = items.Cast<object>().Select(i => MapLookupItem(i, entityType, valueField, display)).ToList();
+        var mapped = DeduplicateByValue(items.Cast<object>().Select(i => MapLookupItem(i, entityType, valueField, display)).ToList());
         var hasMore = mapped.Count > take;
 
         if (hasMore)
@@ -244,7 +244,7 @@ public class LookupService : ILookupService
         var entityType = _typeResolver.Resolve(entityName);
         var valueField = LookupFieldResolver.ResolveValueField(entityType, config?.ValueField);
         var display = LookupDisplayExpression.Create(entityType, config?.TextField);
-        var query = BuildBaseQuery(entityType);
+        var query = BuildBaseQuery(entityType, display);
         query = ApplyDynamicFilter(query, entityType, valueField, value);
 
         var items = await ToListAsync(query, entityType, cancellationToken);
@@ -252,7 +252,7 @@ public class LookupService : ILookupService
         return entity == null ? null : MapLookupItem(entity, entityType, valueField, display);
     }
 
-    private object BuildBaseQuery(Type entityType)
+    private object BuildBaseQuery(Type entityType, LookupDisplayExpression display)
     {
         var setMethod = typeof(DbContext).GetMethod(nameof(DbContext.Set), Type.EmptyTypes)!.MakeGenericMethod(entityType);
         var dbSet = setMethod.Invoke(_dbContext, null)!;
@@ -262,8 +262,32 @@ public class LookupService : ILookupService
             .First(m => m.Name == nameof(EntityFrameworkQueryableExtensions.AsNoTracking) && m.GetParameters().Length == 1)
             .MakeGenericMethod(entityType);
 
-        return asNoTrackingMethod.Invoke(null, [dbSet])!;
+        var query = asNoTrackingMethod.Invoke(null, [dbSet])!;
+        return ApplyIncludes(query, entityType, display.GetIncludePaths(entityType));
     }
+
+    private static object ApplyIncludes(object query, Type entityType, IReadOnlyList<string> includePaths)
+    {
+        foreach (var includePath in includePaths)
+        {
+            var includeMethod = typeof(EntityFrameworkQueryableExtensions)
+                .GetMethods()
+                .First(m => m.Name == nameof(EntityFrameworkQueryableExtensions.Include)
+                    && m.GetParameters().Length == 2
+                    && m.GetParameters()[1].ParameterType == typeof(string))
+                .MakeGenericMethod(entityType);
+
+            query = includeMethod.Invoke(null, [query, includePath])!;
+        }
+
+        return query;
+    }
+
+    private static IReadOnlyList<LookupItemDto> DeduplicateByValue(IReadOnlyList<LookupItemDto> items) =>
+        items
+            .GroupBy(item => item.Value, StringComparer.OrdinalIgnoreCase)
+            .Select(group => group.First())
+            .ToList();
 
     private static LookupItemDto MapLookupItem(
         object entity,
@@ -322,8 +346,8 @@ public class LookupService : ILookupService
 
     private static object ApplyTextSearch(object query, Type entityType, LookupDisplayExpression display, string search)
     {
-        var properties = display.GetSearchableProperties(entityType);
-        if (properties.Count == 0)
+        var paths = display.GetSearchablePaths(entityType);
+        if (paths.Count == 0)
             return query;
 
         var parameter = Expression.Parameter(entityType, "e");
@@ -332,13 +356,16 @@ public class LookupService : ILookupService
         var searchLower = search.ToLowerInvariant();
 
         Expression? predicate = null;
-        foreach (var property in properties)
+        foreach (var path in paths)
         {
-            var propertyAccess = Expression.Property(parameter, property);
-            var notNull = Expression.NotEqual(propertyAccess, Expression.Constant(null, typeof(string)));
-            var lowerProperty = Expression.Call(propertyAccess, toLowerMethod);
+            var (memberAccess, nullGuard) = path.BuildStringSearchAccess(parameter);
+            var notNull = Expression.NotEqual(memberAccess, Expression.Constant(null, typeof(string)));
+            var lowerProperty = Expression.Call(memberAccess, toLowerMethod);
             var contains = Expression.Call(lowerProperty, containsMethod, Expression.Constant(searchLower));
             var fieldPredicate = Expression.AndAlso(notNull, contains);
+            if (nullGuard != null)
+                fieldPredicate = Expression.AndAlso(nullGuard, fieldPredicate);
+
             predicate = predicate == null ? fieldPredicate : Expression.OrElse(predicate, fieldPredicate);
         }
 
@@ -356,17 +383,18 @@ public class LookupService : ILookupService
 
     private static object ApplyOrderBy(object query, Type entityType, LookupDisplayExpression display)
     {
-        var property = display.GetPrimaryOrderProperty(entityType);
-        if (property == null)
+        var path = display.GetPrimaryOrderPath(entityType);
+        if (path == null)
             return query;
 
         var parameter = Expression.Parameter(entityType, "e");
-        var propertyAccess = Expression.Property(parameter, property);
+        var propertyAccess = path.BuildMemberAccess(parameter);
+        var propertyType = path.LeafType;
         var lambda = Expression.Lambda(propertyAccess, parameter);
 
         var orderByMethod = typeof(Queryable).GetMethods()
             .First(m => m.Name == nameof(Queryable.OrderBy) && m.GetParameters().Length == 2)
-            .MakeGenericMethod(entityType, property.PropertyType);
+            .MakeGenericMethod(entityType, propertyType);
 
         return orderByMethod.Invoke(null, [query, lambda])!;
     }

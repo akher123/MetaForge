@@ -32,7 +32,11 @@ public static class LookupFieldResolver
     {
         if (!string.IsNullOrWhiteSpace(configured))
         {
-            var prop = entityType.GetProperty(configured.Trim());
+            var trimmed = configured.Trim();
+            if (LookupPropertyPath.TryParse(entityType, trimmed, out _))
+                return trimmed;
+
+            var prop = entityType.GetProperty(trimmed);
             if (prop != null && IsDisplayableType(prop.PropertyType))
                 return prop.Name;
         }
@@ -114,7 +118,7 @@ public static class LookupFieldResolver
                 && !p.Name.Equals("ModifiedBy", StringComparison.OrdinalIgnoreCase));
     }
 
-    private static bool IsDisplayableType(Type type)
+    public static bool IsDisplayableType(Type type)
     {
         var underlying = Nullable.GetUnderlyingType(type) ?? type;
         return underlying == typeof(string)

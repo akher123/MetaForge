@@ -28,4 +28,12 @@ public class LookupFieldResolverTests
 
         Assert.Equal("VehicleNumber", LookupFieldResolver.ResolveTextField(entityType, null));
     }
+
+    [Fact]
+    public void ResolveTextField_AcceptsNavigationPropertyPath()
+    {
+        var entityType = typeof(Domain.Features.VehicleAssignment);
+
+        Assert.Equal("Vehicle.VehicleNumber", LookupFieldResolver.ResolveTextField(entityType, "Vehicle.VehicleNumber"));
+    }
 }
