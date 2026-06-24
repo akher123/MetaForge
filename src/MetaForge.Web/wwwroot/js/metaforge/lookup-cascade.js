@@ -124,11 +124,77 @@ const MetaForgeLookups = (function () {
         $toggle.attr('aria-label', selected.length ? `${selected.length} selected` : 'Select options');
     }
 
+    function resetMultiSelectPanelPosition($container) {
+        $container.find('.lookup-multiselect-panel').css({
+            position: '',
+            top: '',
+            left: '',
+            width: '',
+            right: '',
+            bottom: '',
+            zIndex: '',
+            maxHeight: '',
+            overflow: ''
+        });
+    }
+
+    function positionMultiSelectPanel($container) {
+        const $panel = $container.find('.lookup-multiselect-panel');
+        const $toggle = $container.find('.lookup-multiselect-toggle');
+        if ($panel.length === 0 || $toggle.length === 0 || !$container.hasClass('lookup-multiselect-open')) {
+            return;
+        }
+
+        const rect = $toggle[0].getBoundingClientRect();
+        const viewportPadding = 8;
+        const spaceBelow = window.innerHeight - rect.bottom - viewportPadding;
+        const spaceAbove = rect.top - viewportPadding;
+        const preferBelow = spaceBelow >= 160 || spaceBelow >= spaceAbove;
+
+        $panel.css({
+            position: 'fixed',
+            left: `${Math.round(rect.left)}px`,
+            width: `${Math.round(rect.width)}px`,
+            right: 'auto',
+            bottom: 'auto',
+            zIndex: 1065
+        });
+
+        if (preferBelow) {
+            $panel.css({
+                top: `${Math.round(rect.bottom + 2)}px`,
+                maxHeight: `${Math.max(120, Math.min(320, spaceBelow))}px`,
+                overflow: 'auto'
+            });
+        } else {
+            const maxHeight = Math.max(120, Math.min(320, spaceAbove));
+            $panel.css({
+                top: `${Math.round(rect.top - maxHeight - 2)}px`,
+                maxHeight: `${maxHeight}px`,
+                overflow: 'auto'
+            });
+        }
+    }
+
+    function bindMultiSelectRepositionEvents() {
+        if ($(window).data('multiselectRepositionBound')) {
+            return;
+        }
+
+        $(window).data('multiselectRepositionBound', true);
+        $(window).on('resize.multiselect scroll.multiselect', function () {
+            $('.lookup-multiselect-checkboxes.lookup-multiselect-open').each(function () {
+                positionMultiSelectPanel($(this));
+            });
+        });
+    }
+
     function closeMultiSelectPanel($container) {
         if (!$container || $container.length === 0) return;
         $container.removeClass('lookup-multiselect-open');
         $container.find('.lookup-multiselect-toggle').attr('aria-expanded', 'false');
         $container.find('.lookup-multiselect-panel').hide();
+        resetMultiSelectPanelPosition($container);
     }
 
     function closeAllMultiSelectPanels(except) {
@@ -148,7 +214,10 @@ const MetaForgeLookups = (function () {
         $container.addClass('lookup-multiselect-open');
         $container.find('.lookup-multiselect-toggle').attr('aria-expanded', 'true');
         $container.find('.lookup-multiselect-panel').show();
+        bindMultiSelectRepositionEvents();
+        positionMultiSelectPanel($container);
         window.setTimeout(function () {
+            positionMultiSelectPanel($container);
             $container.find('.lookup-multiselect-search').trigger('focus');
         }, 0);
     }
@@ -204,11 +273,15 @@ const MetaForgeLookups = (function () {
             .forEach(([value, text]) => {
                 const checked = Object.prototype.hasOwnProperty.call(state.selected, value) ? 'checked' : '';
                 $list.append(`
-                    <label class="lookup-multiselect-option">
+                    <label class="lookup-multiselect-option form-check" role="option">
                         <input type="checkbox" class="form-check-input lookup-multiselect-item" value="${escapeAttr(value)}" ${checked} />
-                        <span>${escapeHtml(text)}</span>
+                        <span class="lookup-multiselect-option-label form-check-label">${escapeHtml(text)}</span>
                     </label>`);
             });
+
+        if ($container.hasClass('lookup-multiselect-open')) {
+            positionMultiSelectPanel($container);
+        }
     }
 
     function clearMultiSelectCheckboxes($container, disabled) {
@@ -308,6 +381,7 @@ const MetaForgeLookups = (function () {
 
         $container.off('click.multiselectToggle', '.lookup-multiselect-toggle');
         $container.off('input.multiselectSearch', '.lookup-multiselect-search');
+        $container.off('click.multiselectOption', '.lookup-multiselect-option');
         $container.off('change.multiselectItem', '.lookup-multiselect-item');
         $container.off('click.multiselectLoadMore', '.lookup-multiselect-load-more');
 
@@ -340,10 +414,14 @@ const MetaForgeLookups = (function () {
             loadMultiSelectPage($container, field, options, false);
         });
 
+        $container.on('click.multiselectOption', '.lookup-multiselect-option', function (e) {
+            e.stopPropagation();
+        });
+
         $container.on('change.multiselectItem', '.lookup-multiselect-item', function () {
             const state = getMultiSelectState($container);
             const value = String($(this).val());
-            const text = $(this).closest('.lookup-multiselect-option').find('span').text();
+            const text = $(this).closest('.lookup-multiselect-option').find('.lookup-multiselect-option-label').text();
             if ($(this).is(':checked')) {
                 state.selected[value] = text;
             } else {
@@ -571,6 +649,34 @@ const MetaForgeLookups = (function () {
         return $scope.find(`select[name="${name}"], select.lookup-select[data-field="${name}"], select.lookup-autocomplete[data-field="${name}"]`);
     }
 
+    function resolveParentControl($scope, parentName, fields) {
+        const parentField = fields.find(f => (f.PropertyName ?? f.propertyName) === parentName);
+        if (parentField && isMultiSelectField(parentField)) {
+            return resolveLookupMultiSelect($scope, parentName);
+        }
+        return resolveLookupSelect($scope, parentName);
+    }
+
+    function readParentFieldValue($scope, parentName, fields) {
+        const $parent = resolveParentControl($scope, parentName, fields);
+        if ($parent.length === 0) return null;
+
+        if ($parent.hasClass('lookup-multiselect-checkboxes')) {
+            const values = readMultiSelectValues($parent);
+            return values.length > 0 ? values[0] : null;
+        }
+
+        const val = $parent.val();
+        return val == null || val === '' ? null : val;
+    }
+
+    function cascadeFilterValue(value) {
+        if (Array.isArray(value)) {
+            return value.length > 0 ? value[0] : null;
+        }
+        return value == null || value === '' ? null : value;
+    }
+
     function clearCascadeChain($scope, fields, parentName, resolveControl) {
         getDependentFields(fields, parentName).forEach(field => {
             const name = field.PropertyName ?? field.propertyName;
@@ -588,16 +694,34 @@ const MetaForgeLookups = (function () {
     }
 
     function bindFormCascade($form, fields) {
-        $form.off('change.cascade select2:select.cascade select2:clear.cascade', '.lookup-select, .lookup-autocomplete');
-        $form.on('change.cascade select2:select.cascade select2:clear.cascade', '.lookup-select, .lookup-autocomplete', function () {
-            const parentName = $(this).attr('name');
-            if (!parentName) return;
+        $form.off(
+            'change.cascade select2:select.cascade select2:clear.cascade',
+            '.lookup-select, .lookup-autocomplete, .lookup-multiselect-checkboxes'
+        );
+        $form.on(
+            'change.cascade select2:select.cascade select2:clear.cascade',
+            '.lookup-select, .lookup-autocomplete, .lookup-multiselect-checkboxes',
+            function () {
+                const $el = $(this);
+                let parentName;
+                let parentVal;
 
-            const hasDependents = getLookupFields(fields).some(f => getParentField(f) === parentName);
-            if (!hasDependents) return;
+                if ($el.hasClass('lookup-multiselect-checkboxes')) {
+                    parentName = $el.data('fieldName');
+                    parentVal = cascadeFilterValue(readMultiSelectValues($el));
+                } else {
+                    parentName = $el.attr('name');
+                    parentVal = $el.val();
+                }
 
-            refreshFormDependents($form, fields, parentName, $(this).val());
-        });
+                if (!parentName) return;
+
+                const hasDependents = getLookupFields(fields).some(f => getParentField(f) === parentName);
+                if (!hasDependents) return;
+
+                refreshFormDependents($form, fields, parentName, parentVal);
+            }
+        );
     }
 
     function refreshFormDependents($form, fields, parentName, parentVal, preserveValues) {
@@ -635,7 +759,7 @@ const MetaForgeLookups = (function () {
                 const childVal = $child.hasClass('lookup-multiselect-checkboxes')
                     ? readMultiSelectValues($child)
                     : $child.val();
-                refreshFormDependents($form, fields, name, childVal, preserveValues);
+                refreshFormDependents($form, fields, name, cascadeFilterValue(childVal), preserveValues);
             });
         });
     }
@@ -692,7 +816,7 @@ const MetaForgeLookups = (function () {
                 const parentName = getParentField(field);
                 const $control = resolveLookupControl($root, name, field);
                 const parentVal = getPendingValue(pendingValues, parentName)
-                    ?? $root.find(`[name="${parentName}"]`).val();
+                    ?? readParentFieldValue($root, parentName, fields);
                 const selected = getPendingValue(pendingValues, name);
                 const selectedValues = getPendingSelectedValues(pendingValues, name, field);
 
@@ -791,6 +915,7 @@ const MetaForgeLookups = (function () {
         isMultiSelectField,
         isAutocompleteField,
         readMultiSelectValues,
+        readParentFieldValue,
         resolveLookupControl,
         buildItemUrl,
         buildItemsUrl,

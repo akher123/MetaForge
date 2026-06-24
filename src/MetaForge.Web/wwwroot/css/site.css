@@ -1667,6 +1667,16 @@ html.sidebar-collapsed .sidebar-tree-children {
   background: transparent;
   min-height: unset;
   border: 0;
+  z-index: 1;
+}
+
+.mf-lookup-multiselect.lookup-multiselect-open {
+  z-index: 1060;
+}
+
+.field-control-wrap:has(.lookup-multiselect-open) {
+  overflow: visible;
+  z-index: 1060;
 }
 
 .mf-lookup-multiselect .lookup-multiselect-toggle {
@@ -1676,10 +1686,21 @@ html.sidebar-collapsed .sidebar-tree-children {
   justify-content: space-between;
   gap: 0.5rem;
   cursor: pointer;
+  text-align: left;
+  color: var(--dv-text);
+  background: var(--dv-surface);
+  border: 1.5px solid var(--dv-border-strong);
+  border-radius: var(--bs-border-radius-sm);
+  font-size: 0.9rem;
+  padding: 0.5rem 0.75rem;
+  min-height: 38px;
+  line-height: 1.5;
+  appearance: none;
 }
 
 .mf-lookup-multiselect .lookup-multiselect-toggle:disabled {
   cursor: not-allowed;
+  opacity: 0.65;
 }
 
 .mf-lookup-multiselect .lookup-multiselect-summary {
@@ -1688,6 +1709,22 @@ html.sidebar-collapsed .sidebar-tree-children {
   white-space: nowrap;
   flex: 1;
   min-width: 0;
+  color: var(--dv-text);
+}
+
+.mf-lookup-multiselect .lookup-multiselect-summary.text-muted {
+  color: var(--dv-text-muted) !important;
+}
+
+.mf-lookup-multiselect .lookup-multiselect-chevron {
+  flex: 0 0 auto;
+  font-size: 0.7rem;
+  color: var(--dv-text-muted);
+  transition: transform 0.15s ease;
+}
+
+.mf-lookup-multiselect.lookup-multiselect-open .lookup-multiselect-chevron {
+  transform: rotate(180deg);
 }
 
 .mf-lookup-multiselect .lookup-multiselect-panel {
@@ -1698,6 +1735,7 @@ html.sidebar-collapsed .sidebar-tree-children {
   left: 0;
   right: 0;
   background: var(--dv-surface);
+  color: var(--dv-text);
   border: 1px solid var(--dv-border, rgba(0, 0, 0, 0.12));
   border-radius: var(--bs-border-radius, 0.375rem);
   box-shadow: 0 0.5rem 1rem rgba(15, 23, 42, 0.12);
@@ -1732,11 +1770,12 @@ html.sidebar-collapsed .sidebar-tree-children {
 .mf-lookup-multiselect .lookup-multiselect-option {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.35rem 0.5rem;
+  gap: 0.625rem;
+  padding: 0.45rem 0.625rem;
   margin: 0;
   cursor: pointer;
   border-bottom: 1px solid var(--dv-border, rgba(0, 0, 0, 0.08));
+  user-select: none;
 }
 
 .mf-lookup-multiselect .lookup-multiselect-option:last-child {
@@ -1747,8 +1786,40 @@ html.sidebar-collapsed .sidebar-tree-children {
   background: var(--dv-surface-hover, rgba(0, 0, 0, 0.03));
 }
 
+.mf-lookup-multiselect .lookup-multiselect-option .form-check-input {
+  flex: 0 0 auto;
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+  cursor: pointer;
+  border: 1.5px solid var(--dv-border-strong);
+  background-color: var(--dv-surface);
+}
+
+.mf-lookup-multiselect .lookup-multiselect-option .form-check-input:checked {
+  background-color: var(--dv-indigo-600);
+  border-color: var(--dv-indigo-600);
+}
+
+.mf-lookup-multiselect .lookup-multiselect-option-label {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  color: var(--dv-text);
+  font-size: 0.875rem;
+  line-height: 1.35;
+  cursor: pointer;
+}
+
+.mf-lookup-multiselect .lookup-multiselect-no-results {
+  color: var(--dv-text-muted);
+}
+
 .mf-lookup-multiselect .lookup-multiselect-search {
   padding: 0.375rem 0.625rem;
+  color: var(--dv-text);
+  background: var(--dv-surface);
 }
 
 /* Select dropdown chevron — theme-aligned color & vertical centering */
@@ -1787,6 +1858,10 @@ html[data-theme$="-dark"] body.metaforge-app .form-select {
   border-radius: var(--bs-border-radius);
   overflow: hidden;
   box-shadow: var(--dv-shadow-xs);
+}
+
+.dynamic-form-tabbed-shell:has(.lookup-multiselect-open) {
+  overflow: visible;
 }
 
 .dynamic-form-tabs-toolbar {
@@ -2944,26 +3019,74 @@ html[data-theme$="-dark"] .confirm-delete-close {
   color: var(--dv-success) !important;
 }
 
-/* ── Select2 ──────────────────────────────────────────────────────────── */
+/* ── Select2 (Autocomplete / Dropdown lookups) ─────────────────────────── */
+/* Keep bootstrap-5 theme layout; only align colors and borders with forms. */
 
-.select2-container--bootstrap-5 .select2-selection {
-  border: 1.5px solid var(--dv-border) !important;
+body.metaforge-app .select2-container--bootstrap-5 .select2-selection {
+  border: 1.5px solid var(--dv-border-strong) !important;
   border-radius: var(--bs-border-radius-sm) !important;
-  min-height: 38px;
+  font-size: 0.9rem;
+  color: var(--dv-text);
+  background-color: var(--dv-surface);
 }
 
-.select2-container--bootstrap-5 .select2-selection--single .select2-selection__arrow b {
+body.metaforge-app .select2-container--bootstrap-5 .select2-selection--single .select2-selection__rendered {
+  color: var(--dv-text);
+}
+
+body.metaforge-app .select2-container--bootstrap-5 .select2-selection--single .select2-selection__placeholder {
+  color: var(--dv-text-muted);
+}
+
+body.metaforge-app .select2-container--bootstrap-5 .select2-dropdown {
+  background-color: var(--dv-surface);
+  border-color: var(--dv-border-strong);
+  z-index: 1065;
+}
+
+body.metaforge-app .select2-container--bootstrap-5 .select2-results__option {
+  color: var(--dv-text);
+}
+
+body.metaforge-app .select2-container--bootstrap-5 .select2-results__option--highlighted,
+body.metaforge-app .select2-container--bootstrap-5 .select2-results__option--selectable:hover {
+  background-color: var(--dv-indigo-50, rgba(99, 102, 241, 0.08));
+  color: var(--dv-indigo-900, var(--dv-text));
+}
+
+body.metaforge-app .select2-container--bootstrap-5 .select2-search--dropdown .select2-search__field {
+  color: var(--dv-text);
+  background-color: var(--dv-surface);
+  border-color: var(--dv-border-strong);
+}
+
+body.metaforge-app .select2-container--bootstrap-5 .select2-selection--single .select2-selection__arrow b {
   border-color: var(--dv-text-muted) transparent transparent transparent !important;
 }
 
-.select2-container--bootstrap-5.select2-container--open .select2-selection--single .select2-selection__arrow b {
+body.metaforge-app .select2-container--bootstrap-5.select2-container--open .select2-selection--single .select2-selection__arrow b {
   border-color: transparent transparent var(--dv-text-muted) transparent !important;
 }
 
-.select2-container--bootstrap-5.select2-container--focus .select2-selection,
-.select2-container--bootstrap-5.select2-container--open .select2-selection {
+body.metaforge-app .select2-container--bootstrap-5.select2-container--focus .select2-selection,
+body.metaforge-app .select2-container--bootstrap-5.select2-container--open .select2-selection {
   border-color: var(--dv-indigo-500) !important;
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15) !important;
+}
+
+/* Match native form-select height in admin forms */
+body.metaforge-app .admin-form-field .select2-container--bootstrap-5 .select2-selection,
+body.metaforge-app .field-control-wrap .select2-container--bootstrap-5 .select2-selection {
+  min-height: 38px;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+
+body.metaforge-app .detail-field-wrap .select2-container--bootstrap-5 .select2-selection {
+  min-height: 31px;
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
+  font-size: 0.875rem;
 }
 
 /* ── Dashboard ──────────────────────────────────────────────────────────── */

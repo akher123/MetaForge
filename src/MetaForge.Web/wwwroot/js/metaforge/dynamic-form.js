@@ -365,12 +365,13 @@ const DynamicForm = (function () {
                     data-lookup="${lookupEntity || (name || '').replace(/Ids$/, '').replace(/Id$/, '')}"
                     ${cascadeAttrs}
                     ${disabled ? 'data-disabled="true"' : ''}>
-                    <button type="button" class="lookup-multiselect-toggle form-select admin-form-control text-start" aria-haspopup="listbox" aria-expanded="false" ${disabled}>
+                    <button type="button" class="lookup-multiselect-toggle admin-form-control" aria-haspopup="listbox" aria-expanded="false" ${disabled}>
                         <span class="lookup-multiselect-summary text-muted">Select...</span>
+                        <i class="fa-solid fa-chevron-down lookup-multiselect-chevron" aria-hidden="true"></i>
                     </button>
                     <div class="lookup-multiselect-panel">
                         <input type="search" class="form-control form-control-sm lookup-multiselect-search" placeholder="Search..." autocomplete="off" ${disabled} />
-                        <div class="lookup-multiselect-list" role="group"></div>
+                        <div class="lookup-multiselect-list" role="listbox" aria-multiselectable="true"></div>
                         <div class="lookup-multiselect-empty small text-muted px-2 py-2 d-none">Select the parent field first.</div>
                         <div class="lookup-multiselect-loading small text-muted px-2 py-2 d-none"><i class="fa-solid fa-spinner fa-spin me-1" aria-hidden="true"></i>Loading...</div>
                         <button type="button" class="btn btn-link btn-sm lookup-multiselect-load-more d-none px-0">Load more</button>

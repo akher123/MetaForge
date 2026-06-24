@@ -415,22 +415,54 @@ html[data-theme$="-dark"] .alert-secondary {
 }
 
 /* Select2 (if present) */
-html[data-theme$="-dark"] .select2-container--bootstrap-5 .select2-selection {
+html[data-theme$="-dark"] body.metaforge-app .select2-container--bootstrap-5 .select2-selection {
   background-color: var(--dv-surface) !important;
   color: var(--dv-text) !important;
   border-color: var(--dv-border-strong) !important;
 }
 
-html[data-theme$="-dark"] .select2-container--bootstrap-5 .select2-dropdown {
+html[data-theme$="-dark"] body.metaforge-app .select2-container--bootstrap-5 .select2-selection--single .select2-selection__rendered,
+html[data-theme$="-dark"] body.metaforge-app .select2-container--bootstrap-5 .select2-selection--single .select2-selection__placeholder {
+  color: var(--dv-text) !important;
+}
+
+html[data-theme$="-dark"] body.metaforge-app .select2-container--bootstrap-5 .select2-selection--single .select2-selection__placeholder {
+  color: var(--dv-text-muted) !important;
+}
+
+html[data-theme$="-dark"] body.metaforge-app .select2-container--bootstrap-5 .select2-dropdown {
   background-color: var(--dv-surface) !important;
   border-color: var(--dv-border) !important;
 }
 
-html[data-theme$="-dark"] .select2-container--bootstrap-5 .select2-results__option {
+html[data-theme$="-dark"] body.metaforge-app .select2-container--bootstrap-5 .select2-results__option {
   color: var(--dv-text) !important;
 }
 
-html[data-theme$="-dark"] .select2-container--bootstrap-5 .select2-results__option--highlighted {
+html[data-theme$="-dark"] body.metaforge-app .select2-container--bootstrap-5 .select2-results__option--highlighted,
+html[data-theme$="-dark"] body.metaforge-app .select2-container--bootstrap-5 .select2-results__option--selectable:hover {
   background-color: var(--dv-surface-hover) !important;
   color: var(--dv-text) !important;
+}
+
+html[data-theme$="-dark"] body.metaforge-app .select2-container--bootstrap-5 .select2-search--dropdown .select2-search__field {
+  color: var(--dv-text) !important;
+  background-color: var(--dv-surface) !important;
+  border-color: var(--dv-border-strong) !important;
+}
+
+html[data-theme$="-dark"] .mf-lookup-multiselect .lookup-multiselect-toggle,
+html[data-theme$="-dark"] .mf-lookup-multiselect .lookup-multiselect-summary,
+html[data-theme$="-dark"] .mf-lookup-multiselect .lookup-multiselect-option-label,
+html[data-theme$="-dark"] .mf-lookup-multiselect .lookup-multiselect-search {
+  color: var(--dv-text) !important;
+}
+
+html[data-theme$="-dark"] .mf-lookup-multiselect .lookup-multiselect-summary.text-muted {
+  color: var(--dv-text-muted) !important;
+}
+
+html[data-theme$="-dark"] .mf-lookup-multiselect .lookup-multiselect-panel {
+  background-color: var(--dv-surface) !important;
+  border-color: var(--dv-border) !important;
 }
