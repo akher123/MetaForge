@@ -20,6 +20,7 @@ public class GenericCrudService : IGenericCrudService
     private readonly ILookupService _lookupService;
     private readonly IDynamicValidationService _validationService;
     private readonly IAuditService _auditService;
+    private readonly IMappingAssociationService _mappingAssociationService;
 
     public GenericCrudService(
         MetaForgeDbContext dbContext,
@@ -27,7 +28,8 @@ public class GenericCrudService : IGenericCrudService
         IFormMetadataCache formCache,
         ILookupService lookupService,
         IDynamicValidationService validationService,
-        IAuditService auditService)
+        IAuditService auditService,
+        IMappingAssociationService mappingAssociationService)
     {
         _dbContext = dbContext;
         _typeResolver = typeResolver;
@@ -35,6 +37,7 @@ public class GenericCrudService : IGenericCrudService
         _lookupService = lookupService;
         _validationService = validationService;
         _auditService = auditService;
+        _mappingAssociationService = mappingAssociationService;
     }
 
     public async Task<PagedResult<Dictionary<string, object?>>> GetAllAsync(GridQueryRequest request, CancellationToken cancellationToken = default)
@@ -98,24 +101,40 @@ public class GenericCrudService : IGenericCrudService
         var entity = await FindEntityAsync(entityName, id, cancellationToken)
             ?? throw new NotFoundException($"{entityName} with id {id} was not found.");
 
-        return DynamicEntityMapper.ToDictionary(entity);
+        var data = DynamicEntityMapper.ToDictionary(entity);
+        await _mappingAssociationService.EnrichAsync(entityName, data, id, cancellationToken);
+        return data;
     }
 
     public async Task<object> CreateAsync(string entityName, Dictionary<string, object?> data, CancellationToken cancellationToken = default)
     {
         data = DynamicEntityMapper.NormalizeDictionary(data);
-        await _validationService.ValidateAsync(entityName, data, cancellationToken);
+        var form = await _formCache.GetByEntityNameAsync(entityName, cancellationToken);
+        Dictionary<string, object?> mappingData = [];
+        if (form != null)
+            _mappingAssociationService.ExtractMappingFields(form, data, out mappingData);
+
+        await _validationService.ValidateAsync(entityName, MergeForValidation(data, mappingData), cancellationToken);
 
         var entityType = _typeResolver.Resolve(entityName);
         var entity = DynamicEntityMapper.CreateEntity(entityType, data);
 
+        await using var transaction = _dbContext.Database.IsRelational()
+            ? await _dbContext.Database.BeginTransactionAsync(cancellationToken)
+            : null;
+
         _dbContext.Add(entity);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
+        var masterId = entityType.GetProperty("Id")!.GetValue(entity)!;
+        await _mappingAssociationService.SyncAsync(entityName, masterId, mappingData, cancellationToken);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        if (transaction != null)
+            await transaction.CommitAsync(cancellationToken);
+
         await _lookupService.InvalidateCacheAsync(entityName, cancellationToken);
 
-        var id = entityType.GetProperty("Id")!.GetValue(entity);
-        await _auditService.LogAsync(entityName, id?.ToString() ?? "", "Insert", null, JsonSerializer.Serialize(data), cancellationToken);
+        await _auditService.LogAsync(entityName, masterId.ToString() ?? "", "Insert", null, JsonSerializer.Serialize(MergeForValidation(data, mappingData)), cancellationToken);
 
         return entity;
     }
@@ -123,18 +142,31 @@ public class GenericCrudService : IGenericCrudService
     public async Task UpdateAsync(string entityName, object id, Dictionary<string, object?> data, CancellationToken cancellationToken = default)
     {
         data = DynamicEntityMapper.NormalizeDictionary(data);
-        await _validationService.ValidateAsync(entityName, data, cancellationToken);
+        var form = await _formCache.GetByEntityNameAsync(entityName, cancellationToken);
+        Dictionary<string, object?> mappingData = [];
+        if (form != null)
+            _mappingAssociationService.ExtractMappingFields(form, data, out mappingData);
+
+        await _validationService.ValidateAsync(entityName, MergeForValidation(data, mappingData), cancellationToken);
 
         var entity = await FindEntityAsync(entityName, id, cancellationToken)
             ?? throw new NotFoundException($"{entityName} with id {id} was not found.");
 
         var oldValue = JsonSerializer.Serialize(DynamicEntityMapper.ToDictionary(entity));
         DynamicEntityMapper.UpdateEntity(entity, data);
+
+        await using var transaction = _dbContext.Database.IsRelational()
+            ? await _dbContext.Database.BeginTransactionAsync(cancellationToken)
+            : null;
+
+        await _mappingAssociationService.SyncAsync(entityName, id, mappingData, cancellationToken);
         await _dbContext.SaveChangesAsync(cancellationToken);
+        if (transaction != null)
+            await transaction.CommitAsync(cancellationToken);
 
         await _lookupService.InvalidateCacheAsync(entityName, cancellationToken);
 
-        await _auditService.LogAsync(entityName, id.ToString()!, "Update", oldValue, JsonSerializer.Serialize(data), cancellationToken);
+        await _auditService.LogAsync(entityName, id.ToString()!, "Update", oldValue, JsonSerializer.Serialize(MergeForValidation(data, mappingData)), cancellationToken);
     }
 
     public async Task DeleteAsync(string entityName, object id, CancellationToken cancellationToken = default)
@@ -143,12 +175,30 @@ public class GenericCrudService : IGenericCrudService
             ?? throw new NotFoundException($"{entityName} with id {id} was not found.");
 
         var oldValue = JsonSerializer.Serialize(DynamicEntityMapper.ToDictionary(entity));
+
+        await using var transaction = _dbContext.Database.IsRelational()
+            ? await _dbContext.Database.BeginTransactionAsync(cancellationToken)
+            : null;
+
+        await _mappingAssociationService.DeleteMappingsAsync(entityName, id, cancellationToken);
         _dbContext.Remove(entity);
         await _dbContext.SaveChangesAsync(cancellationToken);
+        if (transaction != null)
+            await transaction.CommitAsync(cancellationToken);
 
         await _lookupService.InvalidateCacheAsync(entityName, cancellationToken);
 
         await _auditService.LogAsync(entityName, id.ToString()!, "Delete", oldValue, null, cancellationToken);
+    }
+
+    private static Dictionary<string, object?> MergeForValidation(
+        Dictionary<string, object?> entityData,
+        Dictionary<string, object?> mappingData)
+    {
+        var merged = new Dictionary<string, object?>(entityData, StringComparer.OrdinalIgnoreCase);
+        foreach (var (key, value) in mappingData)
+            merged[key] = value;
+        return merged;
     }
 
     private async Task<object?> FindEntityAsync(string entityName, object id, CancellationToken cancellationToken)

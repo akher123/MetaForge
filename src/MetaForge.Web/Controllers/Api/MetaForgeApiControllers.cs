@@ -327,6 +327,26 @@ public class LookupsApiController : ControllerBase
         var item = await _lookupService.GetLookupItemByValueAsync(entityName, value, cancellationToken);
         return item == null ? NotFound() : Ok(item);
     }
+
+    [HttpGet("{entityName}/items")]
+    public async Task<IActionResult> GetItems(
+        string entityName,
+        [FromQuery] string values,
+        CancellationToken cancellationToken = default)
+    {
+        var denied = await PermissionGuard.EnsureLookupAccessAsync(HttpContext, entityName, cancellationToken);
+        if (denied != null) return denied;
+
+        Response.Headers.CacheControl = "no-store, no-cache";
+        Response.Headers.Pragma = "no-cache";
+
+        var valueList = string.IsNullOrWhiteSpace(values)
+            ? []
+            : values.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        var items = await _lookupService.GetLookupItemsByValuesAsync(entityName, valueList, cancellationToken);
+        return Ok(new { items });
+    }
 }
 
 public class MasterDetailSaveRequest

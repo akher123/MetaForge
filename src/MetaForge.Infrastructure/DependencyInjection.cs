@@ -34,6 +34,7 @@ public static class DependencyInjection
         services.AddScoped<IGridService, GridService>();
         services.AddScoped<IGridActionService, GridActionService>();
         services.AddScoped<ILookupService, LookupService>();
+        services.AddScoped<IMappingAssociationService, MappingAssociationService>();
         services.AddScoped<IMasterDetailService, MasterDetailService>();
         services.AddScoped<IEntityMetadataDiscoveryService, EntityMetadataDiscoveryService>();
         services.AddScoped<INavigationService, NavigationService>();

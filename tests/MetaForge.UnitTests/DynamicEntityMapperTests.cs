@@ -95,6 +95,30 @@ public class DynamicEntityMapperTests
     }
 
     [Fact]
+    public void NormalizeDictionary_UnwrapsJsonElementArrayPayload()
+    {
+        using var doc = JsonDocument.Parse("""{"RegionIds":[2,3]}""");
+        var raw = new Dictionary<string, object?>
+        {
+            ["RegionIds"] = doc.RootElement.GetProperty("RegionIds")
+        };
+
+        var normalized = DynamicEntityMapper.NormalizeDictionary(raw);
+
+        var ids = Assert.IsType<List<object?>>(normalized["RegionIds"]);
+        Assert.Equal(2, ids.Count);
+        Assert.Equal(2, ids[0]);
+        Assert.Equal(3, ids[1]);
+        Assert.Equal([2, 3], DynamicEntityMapper.ToInt32List(normalized["RegionIds"]));
+    }
+
+    [Fact]
+    public void ToInt32List_ParsesJsonArrayString()
+    {
+        Assert.Equal([2, 3], DynamicEntityMapper.ToInt32List("[2,3]"));
+    }
+
+    [Fact]
     public void CreateEntity_ConvertsNormalizedMasterDetailItem()
     {
         using var doc = JsonDocument.Parse("""

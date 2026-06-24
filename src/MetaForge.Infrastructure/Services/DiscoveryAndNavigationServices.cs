@@ -124,6 +124,8 @@ public class EntityMetadataDiscoveryService : IEntityMetadataDiscoveryService
 
     private static string InferControlType(string clrType, string propertyName)
     {
+        if (propertyName.EndsWith("Ids", StringComparison.Ordinal) && propertyName.Length > 3)
+            return ControlType.MultiSelect;
         if (propertyName.EndsWith("Id") && propertyName != "Id")
             return ControlType.Autocomplete;
         if (clrType.Contains("Boolean")) return ControlType.Checkbox;

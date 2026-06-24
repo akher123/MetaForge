@@ -66,6 +66,7 @@ public static class DatabaseSeeder
         await EnsureSecurityPermissionsAsync(context, logger);
         await EnsureFormPermissionsAsync(context, logger);
         await EnsureCascadeLookupUpgradeAsync(context, logger);
+        await EnsureCustomerRegionMultiselectUpgradeAsync(context, logger);
         await EnsurePagedLookupUpgradeAsync(context, logger);
         await EnsureSampleCustomerAsync(context, logger);
         await EnsureSampleTransactionDataAsync(context, logger);
@@ -1298,6 +1299,96 @@ public static class DatabaseSeeder
                 await context.SaveChangesAsync();
             }
         }
+    }
+
+    private static async Task EnsureCustomerRegionMultiselectUpgradeAsync(MetaForgeDbContext context, ILogger logger)
+    {
+        var customerForm = await context.ForgeForms
+            .Include(f => f.Fields)
+            .FirstOrDefaultAsync(f => f.Code == "customer");
+
+        if (customerForm == null)
+            return;
+
+        var changed = false;
+        var regionIdsField = customerForm.Fields.FirstOrDefault(f => f.PropertyName == "RegionIds");
+        if (regionIdsField == null)
+        {
+            customerForm.Fields.Add(new ForgeField
+            {
+                PropertyName = "RegionIds",
+                Label = "Regions",
+                ControlType = ControlType.MultiSelect,
+                IsRequired = false,
+                IsVisible = true,
+                DisplayOrder = customerForm.Fields.Count,
+                LookupEntity = "Region",
+                LookupParentField = "CountryId",
+                SectionName = "General",
+                MappingEntity = "CustomerRegion",
+                MappingParentKey = "CustomerId",
+                MappingRelatedKey = "RegionId"
+            });
+            changed = true;
+        }
+        else
+        {
+            if (regionIdsField.ControlType != ControlType.MultiSelect)
+            {
+                regionIdsField.ControlType = ControlType.MultiSelect;
+                changed = true;
+            }
+
+            regionIdsField.LookupEntity ??= "Region";
+            regionIdsField.LookupParentField ??= "CountryId";
+            regionIdsField.SectionName ??= "General";
+            regionIdsField.MappingEntity ??= "CustomerRegion";
+            regionIdsField.MappingParentKey ??= "CustomerId";
+            regionIdsField.MappingRelatedKey ??= "RegionId";
+        }
+
+        if (changed)
+        {
+            await context.SaveChangesAsync();
+            logger.LogInformation("Upgraded Customer form with MultiSelect RegionIds mapping field.");
+        }
+
+        var sampleCustomer = await context.Customers
+            .OrderBy(c => c.Id)
+            .FirstOrDefaultAsync(c => c.CountryId != null);
+
+        if (sampleCustomer == null)
+            return;
+
+        var regionIds = await context.Regions
+            .Where(r => r.CountryId == sampleCustomer.CountryId)
+            .Select(r => r.Id)
+            .Take(2)
+            .ToListAsync();
+
+        if (regionIds.Count == 0)
+            return;
+
+        var existing = await context.CustomerRegions
+            .Where(cr => cr.CustomerId == sampleCustomer.Id)
+            .Select(cr => cr.RegionId)
+            .ToListAsync();
+
+        var missing = regionIds.Except(existing).ToList();
+        if (missing.Count == 0)
+            return;
+
+        foreach (var regionId in missing)
+        {
+            context.CustomerRegions.Add(new CustomerRegion
+            {
+                CustomerId = sampleCustomer.Id,
+                RegionId = regionId
+            });
+        }
+
+        await context.SaveChangesAsync();
+        logger.LogInformation("Seeded sample CustomerRegion mappings for customer {CustomerId}.", sampleCustomer.Id);
     }
 
     private static async Task EnsurePagedLookupUpgradeAsync(MetaForgeDbContext context, ILogger logger)

@@ -280,7 +280,8 @@ public class GenericCrudServiceLookupCacheTests
             Mock.Of<IFormMetadataCache>(),
             lookupService.Object,
             Mock.Of<IDynamicValidationService>(),
-            Mock.Of<IAuditService>());
+            Mock.Of<IAuditService>(),
+            Mock.Of<IMappingAssociationService>());
 
         await service.CreateAsync("Country", new Dictionary<string, object?>
         {

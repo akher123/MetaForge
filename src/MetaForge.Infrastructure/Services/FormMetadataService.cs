@@ -49,6 +49,9 @@ public class FormMetadataService : IFormMetadataService
             LookupEntity = f.LookupEntity,
             LookupParentField = f.LookupParentField,
             LookupFilterField = f.LookupFilterField,
+            MappingEntity = f.MappingEntity,
+            MappingParentKey = f.MappingParentKey,
+            MappingRelatedKey = f.MappingRelatedKey,
             SectionName = f.SectionName
         }).OrderBy(f => f.DisplayOrder).ToList(),
         Relations = form.Relations.Select(r => new RelationDefinition

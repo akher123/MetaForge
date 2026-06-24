@@ -72,6 +72,17 @@ public class RegionConfiguration : IEntityTypeConfiguration<Region>
     }
 }
 
+public class CustomerRegionConfiguration : IEntityTypeConfiguration<CustomerRegion>
+{
+    public void Configure(EntityTypeBuilder<CustomerRegion> builder)
+    {
+        builder.ToTable("CustomerRegions");
+        builder.HasKey(x => new { x.CustomerId, x.RegionId });
+        builder.HasOne(x => x.Customer).WithMany().HasForeignKey(x => x.CustomerId).OnDelete(DeleteBehavior.Cascade);
+        builder.HasOne(x => x.Region).WithMany().HasForeignKey(x => x.RegionId).OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
 public class SalesOrderItemConfiguration : IEntityTypeConfiguration<SalesOrderItem>
 {
     public void Configure(EntityTypeBuilder<SalesOrderItem> builder)

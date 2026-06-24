@@ -6,7 +6,11 @@ const MetaForgeLookups = (function () {
     const LOOKUP_PAGE_SIZE = 10;
 
     function isLookupControlType(controlType) {
-        return controlType === 'Dropdown' || controlType === 'Autocomplete';
+        return MetaForgeControlTypes.isLookupOrMultiSelect(controlType);
+    }
+
+    function isMultiSelectField(field) {
+        return MetaForgeControlTypes.isMultiSelect(field?.ControlType ?? field?.controlType);
     }
 
     function isAutocompleteField(field) {
@@ -41,6 +45,21 @@ const MetaForgeLookups = (function () {
         return `/api/metaforge/lookups/${encodeURIComponent(entity)}/item/${encodeURIComponent(value)}`;
     }
 
+    function buildItemsUrl(entity, values) {
+        const list = Array.isArray(values) ? values : [values];
+        const query = list.filter(v => v != null && v !== '').join(',');
+        return `/api/metaforge/lookups/${encodeURIComponent(entity)}/items?values=${encodeURIComponent(query)}`;
+    }
+
+    function resolveFormRoot($scope) {
+        if (!$scope || $scope.length === 0) return $scope;
+        const $form = $scope.closest('form');
+        if ($form.length) return $form;
+        const $shell = $scope.closest('.module-form-shell, .dynamic-form-tabbed-shell, .admin-form-preview-layout, .master-detail-form');
+        if ($shell.length) return $shell;
+        return $scope;
+    }
+
     function destroySelect2($select) {
         if ($select.hasClass('select2-hidden-accessible')) {
             $select.select2('destroy');
@@ -51,6 +70,325 @@ const MetaForgeLookups = (function () {
         ($scope?.jquery ? $scope : $($scope)).find('.lookup-select, .lookup-autocomplete').each(function () {
             destroySelect2($(this));
         });
+        ($scope?.jquery ? $scope : $($scope)).find('.lookup-multiselect-checkboxes').each(function () {
+            closeMultiSelectPanel($(this));
+            clearMultiSelectCheckboxes($(this), false);
+        });
+    }
+
+    function resolveLookupMultiSelect($scope, name) {
+        return $scope.find(`.lookup-multiselect-checkboxes[data-field-name="${name}"]`);
+    }
+
+    function resolveLookupControl($scope, name, field) {
+        if (field && isMultiSelectField(field)) {
+            return resolveLookupMultiSelect($scope, name);
+        }
+        return resolveLookupSelect($scope, name);
+    }
+
+    function readMultiSelectValues($container) {
+        if (!$container || $container.length === 0) return [];
+        return $container.find('.lookup-multiselect-item:checked')
+            .map(function () {
+                return parseInt($(this).val(), 10);
+            })
+            .get()
+            .filter(v => !Number.isNaN(v) && v > 0);
+    }
+
+    function getMultiSelectState($container) {
+        let state = $container.data('multiselectState');
+        if (!state) {
+            state = { selected: {}, options: {}, skip: 0, hasMore: false, search: '' };
+            $container.data('multiselectState', state);
+        }
+        return state;
+    }
+
+    function syncMultiSelectSummary($container) {
+        const state = getMultiSelectState($container);
+        const selected = Object.entries(state.selected).sort((a, b) => a[1].localeCompare(b[1]));
+        const $summary = $container.find('.lookup-multiselect-summary');
+        const $toggle = $container.find('.lookup-multiselect-toggle');
+
+        if (selected.length === 0) {
+            $summary.text('Select...').addClass('text-muted');
+        } else if (selected.length === 1) {
+            $summary.text(selected[0][1]).removeClass('text-muted');
+        } else {
+            const labels = selected.map(([, text]) => text).join(', ');
+            $summary.text(labels.length > 52 ? `${selected.length} selected` : labels).removeClass('text-muted');
+        }
+
+        $toggle.attr('aria-label', selected.length ? `${selected.length} selected` : 'Select options');
+    }
+
+    function closeMultiSelectPanel($container) {
+        if (!$container || $container.length === 0) return;
+        $container.removeClass('lookup-multiselect-open');
+        $container.find('.lookup-multiselect-toggle').attr('aria-expanded', 'false');
+        $container.find('.lookup-multiselect-panel').hide();
+    }
+
+    function closeAllMultiSelectPanels(except) {
+        ($('.lookup-multiselect-checkboxes.lookup-multiselect-open')).each(function () {
+            if (!except || !$(this).is(except)) {
+                closeMultiSelectPanel($(this));
+            }
+        });
+    }
+
+    function openMultiSelectPanel($container) {
+        if (!$container || $container.length === 0 || $container.hasClass('lookup-multiselect-disabled')) {
+            return;
+        }
+
+        closeAllMultiSelectPanels($container);
+        $container.addClass('lookup-multiselect-open');
+        $container.find('.lookup-multiselect-toggle').attr('aria-expanded', 'true');
+        $container.find('.lookup-multiselect-panel').show();
+        window.setTimeout(function () {
+            $container.find('.lookup-multiselect-search').trigger('focus');
+        }, 0);
+    }
+
+    function bindMultiSelectDropdownGlobalEvents() {
+        if ($(document).data('multiselectDropdownBound')) {
+            return;
+        }
+
+        $(document).data('multiselectDropdownBound', true);
+        $(document).on('click.multiselectDropdown', function (e) {
+            if ($(e.target).closest('.lookup-multiselect-checkboxes').length) {
+                return;
+            }
+            closeAllMultiSelectPanels();
+        });
+        $(document).on('keydown.multiselectDropdown', function (e) {
+            if (e.key === 'Escape') {
+                closeAllMultiSelectPanels();
+            }
+        });
+    }
+
+    function setMultiSelectDisabled($container, disabled) {
+        $container.toggleClass('lookup-multiselect-disabled', !!disabled);
+        $container.find('.lookup-multiselect-toggle, .lookup-multiselect-search, .lookup-multiselect-item, .lookup-multiselect-load-more')
+            .prop('disabled', !!disabled);
+        if (disabled) {
+            closeMultiSelectPanel($container);
+        }
+    }
+
+    function renderMultiSelectOptions($container) {
+        const state = getMultiSelectState($container);
+        const $list = $container.find('.lookup-multiselect-list');
+        const merged = new Map();
+
+        Object.entries(state.selected).forEach(([value, text]) => {
+            merged.set(String(value), text);
+        });
+        Object.entries(state.options).forEach(([value, text]) => {
+            merged.set(String(value), text);
+        });
+
+        $list.empty();
+        if (merged.size === 0) {
+            $list.append('<div class="lookup-multiselect-no-results small text-muted px-2 py-2">No matches found.</div>');
+            return;
+        }
+
+        Array.from(merged.entries())
+            .sort((a, b) => a[1].localeCompare(b[1]))
+            .forEach(([value, text]) => {
+                const checked = Object.prototype.hasOwnProperty.call(state.selected, value) ? 'checked' : '';
+                $list.append(`
+                    <label class="lookup-multiselect-option">
+                        <input type="checkbox" class="form-check-input lookup-multiselect-item" value="${escapeAttr(value)}" ${checked} />
+                        <span>${escapeHtml(text)}</span>
+                    </label>`);
+            });
+    }
+
+    function clearMultiSelectCheckboxes($container, disabled) {
+        if (!$container || $container.length === 0) return;
+        closeMultiSelectPanel($container);
+        $container.removeData('multiselectState');
+        $container.find('.lookup-multiselect-search').val('');
+        $container.find('.lookup-multiselect-list').empty();
+        $container.find('.lookup-multiselect-load-more').addClass('d-none');
+        $container.find('.lookup-multiselect-empty').addClass('d-none');
+        $container.find('.lookup-multiselect-loading').addClass('d-none');
+        syncMultiSelectSummary($container);
+        setMultiSelectDisabled($container, disabled);
+    }
+
+    function fetchLookupSearch(entity, options) {
+        const payload = {
+            search: options.search || '',
+            skip: options.skip || 0,
+            take: LOOKUP_PAGE_SIZE
+        };
+        if (options.filterField) payload.filterField = options.filterField;
+        if (options.filterValue != null && options.filterValue !== '') payload.filterValue = options.filterValue;
+
+        return $.ajax({
+            url: buildSearchUrl(entity),
+            dataType: 'json',
+            cache: false,
+            data: payload
+        });
+    }
+
+    function preloadMultiSelectSelections($container, entity, selectedValues) {
+        if (!Array.isArray(selectedValues) || selectedValues.length === 0) {
+            return $.when();
+        }
+
+        return $.ajax({
+            url: buildItemsUrl(entity, selectedValues),
+            dataType: 'json',
+            cache: false
+        }).then(data => {
+            const state = getMultiSelectState($container);
+            (data.items ?? data.Items ?? []).forEach(item => {
+                const value = String(item.value ?? item.Value ?? '');
+                const text = item.text ?? item.Text ?? value;
+                if (value) state.selected[value] = text;
+            });
+            selectedValues.forEach(val => {
+                const key = String(val);
+                if (!state.selected[key]) state.selected[key] = key;
+            });
+            syncMultiSelectSummary($container);
+        });
+    }
+
+    function loadMultiSelectPage($container, field, options, append) {
+        const opts = options || {};
+        const entity = resolveEntity(field, $container, opts.entity);
+        const state = getMultiSelectState($container);
+        const $loading = $container.find('.lookup-multiselect-loading');
+        const $loadMore = $container.find('.lookup-multiselect-load-more');
+
+        if (!append) {
+            state.skip = 0;
+            state.options = {};
+            state.hasMore = false;
+        }
+
+        $loading.removeClass('d-none');
+        return fetchLookupSearch(entity, {
+            search: state.search,
+            skip: state.skip,
+            filterField: opts.filterField,
+            filterValue: opts.filterValue
+        }).always(() => {
+            $loading.addClass('d-none');
+        }).then(data => {
+            const items = data.items ?? data.Items ?? [];
+            items.forEach(item => {
+                const value = String(item.value ?? item.Value ?? '');
+                const text = item.text ?? item.Text ?? value;
+                if (value) state.options[value] = text;
+            });
+            state.hasMore = !!(data.hasMore ?? data.HasMore);
+            state.skip += items.length;
+            renderMultiSelectOptions($container);
+            $loadMore.toggleClass('d-none', !state.hasMore);
+            syncMultiSelectSummary($container);
+        });
+    }
+
+    function bindMultiSelectEvents($container, field, options) {
+        const entity = resolveEntity(field, $container, options.entity);
+
+        bindMultiSelectDropdownGlobalEvents();
+
+        $container.off('click.multiselectToggle', '.lookup-multiselect-toggle');
+        $container.off('input.multiselectSearch', '.lookup-multiselect-search');
+        $container.off('change.multiselectItem', '.lookup-multiselect-item');
+        $container.off('click.multiselectLoadMore', '.lookup-multiselect-load-more');
+
+        $container.on('click.multiselectToggle', '.lookup-multiselect-toggle', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const $multi = $(this).closest('.lookup-multiselect-checkboxes');
+            if ($multi.hasClass('lookup-multiselect-open')) {
+                closeMultiSelectPanel($multi);
+                return;
+            }
+
+            const state = getMultiSelectState($multi);
+            const hasOptions = Object.keys(state.options).length > 0 || $multi.find('.lookup-multiselect-item').length > 0;
+            if (!hasOptions && !$multi.hasClass('lookup-multiselect-disabled') && $multi.data('multiselectBoundEntity')) {
+                loadMultiSelectPage($multi, field, options, false).then(function () {
+                    openMultiSelectPanel($multi);
+                });
+                return;
+            }
+
+            openMultiSelectPanel($multi);
+        });
+
+        $container.on('input.multiselectSearch', '.lookup-multiselect-search', function () {
+            const state = getMultiSelectState($container);
+            state.search = $(this).val() || '';
+            state.skip = 0;
+            state.options = {};
+            loadMultiSelectPage($container, field, options, false);
+        });
+
+        $container.on('change.multiselectItem', '.lookup-multiselect-item', function () {
+            const state = getMultiSelectState($container);
+            const value = String($(this).val());
+            const text = $(this).closest('.lookup-multiselect-option').find('span').text();
+            if ($(this).is(':checked')) {
+                state.selected[value] = text;
+            } else {
+                delete state.selected[value];
+            }
+            syncMultiSelectSummary($container);
+            $container.trigger('change');
+        });
+
+        $container.on('click.multiselectLoadMore', '.lookup-multiselect-load-more', function () {
+            loadMultiSelectPage($container, field, options, true);
+        });
+
+        $container.data('multiselectBoundEntity', entity);
+    }
+
+    function initMultiSelectCheckboxes($container, field, options) {
+        const opts = options || {};
+        const entity = resolveEntity(field, $container, opts.entity);
+        const disabled = !!opts.disabled || $container.data('disabled') === true || $container.data('disabled') === 'true';
+
+        if (opts.cascadeParent && (opts.filterValue == null || opts.filterValue === '')) {
+            clearMultiSelectCheckboxes($container, opts.disableWhenEmpty !== false);
+            $container.find('.lookup-multiselect-summary').text('Select the parent field first.').addClass('text-muted');
+            $container.find('.lookup-multiselect-empty').removeClass('d-none');
+            return $.when();
+        }
+
+        if (!entity) {
+            clearMultiSelectCheckboxes($container, disabled);
+            return $.when();
+        }
+
+        $container.find('.lookup-multiselect-empty').addClass('d-none');
+        clearMultiSelectCheckboxes($container, disabled);
+        getMultiSelectState($container);
+
+        const selectedValues = opts.selectedValues
+            ?? (Array.isArray(opts.selectedValue) ? opts.selectedValue : null);
+
+        return preloadMultiSelectSelections($container, entity, selectedValues)
+            .then(() => loadMultiSelectPage($container, field, opts, false))
+            .then(() => {
+                bindMultiSelectEvents($container, field, opts);
+            });
     }
 
     function resolveEntity(field, $select, explicitEntity) {
@@ -80,8 +418,10 @@ const MetaForgeLookups = (function () {
         const filterField = opts.filterField || null;
         const filterValue = opts.filterValue ?? null;
         const selectedValue = opts.selectedValue;
+        const selectedValues = opts.selectedValues;
         const disabled = !!opts.disabled;
         const placeholder = opts.placeholder || '-- Search --';
+        const isMultiple = !!opts.multiple || $select.prop('multiple');
 
         if (!entity) {
             clearSelect($select, disabled);
@@ -89,7 +429,10 @@ const MetaForgeLookups = (function () {
         }
 
         destroySelect2($select);
-        $select.empty().append('<option value=""></option>');
+        $select.empty();
+        if (!isMultiple) {
+            $select.append('<option value=""></option>');
+        }
         $select.prop('disabled', disabled);
 
         const ajaxData = params => {
@@ -107,7 +450,8 @@ const MetaForgeLookups = (function () {
             theme: 'bootstrap-5',
             width: '100%',
             placeholder,
-            allowClear: true,
+            allowClear: !isMultiple,
+            multiple: isMultiple,
             minimumInputLength: 0,
             dropdownParent: getDropdownParent($select),
             language: {
@@ -134,6 +478,29 @@ const MetaForgeLookups = (function () {
             }
         });
 
+        if (Array.isArray(selectedValues) && selectedValues.length > 0) {
+            return $.ajax({
+                url: buildItemsUrl(entity, selectedValues),
+                dataType: 'json',
+                cache: false
+            }).then(data => {
+                const items = data.items ?? data.Items ?? [];
+                items.forEach(item => {
+                    const val = item.value ?? item.Value;
+                    const text = item.text ?? item.Text;
+                    const option = new Option(text, val, true, true);
+                    $select.append(option);
+                });
+                $select.trigger('change');
+            }).fail(() => {
+                selectedValues.forEach(val => {
+                    const option = new Option(String(val), String(val), true, true);
+                    $select.append(option);
+                });
+                $select.trigger('change');
+            });
+        }
+
         if (selectedValue != null && selectedValue !== '') {
             return $.ajax({
                 url: buildItemUrl(entity, selectedValue),
@@ -153,12 +520,18 @@ const MetaForgeLookups = (function () {
         return $.when();
     }
 
-    function loadLookup($select, field, options) {
+    function loadLookup($control, field, options) {
+        if (($control.hasClass && $control.hasClass('lookup-multiselect-checkboxes')) || isMultiSelectField(field)) {
+            return initMultiSelectCheckboxes($control, field, options);
+        }
+
+        const $select = $control;
         const opts = options || {};
         const entity = resolveEntity(field, $select, opts.entity);
         const filterField = opts.filterField;
         const filterValue = opts.filterValue;
         const selectedValue = opts.selectedValue;
+        const selectedValues = opts.selectedValues ?? (Array.isArray(selectedValue) ? selectedValue : null);
 
         if (opts.cascadeParent && (filterValue == null || filterValue === '')) {
             clearSelect($select, opts.disableWhenEmpty !== false);
@@ -174,7 +547,7 @@ const MetaForgeLookups = (function () {
             return initPagedLookupSelect($select, entity, {
                 filterField,
                 filterValue,
-                selectedValue,
+                selectedValue: Array.isArray(selectedValue) ? null : selectedValue,
                 disabled: opts.disabled,
                 placeholder: isAutocompleteField(field) || $select.hasClass('lookup-autocomplete')
                     ? '-- Search --'
@@ -198,29 +571,32 @@ const MetaForgeLookups = (function () {
         return $scope.find(`select[name="${name}"], select.lookup-select[data-field="${name}"], select.lookup-autocomplete[data-field="${name}"]`);
     }
 
-    function clearCascadeChain($scope, fields, parentName, resolveSelect) {
+    function clearCascadeChain($scope, fields, parentName, resolveControl) {
         getDependentFields(fields, parentName).forEach(field => {
             const name = field.PropertyName ?? field.propertyName;
-            const $child = resolveSelect(name);
-            if ($child.length) {
+            const $child = resolveControl(name, field);
+            if ($child.length === 0) return;
+            if ($child.hasClass('lookup-multiselect-checkboxes')) {
+                clearMultiSelectCheckboxes($child, true);
+                $child.find('.lookup-multiselect-summary').text('Select the parent field first.').addClass('text-muted');
+                $child.find('.lookup-multiselect-empty').removeClass('d-none');
+            } else {
                 clearSelect($child, true);
             }
-            clearCascadeChain($scope, fields, name, resolveSelect);
+            clearCascadeChain($scope, fields, name, resolveControl);
         });
     }
 
     function bindFormCascade($form, fields) {
-        $form.off('change.cascade', '.lookup-select, .lookup-autocomplete');
+        $form.off('change.cascade select2:select.cascade select2:clear.cascade', '.lookup-select, .lookup-autocomplete');
+        $form.on('change.cascade select2:select.cascade select2:clear.cascade', '.lookup-select, .lookup-autocomplete', function () {
+            const parentName = $(this).attr('name');
+            if (!parentName) return;
 
-        getLookupFields(fields).filter(f => getParentField(f)).forEach(field => {
-            const parentName = getParentField(field);
-            const $parent = $form.find(`[name="${parentName}"]`);
-            if ($parent.length === 0) return;
+            const hasDependents = getLookupFields(fields).some(f => getParentField(f) === parentName);
+            if (!hasDependents) return;
 
-            $parent.on('change.cascade', function () {
-                const parentVal = $(this).val();
-                refreshFormDependents($form, fields, parentName, parentVal);
-            });
+            refreshFormDependents($form, fields, parentName, $(this).val());
         });
     }
 
@@ -228,25 +604,38 @@ const MetaForgeLookups = (function () {
         const dependents = getDependentFields(fields, parentName);
         dependents.forEach(field => {
             const name = field.PropertyName ?? field.propertyName;
-            const $child = resolveLookupSelect($form, name);
+            const $child = resolveLookupControl($form, name, field);
             if ($child.length === 0) return;
 
-            const previous = preserveValues ? $child.val() : null;
-            if (!preserveValues) {
+            let previous = null;
+            if (preserveValues) {
+                previous = $child.hasClass('lookup-multiselect-checkboxes')
+                    ? readMultiSelectValues($child)
+                    : $child.val();
+            } else if ($child.hasClass('lookup-multiselect-checkboxes')) {
+                clearMultiSelectCheckboxes($child, false);
+            } else if ($child.prop('multiple')) {
+                $child.val([]).trigger('change');
+            } else {
                 $child.val('');
             }
 
-            clearCascadeChain($form, fields, name, n => resolveLookupSelect($form, n));
+            clearCascadeChain($form, fields, name, (childName, childField) =>
+                resolveLookupControl($form, childName, childField ?? fields.find(f => (f.PropertyName ?? f.propertyName) === childName)));
 
             loadLookup($child, field, {
                 entity: getEntity(field),
                 filterField: getFilterField(field),
                 filterValue: parentVal,
                 selectedValue: previous,
+                selectedValues: Array.isArray(previous) ? previous : null,
                 cascadeParent: true,
                 disableWhenEmpty: true
             }).then(function () {
-                refreshFormDependents($form, fields, name, $child.val(), preserveValues);
+                const childVal = $child.hasClass('lookup-multiselect-checkboxes')
+                    ? readMultiSelectValues($child)
+                    : $child.val();
+                refreshFormDependents($form, fields, name, childVal, preserveValues);
             });
         });
     }
@@ -256,11 +645,21 @@ const MetaForgeLookups = (function () {
         const val = pendingValues[name]
             ?? pendingValues[name.charAt(0).toLowerCase() + name.slice(1)]
             ?? pendingValues[name.charAt(0).toUpperCase() + name.slice(1)];
-        return val == null || val === '' ? null : val;
+        if (val == null || val === '') return null;
+        if (Array.isArray(val)) return val;
+        return val;
+    }
+
+    function getPendingSelectedValues(pendingValues, name, field) {
+        const val = getPendingValue(pendingValues, name);
+        if (Array.isArray(val)) return val;
+        if (isMultiSelectField(field) && val != null) return [val];
+        return null;
     }
 
     function initFormLookups($form, fields, pendingValues) {
-        destroyFormLookups($form);
+        const $root = resolveFormRoot($form);
+        destroyFormLookups($root);
 
         const lookupFields = getLookupFields(fields);
         const independent = lookupFields.filter(f => !getParentField(f));
@@ -270,11 +669,12 @@ const MetaForgeLookups = (function () {
 
         const independentLoads = independent.map(field => {
             const name = field.PropertyName ?? field.propertyName;
-            const $sel = resolveLookupSelect($form, name);
-            if ($sel.length === 0) return $.when();
-            return loadLookup($sel, field, {
+            const $control = resolveLookupControl($root, name, field);
+            if ($control.length === 0) return $.when();
+            return loadLookup($control, field, {
                 entity: getEntity(field),
-                selectedValue: getPendingValue(pendingValues, name)
+                selectedValue: getPendingSelectedValues(pendingValues, name, field) ? null : getPendingValue(pendingValues, name),
+                selectedValues: getPendingSelectedValues(pendingValues, name, field)
             });
         });
 
@@ -282,7 +682,7 @@ const MetaForgeLookups = (function () {
         $.when.apply($, independentLoads.length ? independentLoads : [$.when()]).then(function () {
             (function loadNext(index) {
                 if (index >= dependent.length) {
-                    bindFormCascade($form, fields);
+                    bindFormCascade($root, fields);
                     chain.resolve();
                     return;
                 }
@@ -290,16 +690,18 @@ const MetaForgeLookups = (function () {
                 const field = dependent[index];
                 const name = field.PropertyName ?? field.propertyName;
                 const parentName = getParentField(field);
-                const $sel = resolveLookupSelect($form, name);
+                const $control = resolveLookupControl($root, name, field);
                 const parentVal = getPendingValue(pendingValues, parentName)
-                    ?? $form.find(`[name="${parentName}"]`).val();
+                    ?? $root.find(`[name="${parentName}"]`).val();
                 const selected = getPendingValue(pendingValues, name);
+                const selectedValues = getPendingSelectedValues(pendingValues, name, field);
 
-                loadLookup($sel, field, {
+                loadLookup($control, field, {
                     entity: getEntity(field),
                     filterField: getFilterField(field),
                     filterValue: parentVal,
-                    selectedValue: selected,
+                    selectedValue: selectedValues ? null : selected,
+                    selectedValues,
                     cascadeParent: true,
                     disableWhenEmpty: true
                 }).always(() => loadNext(index + 1));
@@ -377,6 +779,8 @@ const MetaForgeLookups = (function () {
         initFormLookups,
         initGridLookups,
         initPagedLookupSelect,
+        initMultiSelectCheckboxes,
+        closeMultiSelectPanel,
         initAutocompleteSelect: initPagedLookupSelect,
         destroyFormLookups,
         cascadeAttrs,
@@ -384,8 +788,12 @@ const MetaForgeLookups = (function () {
         getParentField,
         getFilterField,
         isLookupControlType,
+        isMultiSelectField,
         isAutocompleteField,
+        readMultiSelectValues,
+        resolveLookupControl,
         buildItemUrl,
+        buildItemsUrl,
         LOOKUP_PAGE_SIZE
     };
 })();

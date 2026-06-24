@@ -184,6 +184,8 @@ public class FormConfigurationService : IFormConfigurationService
         };
 
         await EnrichLookupFieldSettingsAsync(draft, cancellationToken);
+        AppendInferredMultiSelectFields(draft, metadata);
+        EnrichMultiSelectFieldSettings(draft, metadata);
         return draft;
     }
 
@@ -229,6 +231,10 @@ public class FormConfigurationService : IFormConfigurationService
 
     public async Task<int> SaveFormAsync(FormConfigDto config, CancellationToken cancellationToken = default)
     {
+        var metadata = _discoveryService.Discover(config.EntityName);
+        if (metadata != null)
+            EnrichMultiSelectFieldSettings(config, metadata);
+
         EnsureGridColumns(config);
         Validate(config);
 
@@ -281,6 +287,9 @@ public class FormConfigurationService : IFormConfigurationService
             LookupEntity = f.LookupEntity,
             LookupParentField = f.LookupParentField,
             LookupFilterField = f.LookupFilterField,
+            MappingEntity = f.MappingEntity,
+            MappingParentKey = f.MappingParentKey,
+            MappingRelatedKey = f.MappingRelatedKey,
             SectionName = f.SectionName
         }))
         {
@@ -526,8 +535,7 @@ public class FormConfigurationService : IFormConfigurationService
     }
 
     private static bool IsLookupControlType(string? controlType) =>
-        string.Equals(controlType, ControlType.Dropdown, StringComparison.OrdinalIgnoreCase)
-        || string.Equals(controlType, ControlType.Autocomplete, StringComparison.OrdinalIgnoreCase);
+        ControlType.IsLookupOrMultiSelect(controlType);
 
     public async Task DeleteFormAsync(int id, CancellationToken cancellationToken = default)
     {
@@ -551,9 +559,45 @@ public class FormConfigurationService : IFormConfigurationService
         if (config.Fields.Count == 0)
             throw new BusinessException("At least one field is required.");
 
+        ValidateFieldConfiguration(config.Fields);
+
         var isDetailForm = config.FormType.Equals(FormType.Detail.ToString(), StringComparison.OrdinalIgnoreCase);
         if (config.GridColumns.Count == 0 && !isDetailForm)
             throw new BusinessException("At least one grid column is required.");
+    }
+
+    private static void ValidateFieldConfiguration(IEnumerable<FormFieldConfigDto> fields)
+    {
+        foreach (var field in fields)
+        {
+            var isMultiSelect = ControlType.IsMultiSelect(field.ControlType);
+            var isSingleLookup = ControlType.IsSingleLookup(field.ControlType);
+
+            if (isMultiSelect)
+            {
+                if (string.IsNullOrWhiteSpace(field.LookupEntity))
+                    throw new BusinessException($"Lookup entity is required for MultiSelect field '{field.PropertyName}'.");
+                if (string.IsNullOrWhiteSpace(field.MappingEntity))
+                    throw new BusinessException($"Mapping entity is required for MultiSelect field '{field.PropertyName}'.");
+                if (string.IsNullOrWhiteSpace(field.MappingParentKey))
+                    throw new BusinessException($"Mapping parent key is required for MultiSelect field '{field.PropertyName}'.");
+                if (string.IsNullOrWhiteSpace(field.MappingRelatedKey))
+                    throw new BusinessException($"Mapping related key is required for MultiSelect field '{field.PropertyName}'.");
+            }
+
+            if (isSingleLookup
+                && (!string.IsNullOrWhiteSpace(field.MappingEntity)
+                    || !string.IsNullOrWhiteSpace(field.MappingParentKey)
+                    || !string.IsNullOrWhiteSpace(field.MappingRelatedKey)))
+            {
+                throw new BusinessException($"Mapping table settings apply only to MultiSelect fields ('{field.PropertyName}').");
+            }
+
+            if (!string.IsNullOrWhiteSpace(field.LookupParentField) && !ControlType.IsLookupOrMultiSelect(field.ControlType))
+            {
+                throw new BusinessException($"Cascade settings apply only to Dropdown, Autocomplete, or MultiSelect fields ('{field.PropertyName}').");
+            }
+        }
     }
 
     private static void EnsureGridColumns(FormConfigDto config)
@@ -563,7 +607,8 @@ public class FormConfigurationService : IFormConfigurationService
 
         config.GridColumns = config.Fields
             .Where(f => f.IsVisible
-                && !string.Equals(f.ControlType, ControlType.Hidden, StringComparison.OrdinalIgnoreCase))
+                && !string.Equals(f.ControlType, ControlType.Hidden, StringComparison.OrdinalIgnoreCase)
+                && !ControlType.IsMultiSelect(f.ControlType))
             .Select((f, i) => new FormGridColumnConfigDto
             {
                 PropertyName = f.PropertyName,
@@ -603,6 +648,9 @@ public class FormConfigurationService : IFormConfigurationService
             LookupEntity = f.LookupEntity,
             LookupParentField = f.LookupParentField,
             LookupFilterField = f.LookupFilterField,
+            MappingEntity = f.MappingEntity,
+            MappingParentKey = f.MappingParentKey,
+            MappingRelatedKey = f.MappingRelatedKey,
             SectionName = f.SectionName
         }).ToList(),
         GridColumns = module.GridColumns.OrderBy(c => c.DisplayOrder).Select(c => new FormGridColumnConfigDto
@@ -674,6 +722,8 @@ public class FormConfigurationService : IFormConfigurationService
 
     private static string InferControlType(string clrType, string propertyName)
     {
+        if (propertyName.EndsWith("Ids", StringComparison.Ordinal) && propertyName.Length > 3)
+            return ControlType.MultiSelect;
         if (propertyName.EndsWith("Id", StringComparison.Ordinal) && propertyName != "Id")
             return ControlType.Autocomplete;
         if (clrType.Contains("Boolean", StringComparison.Ordinal)) return ControlType.Checkbox;
@@ -685,6 +735,28 @@ public class FormConfigurationService : IFormConfigurationService
         if (propertyName.Contains("Description", StringComparison.OrdinalIgnoreCase) || propertyName.Contains("Notes", StringComparison.OrdinalIgnoreCase))
             return ControlType.TextArea;
         return ControlType.TextBox;
+    }
+
+    private void AppendInferredMultiSelectFields(FormConfigDto config, EntityMetadataDto metadata)
+    {
+        var existing = config.Fields
+            .Select(f => f.PropertyName)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var junctionField in MultiSelectFieldInference.DiscoverJunctionFields(_dbContext, metadata))
+        {
+            if (existing.Add(junctionField.PropertyName))
+            {
+                junctionField.DisplayOrder = config.Fields.Count;
+                config.Fields.Add(junctionField);
+            }
+        }
+    }
+
+    private void EnrichMultiSelectFieldSettings(FormConfigDto config, EntityMetadataDto metadata)
+    {
+        foreach (var field in config.Fields.Where(f => ControlType.IsMultiSelect(f.ControlType)))
+            MultiSelectFieldInference.ApplyDefaults(field, metadata, _dbContext);
     }
 
     private static string ResolveScreenType(FormConfigDto master)

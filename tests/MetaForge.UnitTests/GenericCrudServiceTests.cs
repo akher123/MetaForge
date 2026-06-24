@@ -37,7 +37,8 @@ public class GenericCrudServiceTests
             moduleCache.Object,
             Mock.Of<ILookupService>(),
             Mock.Of<IDynamicValidationService>(),
-            Mock.Of<IAuditService>());
+            Mock.Of<IAuditService>(),
+            Mock.Of<IMappingAssociationService>());
 
         var result = await service.GetAllAsync(new GridQueryRequest
         {

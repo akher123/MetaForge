@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Text.Json;
 using System.Security.Claims;
 using MetaForge.Domain.Enums;
@@ -44,12 +45,20 @@ public class DynamicValidationService : IDynamicValidationService
                 continue;
 
             data.TryGetValue(field.PropertyName, out var value);
-            var strValue = DynamicEntityMapper.ToStringValue(value);
-            var isLookupField = !string.IsNullOrWhiteSpace(field.LookupEntity)
-                || (field.PropertyName.EndsWith("Id", StringComparison.Ordinal)
-                    && !field.PropertyName.Equals("Id", StringComparison.OrdinalIgnoreCase));
 
-            if (effective.IsRequired && isLookupField)
+            if (MappingAssociationService.IsMultiSelectField(field))
+            {
+                await ValidateMultiSelectFieldAsync(field, value, data, effective.IsRequired, failures, cancellationToken);
+                continue;
+            }
+
+            var strValue = DynamicEntityMapper.ToStringValue(value);
+            var isSingleLookupField = ControlType.IsSingleLookup(field.ControlType)
+                || (!ControlType.IsMultiSelect(field.ControlType)
+                    && (field.PropertyName.EndsWith("Id", StringComparison.Ordinal)
+                        && !field.PropertyName.Equals("Id", StringComparison.OrdinalIgnoreCase)));
+
+            if (effective.IsRequired && isSingleLookupField)
             {
                 var lookupId = DynamicEntityMapper.ToInt32(value);
                 if (lookupId <= 0)
@@ -70,7 +79,7 @@ public class DynamicValidationService : IDynamicValidationService
                 failures.Add(new ValidationFailure(field.PropertyName, $"{field.Label} is required."));
                 continue;
             }
-            else if (isLookupField && !string.IsNullOrWhiteSpace(field.LookupEntity))
+            else if (isSingleLookupField && !string.IsNullOrWhiteSpace(field.LookupEntity))
             {
                 var lookupId = DynamicEntityMapper.ToInt32(value);
                 if (lookupId > 0 && !await ForeignKeyExistsAsync(field.LookupEntity, lookupId, cancellationToken))
@@ -85,6 +94,75 @@ public class DynamicValidationService : IDynamicValidationService
 
         if (failures.Count > 0)
             throw new ValidationException(failures);
+    }
+
+    private async Task ValidateMultiSelectFieldAsync(
+        Domain.Metadata.ForgeField field,
+        object? value,
+        Dictionary<string, object?> data,
+        bool isRequired,
+        List<ValidationFailure> failures,
+        CancellationToken cancellationToken)
+    {
+        var ids = DynamicEntityMapper.ToInt32List(value);
+
+        if (isRequired && ids.Count == 0)
+        {
+            failures.Add(new ValidationFailure(field.PropertyName, $"{field.Label} is required."));
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(field.LookupEntity))
+            return;
+
+        foreach (var lookupId in ids)
+        {
+            if (!await ForeignKeyExistsAsync(field.LookupEntity, lookupId, cancellationToken))
+            {
+                failures.Add(new ValidationFailure(field.PropertyName, $"{field.Label} contains an invalid reference."));
+                return;
+            }
+
+            if (!string.IsNullOrWhiteSpace(field.LookupParentField)
+                && !await LookupMatchesCascadeFilterAsync(field, lookupId, data, cancellationToken))
+            {
+                failures.Add(new ValidationFailure(field.PropertyName, $"{field.Label} contains a value that does not match the parent selection."));
+                return;
+            }
+        }
+    }
+
+    private async Task<bool> LookupMatchesCascadeFilterAsync(
+        Domain.Metadata.ForgeField field,
+        int lookupId,
+        Dictionary<string, object?> data,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(field.LookupParentField))
+            return true;
+
+        if (!data.TryGetValue(field.LookupParentField, out var parentValue))
+            return true;
+
+        var parentFilterValue = DynamicEntityMapper.ToInt32(parentValue);
+        if (parentFilterValue <= 0)
+            return true;
+
+        var lookupEntity = _typeResolver.Resolve(field.LookupEntity!);
+        var filterPropertyName = string.IsNullOrWhiteSpace(field.LookupFilterField)
+            ? field.LookupParentField
+            : field.LookupFilterField;
+
+        var entity = await _dbContext.FindAsync(lookupEntity, [lookupId], cancellationToken);
+        if (entity == null)
+            return false;
+
+        var filterProperty = lookupEntity.GetProperty(filterPropertyName, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+        if (filterProperty == null)
+            return true;
+
+        var actual = DynamicEntityMapper.ToInt32(filterProperty.GetValue(entity));
+        return actual == parentFilterValue;
     }
 
     private async Task<bool> ForeignKeyExistsAsync(string lookupEntity, int id, CancellationToken cancellationToken)

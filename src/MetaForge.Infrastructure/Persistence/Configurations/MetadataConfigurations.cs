@@ -34,6 +34,9 @@ public class ForgeFieldConfiguration : IEntityTypeConfiguration<ForgeField>
         builder.Property(x => x.ControlType).HasMaxLength(50).IsRequired();
         builder.Property(x => x.LookupParentField).HasMaxLength(200);
         builder.Property(x => x.LookupFilterField).HasMaxLength(200);
+        builder.Property(x => x.MappingEntity).HasMaxLength(200);
+        builder.Property(x => x.MappingParentKey).HasMaxLength(200);
+        builder.Property(x => x.MappingRelatedKey).HasMaxLength(200);
     }
 }
 

@@ -27,6 +27,11 @@ public interface ILookupService
         string value,
         CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyList<LookupItemDto>> GetLookupItemsByValuesAsync(
+        string entityName,
+        IEnumerable<string> values,
+        CancellationToken cancellationToken = default);
+
     Task<IReadOnlyDictionary<string, string>> ResolveLookupTextsAsync(
         string entityName,
         IEnumerable<string> values,

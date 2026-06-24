@@ -66,6 +66,15 @@ public class FormFieldConfigDto
     /// <summary>Property on the lookup entity stored as the field value (defaults to Id).</summary>
     public string? LookupValueField { get; set; }
 
+    /// <summary>Junction entity for MultiSelect mapping (e.g. CustomerRegion).</summary>
+    public string? MappingEntity { get; set; }
+
+    /// <summary>FK on the junction entity pointing to the master record.</summary>
+    public string? MappingParentKey { get; set; }
+
+    /// <summary>FK on the junction entity pointing to the lookup entity.</summary>
+    public string? MappingRelatedKey { get; set; }
+
     public string? SectionName { get; set; }
 }
 

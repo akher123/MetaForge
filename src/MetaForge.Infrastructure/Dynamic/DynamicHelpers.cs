@@ -219,6 +219,82 @@ public static class DynamicEntityMapper
     }
 
     /// <summary>
+    /// Converts dynamic request values to a distinct list of positive integers (MultiSelect payloads).
+    /// </summary>
+    public static List<int> ToInt32List(object? value)
+    {
+        if (value == null)
+            return [];
+
+        if (value is JsonElement jsonElement)
+        {
+            if (jsonElement.ValueKind == JsonValueKind.Array)
+            {
+                var list = new List<int>();
+                foreach (var item in jsonElement.EnumerateArray())
+                    AddInt32(list, UnwrapJsonElement(item, typeof(int), false));
+                return list.Distinct().Where(id => id > 0).ToList();
+            }
+
+            if (jsonElement.ValueKind == JsonValueKind.Null)
+                return [];
+
+            return ToInt32List(UnwrapJsonElement(jsonElement, typeof(int), true));
+        }
+
+        if (value is string str)
+        {
+            if (string.IsNullOrWhiteSpace(str))
+                return [];
+
+            str = str.Trim();
+            if (str.StartsWith('[') && str.EndsWith(']'))
+            {
+                try
+                {
+                    using var doc = JsonDocument.Parse(str);
+                    if (doc.RootElement.ValueKind == JsonValueKind.Array)
+                        return ToInt32List(doc.RootElement);
+                }
+                catch (JsonException)
+                {
+                    // fall through to comma-separated parsing
+                }
+            }
+
+            return str.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(s => ToInt32(s))
+                .Where(id => id > 0)
+                .Distinct()
+                .ToList();
+        }
+
+        if (value is IEnumerable<int> intEnumerable)
+            return intEnumerable.Where(id => id > 0).Distinct().ToList();
+
+        if (value is IEnumerable<object> objectEnumerable)
+        {
+            var list = new List<int>();
+            foreach (var item in objectEnumerable)
+                AddInt32(list, item);
+            return list.Distinct().Where(id => id > 0).ToList();
+        }
+
+        var single = ToInt32(value);
+        return single > 0 ? [single] : [];
+    }
+
+    private static void AddInt32(List<int> list, object? value)
+    {
+        if (value == null)
+            return;
+
+        var id = ToInt32(value);
+        if (id > 0)
+            list.Add(id);
+    }
+
+    /// <summary>
     /// Unwraps JsonElement values from API payloads into CLR types.
     /// </summary>
     public static Dictionary<string, object?> NormalizeDictionary(Dictionary<string, object?> data)
@@ -253,6 +329,13 @@ public static class DynamicEntityMapper
                 if (element.TryGetDecimal(out var decVal))
                     return decVal;
                 return element.GetDouble();
+            case JsonValueKind.Array:
+            {
+                var list = new List<object?>();
+                foreach (var item in element.EnumerateArray())
+                    list.Add(NormalizeValue(item));
+                return list;
+            }
             default:
                 return element.ToString();
         }

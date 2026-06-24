@@ -29,6 +29,12 @@ public class FieldDefinition
 
     public string? LookupFilterField { get; set; }
 
+    public string? MappingEntity { get; set; }
+
+    public string? MappingParentKey { get; set; }
+
+    public string? MappingRelatedKey { get; set; }
+
     public string? SectionName { get; set; }
 
     public string? ClrType { get; set; }

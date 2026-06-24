@@ -116,9 +116,32 @@ public static class FormSchemaSyncPlanner
             }
         }
 
+        foreach (var proposed in draft.Fields.Where(f => ControlType.IsMultiSelect(f.ControlType)))
+        {
+            if (formFields.ContainsKey(proposed.PropertyName))
+                continue;
+            if (entityProps.Any(p => p.Name.Equals(proposed.PropertyName, StringComparison.OrdinalIgnoreCase)))
+                continue;
+
+            changes.Add(new FormSchemaSyncChangeDto
+            {
+                Key = $"field:{proposed.PropertyName}",
+                ChangeType = FormSchemaSyncChangeTypes.Add,
+                Target = FormSchemaSyncTargets.Field,
+                Name = proposed.PropertyName,
+                Description = $"Add MultiSelect junction field '{proposed.PropertyName}'.",
+                ProposedSummary = $"Control={proposed.ControlType}, Lookup={proposed.LookupEntity}, Mapping={proposed.MappingEntity}",
+                SelectedByDefault = true,
+                ProposedField = proposed
+            });
+        }
+
         foreach (var field in form.Fields)
         {
             if (entityProps.Any(p => p.Name.Equals(field.PropertyName, StringComparison.OrdinalIgnoreCase)))
+                continue;
+
+            if (ControlType.IsMultiSelect(field.ControlType))
                 continue;
 
             if (string.Equals(field.ControlType, ControlType.Hidden, StringComparison.OrdinalIgnoreCase)
@@ -356,6 +379,9 @@ public static class FormSchemaSyncPlanner
         LookupEntity = field.LookupEntity,
         LookupParentField = field.LookupParentField,
         LookupFilterField = field.LookupFilterField,
+        MappingEntity = field.MappingEntity,
+        MappingParentKey = field.MappingParentKey,
+        MappingRelatedKey = field.MappingRelatedKey,
         SectionName = field.SectionName
     };
 

@@ -83,6 +83,31 @@ public class LookupService : ILookupService
         });
     }
 
+    public async Task<IReadOnlyList<LookupItemDto>> GetLookupItemsByValuesAsync(
+        string entityName,
+        IEnumerable<string> values,
+        CancellationToken cancellationToken = default)
+    {
+        var canonicalEntity = GetCanonicalEntityName(entityName);
+        var distinctValues = values
+            .Where(v => !string.IsNullOrWhiteSpace(v))
+            .Select(v => v.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (distinctValues.Count == 0)
+            return Array.Empty<LookupItemDto>();
+
+        var items = new List<LookupItemDto>(distinctValues.Count);
+        foreach (var value in distinctValues)
+        {
+            var item = await GetLookupItemByValueAsync(canonicalEntity, value, cancellationToken);
+            items.Add(item ?? new LookupItemDto { Value = value, Text = value });
+        }
+
+        return items;
+    }
+
     public async Task<IReadOnlyDictionary<string, string>> ResolveLookupTextsAsync(
         string entityName,
         IEnumerable<string> values,

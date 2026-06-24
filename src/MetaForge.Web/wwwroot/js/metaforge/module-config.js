@@ -107,22 +107,50 @@ const FormBuilder = (function () {
         return fallback ? (fallback.Name ?? fallback.name) : 'Name';
     }
 
-    function syncLookupDisplayFields($row) {
+    function syncFieldRowSettings($row) {
+        const controlType = MetaForgeControlTypes.normalize($row.find('.field-control').val());
+        const isSingleLookup = MetaForgeControlTypes.isSingleLookup(controlType);
+        const isMultiSelect = MetaForgeControlTypes.isMultiSelect(controlType);
+        const isLookup = MetaForgeControlTypes.isLookupOrMultiSelect(controlType);
         const lookupEntity = $row.find('.field-lookup').val()?.trim();
-        const $text = $row.find('.field-lookup-text');
-        const $value = $row.find('.field-lookup-value');
-        const isLookup = ['Dropdown', 'Autocomplete'].includes($row.find('.field-control').val());
+        const propertyName = $row.find('.field-prop').val()?.trim() || '';
+        const masterEntity = $('#entityName').val()?.trim() || '';
 
-        $text.prop('disabled', !isLookup || !lookupEntity);
-        $value.prop('disabled', !isLookup || !lookupEntity);
+        $row.find('.field-lookup, .field-cascade-parent, .field-cascade-filter')
+            .prop('disabled', !isLookup);
+        $row.find('.field-lookup-text, .field-lookup-value')
+            .prop('disabled', !isSingleLookup || !lookupEntity);
+        $row.find('.field-mapping-entity, .field-mapping-parent, .field-mapping-related')
+            .prop('disabled', !isMultiSelect)
+            .closest('td').toggleClass('text-muted', !isMultiSelect);
 
-        if (!isLookup || !lookupEntity) return;
+        if (isMultiSelect) {
+            if (!lookupEntity && propertyName) {
+                $row.find('.field-lookup').val(MetaForgeControlTypes.inferLookupEntityFromProperty(propertyName));
+            }
 
-        if (!$text.val()?.trim()) {
-            $text.val(inferLookupTextField(lookupEntity));
+            const defaults = MetaForgeControlTypes.inferMappingDefaults(propertyName, masterEntity);
+            if (defaults) {
+                if (!$row.find('.field-mapping-entity').val()?.trim()) {
+                    $row.find('.field-mapping-entity').val(defaults.mappingEntity);
+                }
+                if (!$row.find('.field-mapping-parent').val()?.trim()) {
+                    $row.find('.field-mapping-parent').val(defaults.mappingParentKey);
+                }
+                if (!$row.find('.field-mapping-related').val()?.trim()) {
+                    $row.find('.field-mapping-related').val(defaults.mappingRelatedKey);
+                }
+            }
+            return;
         }
-        if (!$value.val()?.trim()) {
-            $value.val('Id');
+
+        if (!isSingleLookup || !lookupEntity) return;
+
+        if (!$row.find('.field-lookup-text').val()?.trim()) {
+            $row.find('.field-lookup-text').val(inferLookupTextField(lookupEntity));
+        }
+        if (!$row.find('.field-lookup-value').val()?.trim()) {
+            $row.find('.field-lookup-value').val('Id');
         }
     }
 
@@ -174,8 +202,8 @@ const FormBuilder = (function () {
 
         $(document).on('change', '#masterFieldsTable input, #masterFieldsTable select', refreshMasterPreview);
         $(document).on('change', '#detailFieldsTable input, #detailFieldsTable select', refreshDetailPreview);
-        $(document).on('change blur', '#masterFieldsTable .field-lookup, #masterFieldsTable .field-control, #detailFieldsTable .field-lookup, #detailFieldsTable .field-control', function () {
-            syncLookupDisplayFields($(this).closest('tr'));
+        $(document).on('change blur', '#masterFieldsTable .field-lookup, #masterFieldsTable .field-control, #masterFieldsTable .field-prop, #detailFieldsTable .field-lookup, #detailFieldsTable .field-control, #detailFieldsTable .field-prop', function () {
+            syncFieldRowSettings($(this).closest('tr'));
         });
         $(document).on('change', '#relationsTable select, #relationsTable input', syncDetailFromRelations);
     }
@@ -418,6 +446,9 @@ const FormBuilder = (function () {
                 <td><input type="text" class="form-control form-control-sm field-lookup-value" value="${esc(field.LookupValueField ?? field.lookupValueField ?? '')}" placeholder="Id" title="Property stored as the field value" /></td>
                 <td><input type="text" class="form-control form-control-sm field-cascade-parent" value="${esc(field.LookupParentField ?? field.lookupParentField ?? '')}" placeholder="e.g. CountryId" /></td>
                 <td><input type="text" class="form-control form-control-sm field-cascade-filter" value="${esc(field.LookupFilterField ?? field.lookupFilterField ?? '')}" placeholder="optional" /></td>
+                <td><input type="text" class="form-control form-control-sm field-mapping-entity" value="${esc(field.MappingEntity ?? field.mappingEntity ?? '')}" placeholder="e.g. CustomerRegion" /></td>
+                <td><input type="text" class="form-control form-control-sm field-mapping-parent" value="${esc(field.MappingParentKey ?? field.mappingParentKey ?? '')}" placeholder="e.g. CustomerId" /></td>
+                <td><input type="text" class="form-control form-control-sm field-mapping-related" value="${esc(field.MappingRelatedKey ?? field.mappingRelatedKey ?? '')}" placeholder="e.g. RegionId" /></td>
                 <td class="text-center"><input type="checkbox" class="form-check-input field-required" ${(field.IsRequired ?? field.isRequired) ? 'checked' : ''} /></td>
                 <td class="text-center"><input type="checkbox" class="form-check-input field-visible" ${(field.IsVisible ?? field.isVisible ?? true) ? 'checked' : ''} /></td>
                 <td class="text-center"><input type="checkbox" class="form-check-input field-readonly" ${(field.IsReadOnly ?? field.isReadOnly) ? 'checked' : ''} /></td>
@@ -440,7 +471,7 @@ const FormBuilder = (function () {
             $row.find('.field-conditional').val(conditionalRule);
         }
 
-        syncLookupDisplayFields($row);
+        syncFieldRowSettings($row);
 
         if (triggerPreview && previewFn) previewFn();
     }
@@ -578,6 +609,9 @@ const FormBuilder = (function () {
                 LookupValueField: $(this).find('.field-lookup-value').val()?.trim() || null,
                 LookupParentField: $(this).find('.field-cascade-parent').val()?.trim() || null,
                 LookupFilterField: $(this).find('.field-cascade-filter').val()?.trim() || null,
+                MappingEntity: $(this).find('.field-mapping-entity').val()?.trim() || null,
+                MappingParentKey: $(this).find('.field-mapping-parent').val()?.trim() || null,
+                MappingRelatedKey: $(this).find('.field-mapping-related').val()?.trim() || null,
                 IsRequired: $(this).find('.field-required').is(':checked'),
                 IsVisible: $(this).find('.field-visible').is(':checked'),
                 IsReadOnly: $(this).find('.field-readonly').is(':checked'),
@@ -708,6 +742,19 @@ const FormBuilder = (function () {
         };
     }
 
+    function validateMultiSelectFields(fields, contextLabel) {
+        const errors = [];
+        fields.forEach(field => {
+            if (!MetaForgeControlTypes.isMultiSelect(field.ControlType ?? field.controlType)) return;
+            const name = field.PropertyName ?? field.propertyName ?? 'field';
+            if (!field.LookupEntity) errors.push(`${contextLabel}: '${name}' requires a Lookup Entity.`);
+            if (!field.MappingEntity) errors.push(`${contextLabel}: '${name}' requires a Mapping Entity.`);
+            if (!field.MappingParentKey) errors.push(`${contextLabel}: '${name}' requires a Mapping Parent Key.`);
+            if (!field.MappingRelatedKey) errors.push(`${contextLabel}: '${name}' requires a Mapping Related Key.`);
+        });
+        return errors;
+    }
+
     function saveScreen() {
         const screenType = $('#screenType').val();
         const master = collectMasterConfig();
@@ -718,6 +765,12 @@ const FormBuilder = (function () {
         }
         if (master.Fields.length === 0) {
             notify('Master form requires at least one field.', 'warning');
+            return;
+        }
+
+        const multiSelectErrors = validateMultiSelectFields(master.Fields, 'Master form');
+        if (multiSelectErrors.length > 0) {
+            notify(multiSelectErrors.join('\n'), 'warning');
             return;
         }
         if (master.GridColumns.length === 0) {
@@ -740,6 +793,11 @@ const FormBuilder = (function () {
             payload.Detail = collectDetailConfig();
             if (!payload.Detail || payload.Detail.Fields.length === 0) {
                 notify('Detail form requires at least one field.', 'warning');
+                return;
+            }
+            const detailMultiSelectErrors = validateMultiSelectFields(payload.Detail.Fields, 'Detail form');
+            if (detailMultiSelectErrors.length > 0) {
+                notify(detailMultiSelectErrors.join('\n'), 'warning');
                 return;
             }
         }

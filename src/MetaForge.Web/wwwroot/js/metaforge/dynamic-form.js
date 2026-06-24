@@ -300,40 +300,23 @@ const DynamicForm = (function () {
         }
     }
 
-    function getLookupInitScope($scope) {
-        if (layoutMode !== 'tabs') return $scope;
-        const $pane = $scope.find('.tab-pane.active').first();
-        return $pane.length ? $pane : $scope;
-    }
-
     function initLookupsForScope($scope, fields, data) {
-        const target = getLookupInitScope($scope);
-        return MetaForgeLookups.initFormLookups(target, fields, data || {});
+        return MetaForgeLookups.initFormLookups($scope, fields, data || {});
     }
 
     function bindTabLookupLazyLoad($container) {
-        $container.find('[data-bs-toggle="tab"]').off('shown.bs.tab.dynamicForm').on('shown.bs.tab.dynamicForm', function (e) {
-            const paneSelector = $(e.target).attr('data-bs-target');
+        $container.find('[data-bs-toggle="tab"]').off('shown.bs.tab.dynamicForm').on('shown.bs.tab.dynamicForm', function () {
+            const paneSelector = $(this).attr('data-bs-target');
             const $pane = $(paneSelector);
-            if (!$pane.length || $pane.data('lookupsInitialized') || typeof MetaForgeLookups === 'undefined') {
-                return;
-            }
+            if (!$pane.length) return;
 
-            $pane.data('lookupsInitialized', true);
-            const paneFields = getFields().filter(field => {
-                const name = field.PropertyName ?? field.propertyName;
-                return $pane.find(`[name="${name}"]`).length > 0;
-            });
-
-            MetaForgeLookups.initFormLookups($pane, paneFields).always(function () {
-                applyAllConditionalStates($pane);
+            $pane.find('select.lookup-autocomplete, select.lookup-select').each(function () {
+                const $select = $(this);
+                if ($select.hasClass('select2-hidden-accessible')) {
+                    $select.trigger('change.select2');
+                }
             });
         });
-
-        const $firstPane = $container.find('.tab-pane.active').first();
-        if ($firstPane.length) {
-            $firstPane.data('lookupsInitialized', true);
-        }
     }
 
     function buildControl(field) {
@@ -375,6 +358,24 @@ const DynamicForm = (function () {
                 break;
             case 'Autocomplete':
                 controlHtml = `<select class="form-select admin-form-control lookup-autocomplete" name="${name}" data-lookup="${lookupEntity || (name || '').replace(/Id$/, '')}" ${cascadeAttrs} ${required} ${disabled}></select>`;
+                break;
+            case 'MultiSelect':
+                controlHtml = `<div class="mf-lookup-multiselect lookup-multiselect-checkboxes"
+                    data-field-name="${name}"
+                    data-lookup="${lookupEntity || (name || '').replace(/Ids$/, '').replace(/Id$/, '')}"
+                    ${cascadeAttrs}
+                    ${disabled ? 'data-disabled="true"' : ''}>
+                    <button type="button" class="lookup-multiselect-toggle form-select admin-form-control text-start" aria-haspopup="listbox" aria-expanded="false" ${disabled}>
+                        <span class="lookup-multiselect-summary text-muted">Select...</span>
+                    </button>
+                    <div class="lookup-multiselect-panel">
+                        <input type="search" class="form-control form-control-sm lookup-multiselect-search" placeholder="Search..." autocomplete="off" ${disabled} />
+                        <div class="lookup-multiselect-list" role="group"></div>
+                        <div class="lookup-multiselect-empty small text-muted px-2 py-2 d-none">Select the parent field first.</div>
+                        <div class="lookup-multiselect-loading small text-muted px-2 py-2 d-none"><i class="fa-solid fa-spinner fa-spin me-1" aria-hidden="true"></i>Loading...</div>
+                        <button type="button" class="btn btn-link btn-sm lookup-multiselect-load-more d-none px-0">Load more</button>
+                    </div>
+                </div>`;
                 break;
             case 'FileUpload':
                 controlHtml = buildFileUploadControl(name, !!(field.IsReadOnly ?? field.isReadOnly));
@@ -624,6 +625,7 @@ const DynamicForm = (function () {
             const name = $el.attr('name');
             data[name] = readFieldValue($el, getField(name));
         });
+        collectMultiSelectData($scope, data);
         return data;
     }
 
@@ -679,6 +681,14 @@ const DynamicForm = (function () {
                     $input.removeAttr('tabindex');
                     $s2.removeClass('pe-none field-readonly-select');
                 }
+            } else if ($input.hasClass('lookup-multiselect-toggle')) {
+                const $multi = $input.closest('.lookup-multiselect-checkboxes');
+                $multi.find('.lookup-multiselect-toggle').prop('disabled', state.readOnly);
+                $multi.find('.lookup-multiselect-search').prop('disabled', state.readOnly);
+                $multi.find('.lookup-multiselect-item, .lookup-multiselect-load-more').prop('disabled', state.readOnly);
+                if (state.readOnly && typeof MetaForgeLookups !== 'undefined') {
+                    MetaForgeLookups.closeMultiSelectPanel($multi);
+                }
             } else if ($input.closest('.mf-rich-text').length) {
                 if (typeof MetaForgeRichText !== 'undefined') {
                     MetaForgeRichText.setReadOnly($input.closest('.mf-rich-text'), state.readOnly);
@@ -711,7 +721,7 @@ const DynamicForm = (function () {
     function bindConditionalLogic($scope) {
         const $root = $scope ? $($scope) : $form;
         $root.off('.conditionalLogic');
-        $root.on('input.conditionalLogic change.conditionalLogic', '.form-control, .form-select, .form-check-input, .mf-rich-text input[type="hidden"]', function () {
+        $root.on('input.conditionalLogic change.conditionalLogic', '.form-control, .form-select, .form-check-input, .lookup-multiselect-item, .mf-rich-text input[type="hidden"]', function () {
             applyAllConditionalStates($root);
         });
     }
@@ -728,6 +738,11 @@ const DynamicForm = (function () {
                 return $richText.find('input[type="hidden"]').first();
             }
 
+            const $multiselect = $wrap.find('.lookup-multiselect-checkboxes');
+            if ($multiselect.length) {
+                return $multiselect.find('.lookup-multiselect-toggle').first();
+            }
+
             const $input = $wrap.find('.form-control, .form-select, .form-check-input').first();
             if ($input.length) return $input;
         }
@@ -740,6 +755,7 @@ const DynamicForm = (function () {
         if (!$root.length) return;
 
         $root.find('.is-invalid').removeClass('is-invalid');
+        $root.find('.lookup-multiselect-checkboxes.is-invalid').removeClass('is-invalid');
         $root.find('.field-control-wrap.is-invalid').removeClass('is-invalid');
         $root.find('[data-field-error]').text('').hide();
         $root.find('.detail-field-wrap .is-invalid').removeClass('is-invalid');
@@ -764,6 +780,9 @@ const DynamicForm = (function () {
 
         if ($input.hasClass('lookup-select') || $input.hasClass('lookup-autocomplete')) {
             $input.next('.select2-container').find('.select2-selection').addClass('is-invalid');
+        }
+        if ($input.hasClass('lookup-multiselect-toggle')) {
+            $input.closest('.lookup-multiselect-checkboxes').addClass('is-invalid');
         }
     }
 
@@ -944,10 +963,32 @@ const DynamicForm = (function () {
         return keys;
     }
 
+    function readMultiSelectValues($container) {
+        if (!$container || $container.length === 0) return [];
+        return $container.find('.lookup-multiselect-item:checked')
+            .map(function () {
+                return parseInt($(this).val(), 10);
+            })
+            .get()
+            .filter(v => !Number.isNaN(v) && v > 0);
+    }
+
+    function collectMultiSelectData($scope, data) {
+        $scope.find('.lookup-multiselect-checkboxes').each(function () {
+            const name = $(this).data('fieldName');
+            if (!name) return;
+            data[name] = readMultiSelectValues($(this));
+        });
+    }
+
     function readFieldValue($el, field) {
         const controlType = MetaForgeControlTypes.normalize(field?.ControlType ?? field?.controlType);
 
-        if ($el.attr('type') === 'checkbox') {
+        if ($el.hasClass('lookup-multiselect-checkboxes')) {
+            return readMultiSelectValues($el);
+        }
+
+        if ($el.attr('type') === 'checkbox' && !$el.hasClass('lookup-multiselect-item')) {
             return $el.is(':checked');
         }
 
@@ -959,6 +1000,10 @@ const DynamicForm = (function () {
         if (controlType === 'Number') {
             const num = parseFloat(raw);
             return Number.isNaN(num) ? null : num;
+        }
+
+        if (MetaForgeControlTypes.isMultiSelect(controlType)) {
+            return null;
         }
 
         if ((MetaForgeControlTypes.isLookup(controlType)) && (field?.PropertyName ?? field?.propertyName ?? '').endsWith('Id')) {
@@ -976,6 +1021,7 @@ const DynamicForm = (function () {
             const name = $el.attr('name');
             data[name] = readFieldValue($el, getField(name));
         });
+        collectMultiSelectData($form, data);
         if (recordId != null && recordId !== '') {
             data.Id = parseInt(recordId, 10);
         }
@@ -1021,7 +1067,7 @@ const DynamicForm = (function () {
             if (value === undefined || value === null) return;
 
             const $el = $(this);
-            if ($el.is('select')) return;
+            if ($el.is('select') || $el.closest('.lookup-multiselect-checkboxes').length) return;
 
             const field = getField(name);
             const controlType = MetaForgeControlTypes.normalize(field?.ControlType ?? field?.controlType);
@@ -1120,7 +1166,8 @@ const DynamicForm = (function () {
         clearFilePreviews($form);
         applyAllConditionalStates($form);
         if (typeof MetaForgeLookups !== 'undefined') {
-            return initLookupsForScope($form, getFields()).then(function () {
+            destroyLookups($form);
+            return initLookupsForScope($form, getFields(), null).then(function () {
                 applyAllConditionalStates($form);
             });
         }
@@ -1139,12 +1186,9 @@ const DynamicForm = (function () {
 
     function refreshLookups(data) {
         if (typeof MetaForgeLookups !== 'undefined') {
-            $form.find('[data-form-tab-pane]').removeData('lookupsInitialized');
-            const $firstPane = $form.find('.tab-pane.active').first();
-            if ($firstPane.length) {
-                $firstPane.data('lookupsInitialized', true);
-            }
-            return initLookupsForScope($form, getFields(), data || {});
+            return MetaForgeLookups.initFormLookups($form, getFields(), data || {}).then(function () {
+                applyAllConditionalStates($form);
+            });
         }
         return $.when();
     }

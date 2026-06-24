@@ -212,6 +212,9 @@
                                         <th>Value Field</th>
                                         <th>Cascade From</th>
                                         <th>Filter Field</th>
+                                        <th>Mapping Entity</th>
+                                        <th>Mapping Parent Key</th>
+                                        <th>Mapping Related Key</th>
                                         <th title="Required">Req</th>
                                         <th title="Visible">Vis</th>
                                         <th title="Read Only">RO</th>
@@ -267,6 +270,9 @@
                                         <th>Value Field</th>
                                         <th>Cascade From</th>
                                         <th>Filter Field</th>
+                                        <th>Mapping Entity</th>
+                                        <th>Mapping Parent Key</th>
+                                        <th>Mapping Related Key</th>
                                         <th title="Required">Req</th>
                                         <th title="Visible">Vis</th>
                                         <th title="Read Only">RO</th>
@@ -393,7 +399,7 @@
         For dropdown or autocomplete fields, set <strong>Lookup</strong> to the entity name.
         Set <strong>Display Field</strong> to the lookup property shown in the list, or combine fields using a template such as <code>{Code} - {Name}</code> or comma-separated values such as <code>Code, Name</code>.
         Set <strong>Value Field</strong> to the property stored in the form (usually <code>Id</code>).
-        Use <strong>Cascade From</strong> to filter child lookups by a parent field (e.g. Region by CountryId).
+        Use <strong>Cascade From</strong> to filter child lookups by a parent field (e.g. Region by CountryId). Dropdown and Autocomplete store a single FK on the entity; MultiSelect uses autocomplete search with checkboxes and the mapping columns to persist selected ids in a junction table.
         Use <strong>Autocomplete</strong> for large lookup lists — loads 10 items at a time and fetches more as you type or scroll.
         Optional <strong>Filter Field</strong> overrides the lookup property name.
         Click the <i class="fa-solid fa-shield-halved"></i> button in the <strong>Validation</strong> column to configure rules visually (length, range, email, regex, cross-field compare).

@@ -36,6 +36,7 @@ public class MetaForgeDbContext : DbContext
     public DbSet<Country> Countries => Set<Country>();
     public DbSet<Region> Regions => Set<Region>();
     public DbSet<Customer> Customers => Set<Customer>();
+    public DbSet<CustomerRegion> CustomerRegions => Set<CustomerRegion>();
     public DbSet<Address> Addresses => Set<Address>();
     public DbSet<Product> Products => Set<Product>();
     public DbSet<Supplier> Suppliers => Set<Supplier>();

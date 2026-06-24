@@ -36,6 +36,15 @@ public class ForgeField
     /// <summary>Property on the lookup entity to filter by (defaults to LookupParentField).</summary>
     public string? LookupFilterField { get; set; }
 
+    /// <summary>Junction entity for MultiSelect mapping (e.g. CustomerRegion).</summary>
+    public string? MappingEntity { get; set; }
+
+    /// <summary>FK on the junction entity pointing to the master record (e.g. CustomerId).</summary>
+    public string? MappingParentKey { get; set; }
+
+    /// <summary>FK on the junction entity pointing to the lookup entity (e.g. RegionId).</summary>
+    public string? MappingRelatedKey { get; set; }
+
     public string? SectionName { get; set; }
 
     public ForgeForm Form { get; set; } = null!;
