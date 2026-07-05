@@ -1,5 +1,6 @@
 using MetaForge.Application.Validation;
 using MetaForge.Domain.Business;
+using MetaForge.Domain.Notifications;
 using MetaForge.Domain.Security;
 using MetaForge.Infrastructure.Services;
 using MetaForge.Infrastructure.Validation;
@@ -79,6 +80,9 @@ public static class DatabaseSeeder
         await EnsureSampleReportsAsync(context, logger);
         await EnsureReportExportLayoutAsync(context, logger);
         await EnsureReportPermissionsAsync(context, logger);
+        await EnsureEmailDefaultsAsync(context, logger);
+        await EnsurePasswordResetEmailTemplateAsync(context, logger);
+        await EnsureEmailPermissionsAsync(context, logger);
         await EnsureMenusAsync(scope, logger);
     }
 
@@ -816,6 +820,163 @@ public static class DatabaseSeeder
             await context.SaveChangesAsync();
             logger.LogInformation(
                 "Synced report permissions ({AddedPermissions} new permission(s), {AddedAssignments} admin assignment(s)).",
+                addedPermissions,
+                addedAssignments);
+        }
+    }
+
+    private static async Task EnsureEmailDefaultsAsync(MetaForgeDbContext context, ILogger logger)
+    {
+        var added = 0;
+
+        if (!await context.EmailRetryPolicies.AnyAsync(p => p.Code == "standard"))
+        {
+            context.EmailRetryPolicies.Add(new EmailRetryPolicy
+            {
+                Code = "standard",
+                Name = "Standard Retry",
+                MaxAttempts = 5,
+                BackoffStrategy = EmailBackoffStrategy.Exponential,
+                BaseDelaySeconds = 60,
+                MaxDelaySeconds = 3600,
+                BackoffMultiplier = 2.0,
+                UseJitter = true,
+                IsActive = true,
+                IsDefault = true
+            });
+            added++;
+        }
+
+        if (!await context.EmailChannels.AnyAsync(c => c.Code == "default-smtp"))
+        {
+            context.EmailChannels.Add(new EmailChannel
+            {
+                Code = "default-smtp",
+                Name = "Default SMTP",
+                Provider = EmailProviderType.Smtp,
+                FromAddress = "noreply@example.com",
+                FromDisplayName = "MetaForge",
+                SmtpHost = "localhost",
+                SmtpPort = 587,
+                SmtpUseSsl = true,
+                CredentialSecretName = "default-smtp",
+                IsActive = true,
+                IsDefault = true
+            });
+            added++;
+        }
+
+        if (!await context.EmailChannels.AnyAsync(c => c.Code == "sendgrid"))
+        {
+            context.EmailChannels.Add(new EmailChannel
+            {
+                Code = "sendgrid",
+                Name = "SendGrid",
+                Provider = EmailProviderType.SendGrid,
+                FromAddress = "noreply@example.com",
+                FromDisplayName = "MetaForge",
+                CredentialSecretName = "sendgrid-main",
+                IsActive = false,
+                IsDefault = false
+            });
+            added++;
+        }
+
+        if (added > 0)
+        {
+            await context.SaveChangesAsync();
+            logger.LogInformation("Seeded {Count} default email configuration record(s).", added);
+        }
+    }
+
+    private static async Task EnsurePasswordResetEmailTemplateAsync(MetaForgeDbContext context, ILogger logger)
+    {
+        if (await context.EmailTemplates.AnyAsync(t => t.Code == "password-reset"))
+            return;
+
+        var channel = await context.EmailChannels.FirstOrDefaultAsync(c => c.IsDefault && c.IsActive)
+            ?? await context.EmailChannels.FirstOrDefaultAsync(c => c.IsActive);
+        var policy = await context.EmailRetryPolicies.FirstOrDefaultAsync(p => p.IsDefault && p.IsActive)
+            ?? await context.EmailRetryPolicies.FirstOrDefaultAsync(p => p.IsActive);
+
+        context.EmailTemplates.Add(new EmailTemplate
+        {
+            Code = "password-reset",
+            Name = "Password Reset",
+            Description = "Sent when a user must set or reset their password.",
+            Subject = "Set your {{AppName}} password",
+            DefaultToExpression = "{{Email}}",
+            BodyHtml = """
+                <p>Hello {{UserName}},</p>
+                <p>Use the link below to set your password. This link expires in {{ExpiresHours}} hour(s).</p>
+                <p><a href="{{ResetLink}}">Set my password</a></p>
+                <p>If you did not request this, you can ignore this email.</p>
+                """,
+            BodyText = """
+                Hello {{UserName}},
+
+                Use the link below to set your password. This link expires in {{ExpiresHours}} hour(s).
+
+                {{ResetLink}}
+
+                If you did not request this, you can ignore this email.
+                """,
+            EmailChannelId = channel?.Id,
+            RetryPolicyId = policy?.Id,
+            IsActive = true
+        });
+
+        await context.SaveChangesAsync();
+        logger.LogInformation("Seeded password reset email template.");
+    }
+
+    private static async Task EnsureEmailPermissionsAsync(MetaForgeDbContext context, ILogger logger)
+    {
+        var adminRole = await context.Roles.FirstOrDefaultAsync(r => r.Name == "Administrator");
+        if (adminRole == null) return;
+
+        var existingPermissions = await context.Permissions.ToListAsync();
+        var permissionByCode = existingPermissions.ToDictionary(p => p.Code, StringComparer.OrdinalIgnoreCase);
+        var adminPermissionIds = await context.RolePermissions
+            .Where(rp => rp.RoleId == adminRole.Id)
+            .Select(rp => rp.PermissionId)
+            .ToHashSetAsync();
+
+        var addedPermissions = 0;
+        var addedAssignments = 0;
+
+        foreach (var (code, name, action) in Shared.Constants.EmailConfigPermissions.All)
+        {
+            if (!permissionByCode.TryGetValue(code, out var permission))
+            {
+                permission = new Permission { FormId = 0, Action = action, Code = code, Name = name };
+                context.Permissions.Add(permission);
+                permissionByCode[code] = permission;
+                addedPermissions++;
+            }
+
+            if (permission.Id > 0 && adminPermissionIds.Contains(permission.Id))
+                continue;
+
+            var alreadyAssigned = permission.Id > 0 && await context.RolePermissions.AnyAsync(
+                rp => rp.RoleId == adminRole.Id && rp.PermissionId == permission.Id);
+            if (alreadyAssigned)
+            {
+                adminPermissionIds.Add(permission.Id);
+                continue;
+            }
+
+            context.RolePermissions.Add(new RolePermission { Role = adminRole, Permission = permission });
+            if (permission.Id > 0)
+                adminPermissionIds.Add(permission.Id);
+            addedAssignments++;
+        }
+
+        if (addedPermissions > 0 || addedAssignments > 0)
+        {
+            await context.SaveChangesAsync();
+            logger.LogInformation(
+                "Synced email permissions ({AddedPermissions} new permission(s), {AddedAssignments} admin assignment(s)).",
                 addedPermissions,
                 addedAssignments);
         }

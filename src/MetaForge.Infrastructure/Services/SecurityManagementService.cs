@@ -11,15 +11,18 @@ public class SecurityManagementService : ISecurityManagementService
     private readonly MetaForgeDbContext _dbContext;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ISecurityStampService _securityStampService;
+    private readonly IPasswordResetService _passwordResetService;
 
     public SecurityManagementService(
         MetaForgeDbContext dbContext,
         IUnitOfWork unitOfWork,
-        ISecurityStampService securityStampService)
+        ISecurityStampService securityStampService,
+        IPasswordResetService passwordResetService)
     {
         _dbContext = dbContext;
         _unitOfWork = unitOfWork;
         _securityStampService = securityStampService;
+        _passwordResetService = passwordResetService;
     }
 
     public async Task<SecurityOverviewDto> GetOverviewAsync(CancellationToken cancellationToken = default) =>
@@ -95,7 +98,9 @@ public class SecurityManagementService : ISecurityManagementService
         if (exists)
             throw new BusinessException($"Username '{dto.UserName}' already exists.");
 
+        var isNewUser = dto.Id <= 0;
         User user;
+
         if (dto.Id > 0)
         {
             user = await _dbContext.Users
@@ -114,14 +119,11 @@ public class SecurityManagementService : ISecurityManagementService
         }
         else
         {
-            if (string.IsNullOrWhiteSpace(dto.Password))
-                throw new BusinessException("Password is required for new users.");
-
             user = new User
             {
                 UserName = dto.UserName.Trim(),
                 Email = dto.Email.Trim(),
-                PasswordHash = PasswordHasher.Hash(dto.Password),
+                PasswordHash = PasswordHasher.Hash(Guid.NewGuid().ToString("N")),
                 IsActive = dto.IsActive
             };
             await _dbContext.Users.AddAsync(user, cancellationToken);
@@ -134,6 +136,10 @@ public class SecurityManagementService : ISecurityManagementService
 
         await _dbContext.SaveChangesAsync(cancellationToken);
         await _securityStampService.BumpUserStampAsync(user.Id, cancellationToken);
+
+        if (isNewUser && user.IsActive)
+            await _passwordResetService.SendNewUserInviteAsync(user.Id, cancellationToken);
+
         return user.Id;
     }
 

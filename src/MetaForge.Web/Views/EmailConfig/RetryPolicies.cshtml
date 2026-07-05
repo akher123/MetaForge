@@ -1,0 +1,120 @@
+@{
+    ViewData["Title"] = "Retry Policies";
+    var policies = ViewBag.Policies as IReadOnlyList<MetaForge.Application.DTOs.EmailRetryPolicyListItemDto> ?? [];
+}
+
+<div class="app-page-fill admin-hub-page">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h1 class="h4 mb-1">Email Retry Policies</h1>
+            <p class="text-muted small mb-0">Configure retry attempts and backoff for failed sends.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="/EmailAdmin" class="btn btn-sm btn-outline-secondary"><i class="fa-solid fa-arrow-left me-1"></i>Back</a>
+            <button type="button" class="btn btn-sm btn-primary" id="btnNewPolicy"><i class="fa-solid fa-plus me-1"></i>New Policy</button>
+        </div>
+    </div>
+
+    <div class="card admin-card">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0" id="policiesTable">
+                <thead>
+                    <tr>
+                        <th>Code</th>
+                        <th>Name</th>
+                        <th>Max Attempts</th>
+                        <th>Strategy</th>
+                        <th>Default</th>
+                        <th>Active</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var p in policies)
+                    {
+                        <tr data-id="@p.Id">
+                            <td>@p.Code</td>
+                            <td>@p.Name</td>
+                            <td>@p.MaxAttempts</td>
+                            <td>@p.BackoffStrategy</td>
+                            <td>@(p.IsDefault ? "Yes" : "No")</td>
+                            <td>@(p.IsActive ? "Yes" : "No")</td>
+                            <td class="text-end">
+                                <button type="button" class="btn btn-sm btn-outline-primary btn-edit">Edit</button>
+                                <button type="button" class="btn btn-sm btn-outline-danger btn-delete">Delete</button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="policyModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Retry Policy</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="policyForm">
+                    <input type="hidden" id="policyId" value="0" />
+                    <div class="mb-3">
+                        <label class="form-label">Code</label>
+                        <input type="text" class="form-control" id="policyCode" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Name</label>
+                        <input type="text" class="form-control" id="policyName" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Max Attempts</label>
+                        <input type="number" class="form-control" id="policyMaxAttempts" value="5" min="1" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Backoff Strategy</label>
+                        <select class="form-select" id="policyStrategy">
+                            <option value="Fixed">Fixed</option>
+                            <option value="Linear">Linear</option>
+                            <option value="Exponential">Exponential</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Base Delay (seconds)</label>
+                        <input type="number" class="form-control" id="policyBaseDelay" value="60" min="1" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Max Delay (seconds)</label>
+                        <input type="number" class="form-control" id="policyMaxDelay" value="3600" min="1" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Backoff Multiplier</label>
+                        <input type="number" class="form-control" id="policyMultiplier" value="2" step="0.1" />
+                    </div>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" id="policyJitter" checked />
+                        <label class="form-check-label" for="policyJitter">Use jitter</label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" id="policyDefault" />
+                        <label class="form-check-label" for="policyDefault">Default policy</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="policyActive" checked />
+                        <label class="form-check-label" for="policyActive">Active</label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="btnSavePolicy">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/metaforge/email-policies.js" asp-append-version="true"></script>
+}

@@ -299,6 +299,12 @@
     color: #b91c1c;
 }
 
+.auth-alert--success {
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    color: #047857;
+}
+
 .auth-alert-icon {
     margin-top: 0.1rem;
     flex-shrink: 0;
@@ -400,7 +406,22 @@
 }
 
 .auth-form-options {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
     margin-bottom: 1.5rem;
+}
+
+.auth-forgot-link {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--mf-primary);
+    text-decoration: none;
+}
+
+.auth-forgot-link:hover {
+    text-decoration: underline;
 }
 
 .auth-remember .form-check-input {

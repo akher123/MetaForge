@@ -281,7 +281,8 @@ public class GenericCrudServiceLookupCacheTests
             lookupService.Object,
             Mock.Of<IDynamicValidationService>(),
             Mock.Of<IAuditService>(),
-            Mock.Of<IMappingAssociationService>());
+            Mock.Of<IMappingAssociationService>(),
+            Mock.Of<IEmailTriggerService>());
 
         await service.CreateAsync("Country", new Dictionary<string, object?>
         {

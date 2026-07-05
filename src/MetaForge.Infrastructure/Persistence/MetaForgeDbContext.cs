@@ -1,5 +1,6 @@
 using MetaForge.Domain.Audit;
 using MetaForge.Domain.Features;
+using MetaForge.Domain.Notifications;
 using MetaForge.Domain.Security;
 
 namespace MetaForge.Infrastructure.Persistence;
@@ -30,6 +31,7 @@ public class MetaForgeDbContext : DbContext
     public DbSet<Permission> Permissions => Set<Permission>();
     public DbSet<UserRole> UserRoles => Set<UserRole>();
     public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
+    public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
 
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
@@ -55,6 +57,12 @@ public class MetaForgeDbContext : DbContext
     public DbSet<Vehicle> Vehicles => Set<Vehicle>();
 
     public DbSet<MaintenanceRecord> MaintenanceRecords => Set<MaintenanceRecord>();
+
+    public DbSet<EmailChannel> EmailChannels => Set<EmailChannel>();
+    public DbSet<EmailRetryPolicy> EmailRetryPolicies => Set<EmailRetryPolicy>();
+    public DbSet<EmailTemplate> EmailTemplates => Set<EmailTemplate>();
+    public DbSet<EmailTemplateBinding> EmailTemplateBindings => Set<EmailTemplateBinding>();
+    public DbSet<EmailMessage> EmailMessages => Set<EmailMessage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

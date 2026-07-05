@@ -38,7 +38,8 @@ public class GenericCrudServiceTests
             Mock.Of<ILookupService>(),
             Mock.Of<IDynamicValidationService>(),
             Mock.Of<IAuditService>(),
-            Mock.Of<IMappingAssociationService>());
+            Mock.Of<IMappingAssociationService>(),
+            Mock.Of<IEmailTriggerService>());
 
         var result = await service.GetAllAsync(new GridQueryRequest
         {

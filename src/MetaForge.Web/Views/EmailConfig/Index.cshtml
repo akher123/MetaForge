@@ -1,0 +1,90 @@
+@{
+    ViewData["Title"] = "Email Admin";
+    var channels = ViewBag.Channels as IReadOnlyList<MetaForge.Application.DTOs.EmailChannelListItemDto> ?? [];
+    var templates = ViewBag.Templates as IReadOnlyList<MetaForge.Application.DTOs.EmailTemplateListItemDto> ?? [];
+    var policies = ViewBag.Policies as IReadOnlyList<MetaForge.Application.DTOs.EmailRetryPolicyListItemDto> ?? [];
+}
+
+<div class="app-page-fill admin-hub-page form-builder-page">
+    <div class="row g-3 mb-4 form-builder-stat-grid security-stat-grid">
+        <div class="col-6 col-xl-3">
+            <div class="stat-card stat-primary h-100">
+                <div class="card-body text-center">
+                    <span class="stat-icon stat-icon-screens"><i class="fa-solid fa-envelope"></i></span>
+                    <div class="stat-value">@templates.Count</div>
+                    <div class="stat-label">Templates</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-xl-3">
+            <div class="stat-card stat-info h-100">
+                <div class="card-body text-center">
+                    <span class="stat-icon stat-icon-master"><i class="fa-solid fa-server"></i></span>
+                    <div class="stat-value">@channels.Count</div>
+                    <div class="stat-label">Channels</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-xl-3">
+            <div class="stat-card stat-warning h-100">
+                <div class="card-body text-center">
+                    <span class="stat-icon stat-icon-transaction"><i class="fa-solid fa-rotate"></i></span>
+                    <div class="stat-value">@policies.Count</div>
+                    <div class="stat-label">Retry Policies</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-xl-3">
+            <div class="stat-card stat-success h-100">
+                <div class="card-body text-center">
+                    <span class="stat-icon stat-icon-active"><i class="fa-solid fa-list-check"></i></span>
+                    <div class="stat-value"><i class="fa-solid fa-arrow-right"></i></div>
+                    <div class="stat-label">Email Log</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-md-6 col-xl-3">
+            <div class="card admin-card form-builder-hub-card h-100">
+                <div class="card-body">
+                    <span class="form-builder-hub-icon hub-master"><i class="fa-solid fa-server"></i></span>
+                    <h2 class="h6 mb-1 fw-bold">Email Channels</h2>
+                    <p class="small text-muted">Configure SMTP or SendGrid transport providers.</p>
+                    <a href="/EmailAdmin/Channels" class="btn btn-sm btn-outline-primary">Manage Channels</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-xl-3">
+            <div class="card admin-card form-builder-hub-card h-100">
+                <div class="card-body">
+                    <span class="form-builder-hub-icon hub-master"><i class="fa-solid fa-file-lines"></i></span>
+                    <h2 class="h6 mb-1 fw-bold">Email Templates</h2>
+                    <p class="small text-muted">Design HTML templates with {{Token}} placeholders.</p>
+                    <a href="/EmailAdmin/Templates" class="btn btn-sm btn-outline-primary">Manage Templates</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-xl-3">
+            <div class="card admin-card form-builder-hub-card h-100">
+                <div class="card-body">
+                    <span class="form-builder-hub-icon hub-master"><i class="fa-solid fa-rotate"></i></span>
+                    <h2 class="h6 mb-1 fw-bold">Retry Policies</h2>
+                    <p class="small text-muted">Configure max attempts and backoff strategies.</p>
+                    <a href="/EmailAdmin/RetryPolicies" class="btn btn-sm btn-outline-primary">Manage Policies</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-xl-3">
+            <div class="card admin-card form-builder-hub-card h-100">
+                <div class="card-body">
+                    <span class="form-builder-hub-icon hub-master"><i class="fa-solid fa-list-check"></i></span>
+                    <h2 class="h6 mb-1 fw-bold">Email Log</h2>
+                    <p class="small text-muted">Monitor send status, retries, and errors.</p>
+                    <a href="/EmailAdmin/Log" class="btn btn-sm btn-outline-primary">View Log</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

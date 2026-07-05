@@ -50,6 +50,14 @@
                 <p class="auth-form-subtitle">Enter your credentials to access the dashboard</p>
             </header>
 
+            @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+            {
+                <div class="auth-alert auth-alert--success" role="status">
+                    <i class="fa-solid fa-circle-check auth-alert-icon" aria-hidden="true"></i>
+                    <span>@Model.SuccessMessage</span>
+                </div>
+            }
+
             @if (!string.IsNullOrEmpty(Model.ErrorMessage))
             {
                 <div class="auth-alert auth-alert--danger" role="alert">
@@ -103,6 +111,7 @@
                         <input asp-for="RememberMe" class="form-check-input" id="RememberMe" />
                         <label asp-for="RememberMe" class="form-check-label" for="RememberMe">Keep me signed in</label>
                     </div>
+                    <a asp-action="ForgotPassword" class="auth-forgot-link">Forgot password?</a>
                 </div>
 
                 <button type="submit" class="btn btn-auth-submit w-100">

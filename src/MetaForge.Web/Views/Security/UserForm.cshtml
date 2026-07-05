@@ -32,8 +32,17 @@
                         <input type="email" id="email" class="form-control" value="@user?.Email" required autocomplete="email" />
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label" for="password">Password @(isEdit ? "(leave blank to keep)" : "*")</label>
-                        <input type="password" id="password" class="form-control" @(isEdit ? "" : "required") autocomplete="@(isEdit ? "new-password" : "new-password")" />
+                        @if (isEdit)
+                        {
+                            <label class="form-label" for="password">Password (leave blank to keep)</label>
+                            <input type="password" id="password" class="form-control" autocomplete="new-password" />
+                        }
+                        else
+                        {
+                            <label class="form-label">Password</label>
+                            <input type="text" class="form-control" value="Set via email invite" disabled />
+                            <div class="form-text">A secure link will be emailed so the user can set their password.</div>
+                        }
                     </div>
                     <div class="col-12">
                         <div class="form-check form-switch">

@@ -21,6 +21,7 @@ public class GenericCrudService : IGenericCrudService
     private readonly IDynamicValidationService _validationService;
     private readonly IAuditService _auditService;
     private readonly IMappingAssociationService _mappingAssociationService;
+    private readonly IEmailTriggerService _emailTriggerService;
 
     public GenericCrudService(
         MetaForgeDbContext dbContext,
@@ -29,7 +30,8 @@ public class GenericCrudService : IGenericCrudService
         ILookupService lookupService,
         IDynamicValidationService validationService,
         IAuditService auditService,
-        IMappingAssociationService mappingAssociationService)
+        IMappingAssociationService mappingAssociationService,
+        IEmailTriggerService emailTriggerService)
     {
         _dbContext = dbContext;
         _typeResolver = typeResolver;
@@ -38,6 +40,7 @@ public class GenericCrudService : IGenericCrudService
         _validationService = validationService;
         _auditService = auditService;
         _mappingAssociationService = mappingAssociationService;
+        _emailTriggerService = emailTriggerService;
     }
 
     public async Task<PagedResult<Dictionary<string, object?>>> GetAllAsync(GridQueryRequest request, CancellationToken cancellationToken = default)
@@ -136,6 +139,9 @@ public class GenericCrudService : IGenericCrudService
 
         await _auditService.LogAsync(entityName, masterId.ToString() ?? "", "Insert", null, JsonSerializer.Serialize(MergeForValidation(data, mappingData)), cancellationToken);
 
+        if (int.TryParse(masterId.ToString(), out var createdId))
+            await _emailTriggerService.TriggerAsync(entityName, createdId, EmailTriggerEvent.OnCreate, cancellationToken: cancellationToken);
+
         return entity;
     }
 
@@ -167,6 +173,9 @@ public class GenericCrudService : IGenericCrudService
         await _lookupService.InvalidateCacheAsync(entityName, cancellationToken);
 
         await _auditService.LogAsync(entityName, id.ToString()!, "Update", oldValue, JsonSerializer.Serialize(MergeForValidation(data, mappingData)), cancellationToken);
+
+        if (int.TryParse(id.ToString(), out var updatedId))
+            await _emailTriggerService.TriggerAsync(entityName, updatedId, EmailTriggerEvent.OnUpdate, cancellationToken: cancellationToken);
     }
 
     public async Task DeleteAsync(string entityName, object id, CancellationToken cancellationToken = default)
@@ -189,6 +198,9 @@ public class GenericCrudService : IGenericCrudService
         await _lookupService.InvalidateCacheAsync(entityName, cancellationToken);
 
         await _auditService.LogAsync(entityName, id.ToString()!, "Delete", oldValue, null, cancellationToken);
+
+        if (int.TryParse(id.ToString(), out var deletedId))
+            await _emailTriggerService.TriggerAsync(entityName, deletedId, EmailTriggerEvent.OnDelete, cancellationToken: cancellationToken);
     }
 
     private static Dictionary<string, object?> MergeForValidation(

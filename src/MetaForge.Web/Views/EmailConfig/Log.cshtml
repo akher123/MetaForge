@@ -1,0 +1,63 @@
+@{
+    ViewData["Title"] = "Email Log";
+    var messages = ViewBag.Messages as MetaForge.Application.Common.PagedResult<MetaForge.Application.DTOs.EmailMessageListItemDto>;
+    var items = messages?.Items ?? [];
+}
+
+<div class="app-page-fill admin-hub-page">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h1 class="h4 mb-1">Email Log</h1>
+            <p class="text-muted small mb-0">Monitor outbound email status, retries, and errors.</p>
+        </div>
+        <a href="/EmailAdmin" class="btn btn-sm btn-outline-secondary"><i class="fa-solid fa-arrow-left me-1"></i>Back</a>
+    </div>
+
+    <div class="card admin-card">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0" id="emailLogTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>To</th>
+                        <th>Subject</th>
+                        <th>Template</th>
+                        <th>Status</th>
+                        <th>Attempts</th>
+                        <th>Created</th>
+                        <th>Sent</th>
+                        <th>Error</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var m in items)
+                    {
+                        <tr data-id="@m.Id">
+                            <td>@m.Id</td>
+                            <td>@m.ToAddress</td>
+                            <td>@m.Subject</td>
+                            <td>@(m.TemplateCode ?? "-")</td>
+                            <td><span class="badge email-status-@m.Status.ToLowerInvariant()">@m.Status</span></td>
+                            <td>@m.AttemptCount / @m.MaxAttempts</td>
+                            <td>@m.CreatedUtc.ToLocalTime().ToString("g")</td>
+                            <td>@(m.SentUtc?.ToLocalTime().ToString("g") ?? "-")</td>
+                            <td class="small text-danger">@(m.LastError ?? "")</td>
+                            <td class="text-end text-nowrap">
+                                @if (m.Status is not "Sent" and not "Cancelled")
+                                {
+                                    <button type="button" class="btn btn-sm btn-outline-warning btn-cancel">Cancel</button>
+                                }
+                                <button type="button" class="btn btn-sm btn-outline-primary btn-resend">Resend</button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/metaforge/email-log.js" asp-append-version="true"></script>
+}

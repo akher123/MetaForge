@@ -1,0 +1,100 @@
+@{
+    ViewData["Title"] = ViewBag.IsEdit == true ? "Edit Email Template" : "New Email Template";
+    var template = ViewBag.Template as MetaForge.Application.DTOs.EmailTemplateDto;
+    var channels = ViewBag.Channels as IReadOnlyList<MetaForge.Application.DTOs.EmailChannelListItemDto> ?? [];
+    var policies = ViewBag.Policies as IReadOnlyList<MetaForge.Application.DTOs.EmailRetryPolicyListItemDto> ?? [];
+    var forms = ViewBag.Forms as IReadOnlyList<MetaForge.Application.DTOs.FormOptionDto> ?? [];
+    var isEdit = ViewBag.IsEdit == true;
+}
+
+<div class="app-page-fill admin-hub-page">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h1 class="h4 mb-1">@(isEdit ? "Edit Template" : "New Template")</h1>
+            <p class="text-muted small mb-0">Use {{PropertyName}} tokens from bound feature entities.</p>
+        </div>
+        <a href="/EmailAdmin/Templates" class="btn btn-sm btn-outline-secondary"><i class="fa-solid fa-arrow-left me-1"></i>Back</a>
+    </div>
+
+    <div class="card admin-card">
+        <div class="card-body">
+            <form id="templateForm">
+                <input type="hidden" id="templateId" value="@(template?.Id ?? 0)" />
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Code</label>
+                        <input type="text" class="form-control" id="templateCode" value="@template?.Code" required />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Name</label>
+                        <input type="text" class="form-control" id="templateName" value="@template?.Name" required />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Default To Expression</label>
+                        <input type="text" class="form-control" id="templateTo" value="@template?.DefaultToExpression" placeholder="{{Email}}" />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Subject</label>
+                        <input type="text" class="form-control" id="templateSubject" value="@template?.Subject" required />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Channel</label>
+                        <select class="form-select" id="templateChannel">
+                            <option value="">Default</option>
+                            @foreach (var c in channels)
+                            {
+                                <option value="@c.Id" selected="@(template?.EmailChannelId == c.Id)">@c.Name (@c.Provider)</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Retry Policy</label>
+                        <select class="form-select" id="templatePolicy">
+                            <option value="">Default</option>
+                            @foreach (var p in policies)
+                            {
+                                <option value="@p.Id" selected="@(template?.RetryPolicyId == p.Id)">@p.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">HTML Body</label>
+                        <textarea class="form-control" id="templateBody" rows="10" required>@template?.BodyHtml</textarea>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Plain Text Body (optional)</label>
+                        <textarea class="form-control" id="templateBodyText" rows="4">@template?.BodyText</textarea>
+                    </div>
+                    <div class="col-12">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="templateActive" @(template == null || template.IsActive ? "checked" : "") />
+                            <label class="form-check-label" for="templateActive">Active</label>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="my-4" />
+                <h2 class="h6">Feature Bindings</h2>
+                <p class="text-muted small">Automatically send this template when a feature event occurs.</p>
+                <div id="bindingsContainer"></div>
+                <button type="button" class="btn btn-sm btn-outline-secondary mt-2" id="btnAddBinding"><i class="fa-solid fa-plus me-1"></i>Add Binding</button>
+
+                <div class="mt-4">
+                    <button type="button" class="btn btn-primary" id="btnSaveTemplate">Save Template</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    window.emailTemplateConfig = {
+        forms: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(forms)),
+        bindings: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(template?.Bindings ?? new List<MetaForge.Application.DTOs.EmailTemplateBindingDto>())),
+        triggerEvents: ["OnCreate", "OnUpdate", "OnDelete", "OnAction"]
+    };
+</script>
+
+@section Scripts {
+    <script src="~/js/metaforge/email-templates.js" asp-append-version="true"></script>
+}

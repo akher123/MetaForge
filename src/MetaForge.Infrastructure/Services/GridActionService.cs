@@ -13,18 +13,25 @@ public class GridActionService : IGridActionService
         @"^/api/metaforge/crud/(?<entity>[^/]+)(?:/(?<id>\d+))?$",
         RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
+    private static readonly Regex EmailSendPathPattern = new(
+        @"^/api/metaforge/email/send$",
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+
     private readonly IFormMetadataCache _formCache;
     private readonly IGenericCrudService _crudService;
     private readonly IFormAuthorizationService _authorizationService;
+    private readonly IEmailDispatchService _emailDispatchService;
 
     public GridActionService(
         IFormMetadataCache formCache,
         IGenericCrudService crudService,
-        IFormAuthorizationService authorizationService)
+        IFormAuthorizationService authorizationService,
+        IEmailDispatchService emailDispatchService)
     {
         _formCache = formCache;
         _crudService = crudService;
         _authorizationService = authorizationService;
+        _emailDispatchService = emailDispatchService;
     }
 
     public async Task ExecuteAsync(
@@ -54,8 +61,14 @@ public class GridActionService : IGridActionService
         var context = await BuildContextAsync(form, recordId, cancellationToken);
         var target = ResolveTemplate(action.HandlerTarget, context);
 
+        if (EmailSendPathPattern.IsMatch(target))
+        {
+            await ExecuteEmailSendAsync(action, form, recordId, context, cancellationToken);
+            return;
+        }
+
         if (!CrudPathPattern.IsMatch(target))
-            throw new BusinessException("Grid action target must point to /api/metaforge/crud/{entity}/{id}.");
+            throw new BusinessException("Grid action target must point to /api/metaforge/crud/{entity}/{id} or /api/metaforge/email/send.");
 
         var match = CrudPathPattern.Match(target);
         var entity = match.Groups["entity"].Value;
@@ -106,6 +119,47 @@ public class GridActionService : IGridActionService
         }
 
         throw new BusinessException($"HTTP method '{action.HttpMethod}' is not supported for grid actions.");
+    }
+
+    private async Task ExecuteEmailSendAsync(
+        ForgeFormAction action,
+        ForgeForm form,
+        int? recordId,
+        Dictionary<string, string?> context,
+        CancellationToken cancellationToken)
+    {
+        if (!recordId.HasValue)
+            throw new BusinessException("Email grid actions require a record id.");
+
+        var payload = ParseRequestBody(action.RequestBody, context);
+        var templateCode = GetPayloadString(payload, "templateCode");
+        if (string.IsNullOrWhiteSpace(templateCode))
+            throw new BusinessException("Email grid action request body must include templateCode.");
+
+        var entityName = GetPayloadString(payload, "entity") ?? form.EntityName;
+        var recordIdValue = int.Parse(GetPayloadString(payload, "recordId") ?? recordId.Value.ToString());
+
+        await _emailDispatchService.EnqueueFromTemplateAsync(new EmailSendRequest
+        {
+            TemplateCode = templateCode,
+            EntityName = entityName,
+            RecordId = recordIdValue,
+            ToAddress = GetPayloadString(payload, "toAddress"),
+            Cc = GetPayloadString(payload, "cc"),
+            Bcc = GetPayloadString(payload, "bcc")
+        }, cancellationToken);
+    }
+
+    private static string? GetPayloadString(Dictionary<string, object?> payload, string key)
+    {
+        if (!payload.TryGetValue(key, out var value) || value == null)
+            return null;
+
+        return value switch
+        {
+            JsonElement element when element.ValueKind == JsonValueKind.String => element.GetString(),
+            _ => value.ToString()
+        };
     }
 
     private async Task<Dictionary<string, string?>> BuildContextAsync(

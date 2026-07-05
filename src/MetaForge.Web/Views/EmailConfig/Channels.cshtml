@@ -1,0 +1,134 @@
+@{
+    ViewData["Title"] = "Email Channels";
+    var channels = ViewBag.Channels as IReadOnlyList<MetaForge.Application.DTOs.EmailChannelListItemDto> ?? [];
+}
+
+<div class="app-page-fill admin-hub-page">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h1 class="h4 mb-1">Email Channels</h1>
+            <p class="text-muted small mb-0">Configure SMTP or SendGrid transport. Store credentials in appsettings Email:Secrets.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="/EmailAdmin" class="btn btn-sm btn-outline-secondary"><i class="fa-solid fa-arrow-left me-1"></i>Back</a>
+            <button type="button" class="btn btn-sm btn-primary" id="btnNewChannel"><i class="fa-solid fa-plus me-1"></i>New Channel</button>
+        </div>
+    </div>
+
+    <div class="card admin-card">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0" id="channelsTable">
+                <thead>
+                    <tr>
+                        <th>Code</th>
+                        <th>Name</th>
+                        <th>Provider</th>
+                        <th>From</th>
+                        <th>Default</th>
+                        <th>Active</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var c in channels)
+                    {
+                        <tr data-id="@c.Id">
+                            <td>@c.Code</td>
+                            <td>@c.Name</td>
+                            <td><span class="badge bg-info">@c.Provider</span></td>
+                            <td>@c.FromAddress</td>
+                            <td>@(c.IsDefault ? "Yes" : "No")</td>
+                            <td>@(c.IsActive ? "Yes" : "No")</td>
+                            <td class="text-end">
+                                <button type="button" class="btn btn-sm btn-outline-primary btn-edit">Edit</button>
+                                <button type="button" class="btn btn-sm btn-outline-danger btn-delete">Delete</button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="channelModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Email Channel</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="channelForm">
+                    <input type="hidden" id="channelId" value="0" />
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Code</label>
+                            <input type="text" class="form-control" id="channelCode" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Name</label>
+                            <input type="text" class="form-control" id="channelName" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Provider</label>
+                            <select class="form-select" id="channelProvider">
+                                <option value="Smtp">SMTP</option>
+                                <option value="SendGrid">SendGrid</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Credential Secret Name</label>
+                            <input type="text" class="form-control" id="channelSecret" placeholder="e.g. default-smtp" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">From Address</label>
+                            <input type="email" class="form-control" id="channelFrom" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">From Display Name</label>
+                            <input type="text" class="form-control" id="channelFromName" />
+                        </div>
+                        <div class="col-md-6 smtp-field">
+                            <label class="form-label">SMTP Host</label>
+                            <input type="text" class="form-control" id="channelHost" />
+                        </div>
+                        <div class="col-md-3 smtp-field">
+                            <label class="form-label">SMTP Port</label>
+                            <input type="number" class="form-control" id="channelPort" value="587" />
+                        </div>
+                        <div class="col-md-3 smtp-field">
+                            <label class="form-label">Use SSL</label>
+                            <select class="form-select" id="channelSsl">
+                                <option value="true">Yes</option>
+                                <option value="false">No</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 smtp-field">
+                            <label class="form-label">SMTP Username</label>
+                            <input type="text" class="form-control" id="channelUsername" />
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check mt-4">
+                                <input class="form-check-input" type="checkbox" id="channelDefault" />
+                                <label class="form-check-label" for="channelDefault">Default channel</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="channelActive" checked />
+                                <label class="form-check-label" for="channelActive">Active</label>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="btnSaveChannel">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/metaforge/email-channels.js" asp-append-version="true"></script>
+}

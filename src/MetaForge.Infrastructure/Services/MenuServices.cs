@@ -281,8 +281,9 @@ public class MenuSyncService : IMenuSyncService
         var systemFolder = await EnsureGroupFolderAsync("System", cancellationToken);
         await EnsureUrlMenuAsync(systemFolder.Id, "Form Builder", "/FormBuilder", "fa-wand-magic-sparkles", 0, cancellationToken);
         await EnsureUrlMenuAsync(systemFolder.Id, "Report Builder", "/ReportBuilder", "fa-chart-column", 1, cancellationToken);
-        await EnsureUrlMenuAsync(systemFolder.Id, "Menu Management", "/Menu", "fa-sitemap", 2, cancellationToken);
-        await EnsureUrlMenuAsync(systemFolder.Id, "Security", "/Security", "fa-shield-halved", 3, cancellationToken);
+        await EnsureUrlMenuAsync(systemFolder.Id, "Email Admin", "/EmailAdmin", "fa-envelope", 2, cancellationToken);
+        await EnsureUrlMenuAsync(systemFolder.Id, "Menu Management", "/Menu", "fa-sitemap", 3, cancellationToken);
+        await EnsureUrlMenuAsync(systemFolder.Id, "Security", "/Security", "fa-shield-halved", 4, cancellationToken);
     }
 
     public async Task EnsureSystemAdminMenusAsync(CancellationToken cancellationToken = default)
@@ -290,8 +291,9 @@ public class MenuSyncService : IMenuSyncService
         var systemFolder = await EnsureGroupFolderAsync("System", cancellationToken);
         await EnsureUrlMenuAsync(systemFolder.Id, "Form Builder", "/FormBuilder", "fa-wand-magic-sparkles", 0, cancellationToken);
         await EnsureUrlMenuAsync(systemFolder.Id, "Report Builder", "/ReportBuilder", "fa-chart-column", 1, cancellationToken);
-        await EnsureUrlMenuAsync(systemFolder.Id, "Menu Management", "/Menu", "fa-sitemap", 2, cancellationToken);
-        await EnsureUrlMenuAsync(systemFolder.Id, "Security", "/Security", "fa-shield-halved", 3, cancellationToken);
+        await EnsureUrlMenuAsync(systemFolder.Id, "Email Admin", "/EmailAdmin", "fa-envelope", 2, cancellationToken);
+        await EnsureUrlMenuAsync(systemFolder.Id, "Menu Management", "/Menu", "fa-sitemap", 3, cancellationToken);
+        await EnsureUrlMenuAsync(systemFolder.Id, "Security", "/Security", "fa-shield-halved", 4, cancellationToken);
     }
 
     private async Task<bool> IsDetailOnlyFormAsync(ForgeForm form, CancellationToken cancellationToken)

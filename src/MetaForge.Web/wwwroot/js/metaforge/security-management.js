@@ -134,7 +134,7 @@ const SecurityManagement = (function () {
                 Id: parseInt($('#userId').val(), 10) || 0,
                 UserName: $('#userName').val()?.trim(),
                 Email: $('#email').val()?.trim(),
-                Password: $('#password').val() || null,
+                Password: $('#password').length ? ($('#password').val() || null) : null,
                 IsActive: $('#isActive').is(':checked'),
                 RoleIds: $('.role-check:checked').map(function () {
                     return parseInt($(this).val(), 10);
@@ -147,7 +147,10 @@ const SecurityManagement = (function () {
                 contentType: 'application/json',
                 data: JSON.stringify(payload)
             }).done(function () {
-                MetaForgeUi.showAlert('User saved successfully.', 'success', 3000);
+                MetaForgeUi.showAlert(
+                    payload.Id > 0 ? 'User saved successfully.' : 'User created. A password setup email has been sent.',
+                    'success',
+                    3000);
                 window.setTimeout(function () { window.location = '/Security/Users'; }, 800);
             }).fail(function (xhr) {
                 MetaForgeUi.showAlert(xhr.responseJSON?.error ?? xhr.responseJSON?.title ?? 'Save failed.', 'danger');

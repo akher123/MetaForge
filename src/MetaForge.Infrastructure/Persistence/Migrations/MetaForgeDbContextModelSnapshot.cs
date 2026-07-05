@@ -1838,6 +1838,371 @@ namespace MetaForge.Infrastructure.Persistence.Migrations
                     b.ToTable("LookupConfigurations", (string)null);
                 });
 
+            modelBuilder.Entity("MetaForge.Domain.Notifications.EmailChannel", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("CredentialSecretName")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("FromAddress")
+                        .IsRequired()
+                        .HasMaxLength(320)
+                        .HasColumnType("nvarchar(320)");
+
+                    b.Property<string>("FromDisplayName")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDefault")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("MaxDegreeOfParallelism")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("SmtpHost")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("SmtpPort")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("SmtpUseSsl")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("SmtpUsername")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("EmailChannels", (string)null);
+                });
+
+            modelBuilder.Entity("MetaForge.Domain.Notifications.EmailMessage", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AttemptCount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Bcc")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("BodyHtml")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("BodyText")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Cc")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("ContextJson")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("EmailChannelId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("EmailTemplateId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("LastError")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int>("MaxAttempts")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("NextAttemptUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("RetryPolicyId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("SentUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("SourceEntity")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("SourceRecordId")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("ToAddress")
+                        .IsRequired()
+                        .HasMaxLength(320)
+                        .HasColumnType("nvarchar(320)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedUtc");
+
+                    b.HasIndex("EmailChannelId");
+
+                    b.HasIndex("EmailTemplateId");
+
+                    b.HasIndex("RetryPolicyId");
+
+                    b.HasIndex("Status", "NextAttemptUtc");
+
+                    b.ToTable("EmailMessages", (string)null);
+                });
+
+            modelBuilder.Entity("MetaForge.Domain.Notifications.EmailRetryPolicy", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<double>("BackoffMultiplier")
+                        .HasColumnType("float");
+
+                    b.Property<string>("BackoffStrategy")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("BaseDelaySeconds")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDefault")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("MaxAttempts")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MaxDelaySeconds")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<bool>("UseJitter")
+                        .HasColumnType("bit");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("EmailRetryPolicies", (string)null);
+                });
+
+            modelBuilder.Entity("MetaForge.Domain.Notifications.EmailTemplate", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("BodyHtml")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("BodyText")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Culture")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<string>("DefaultBcc")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("DefaultCc")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("DefaultToExpression")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int?>("EmailChannelId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int?>("RetryPolicyId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.HasIndex("EmailChannelId");
+
+                    b.HasIndex("RetryPolicyId");
+
+                    b.ToTable("EmailTemplates", (string)null);
+                });
+
+            modelBuilder.Entity("MetaForge.Domain.Notifications.EmailTemplateBinding", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ActionCode")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("ConditionExpression")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("EmailTemplateId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("FormId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("RecipientField")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("TriggerEvent")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmailTemplateId");
+
+                    b.HasIndex("FormId");
+
+                    b.ToTable("EmailTemplateBindings", (string)null);
+                });
+
+            modelBuilder.Entity("MetaForge.Domain.Security.PasswordResetToken", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("ExpiresUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Purpose")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<DateTime?>("UsedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TokenHash");
+
+                    b.HasIndex("UserId", "Purpose", "UsedUtc");
+
+                    b.ToTable("PasswordResetTokens", (string)null);
+                });
+
             modelBuilder.Entity("MetaForge.Domain.Security.Permission", b =>
                 {
                     b.Property<int>("Id")
@@ -2357,6 +2722,76 @@ namespace MetaForge.Infrastructure.Persistence.Migrations
                     b.Navigation("Report");
                 });
 
+            modelBuilder.Entity("MetaForge.Domain.Notifications.EmailMessage", b =>
+                {
+                    b.HasOne("MetaForge.Domain.Notifications.EmailChannel", "EmailChannel")
+                        .WithMany()
+                        .HasForeignKey("EmailChannelId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MetaForge.Domain.Notifications.EmailTemplate", "EmailTemplate")
+                        .WithMany()
+                        .HasForeignKey("EmailTemplateId");
+
+                    b.HasOne("MetaForge.Domain.Notifications.EmailRetryPolicy", "RetryPolicy")
+                        .WithMany()
+                        .HasForeignKey("RetryPolicyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("EmailChannel");
+
+                    b.Navigation("EmailTemplate");
+
+                    b.Navigation("RetryPolicy");
+                });
+
+            modelBuilder.Entity("MetaForge.Domain.Notifications.EmailTemplate", b =>
+                {
+                    b.HasOne("MetaForge.Domain.Notifications.EmailChannel", "EmailChannel")
+                        .WithMany("Templates")
+                        .HasForeignKey("EmailChannelId");
+
+                    b.HasOne("MetaForge.Domain.Notifications.EmailRetryPolicy", "RetryPolicy")
+                        .WithMany()
+                        .HasForeignKey("RetryPolicyId");
+
+                    b.Navigation("EmailChannel");
+
+                    b.Navigation("RetryPolicy");
+                });
+
+            modelBuilder.Entity("MetaForge.Domain.Notifications.EmailTemplateBinding", b =>
+                {
+                    b.HasOne("MetaForge.Domain.Notifications.EmailTemplate", "EmailTemplate")
+                        .WithMany("Bindings")
+                        .HasForeignKey("EmailTemplateId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MetaForge.Domain.Metadata.ForgeForm", "Form")
+                        .WithMany()
+                        .HasForeignKey("FormId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("EmailTemplate");
+
+                    b.Navigation("Form");
+                });
+
+            modelBuilder.Entity("MetaForge.Domain.Security.PasswordResetToken", b =>
+                {
+                    b.HasOne("MetaForge.Domain.Security.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("MetaForge.Domain.Security.RolePermission", b =>
                 {
                     b.HasOne("MetaForge.Domain.Security.Permission", "Permission")
@@ -2439,6 +2874,16 @@ namespace MetaForge.Infrastructure.Persistence.Migrations
                     b.Navigation("Signatures");
 
                     b.Navigation("Summaries");
+                });
+
+            modelBuilder.Entity("MetaForge.Domain.Notifications.EmailChannel", b =>
+                {
+                    b.Navigation("Templates");
+                });
+
+            modelBuilder.Entity("MetaForge.Domain.Notifications.EmailTemplate", b =>
+                {
+                    b.Navigation("Bindings");
                 });
 
             modelBuilder.Entity("MetaForge.Domain.Security.Permission", b =>
