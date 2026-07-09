@@ -54,12 +54,28 @@ const FormHealthCheck = (function () {
     }
 
     function toggleDetails() {
-        const target = $(this).data('target');
-        const $details = $(target);
+        if (!healthTable) return;
+
+        const $tr = $(this).closest('tr');
+        const row = healthTable.row($tr);
+        const formId = $tr.data('form-id');
         const $icon = $(this).find('i');
 
-        $details.toggleClass('d-none');
-        $icon.toggleClass('fa-chevron-right fa-chevron-down');
+        if (row.child.isShown()) {
+            row.child.hide();
+            $tr.removeClass('health-row-expanded');
+            $icon.removeClass('fa-chevron-down').addClass('fa-chevron-right');
+            return;
+        }
+
+        const template = document.getElementById('health-issues-' + formId);
+        const html = template
+            ? template.innerHTML
+            : '<div class="health-details-panel"><div class="health-issue-item text-muted">No issue details.</div></div>';
+
+        row.child($('<div class="health-details-child">').html(html)).show();
+        $tr.addClass('health-row-expanded');
+        $icon.removeClass('fa-chevron-right').addClass('fa-chevron-down');
     }
 
     function openSchemaSync() {

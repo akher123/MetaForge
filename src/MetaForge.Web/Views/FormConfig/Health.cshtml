@@ -147,12 +147,11 @@
                         <tbody>
                             @foreach (var item in items)
                             {
-                                var rowId = $"health-row-{item.FormId}";
                                 <tr data-form-id="@item.FormId" class="health-row @(item.IssueCount > 0 ? "health-row-attention" : "")">
                                     <td class="text-center">
                                         @if (item.IssueCount > 0)
                                         {
-                                            <button type="button" class="btn btn-sm btn-link p-0 health-toggle" data-target="#@rowId-details" aria-label="Show issues">
+                                            <button type="button" class="btn btn-sm btn-link p-0 health-toggle" aria-label="Show issues">
                                                 <i class="fa-solid fa-chevron-right"></i>
                                             </button>
                                         }
@@ -180,30 +179,30 @@
                                         </div>
                                     </td>
                                 </tr>
-                                @if (item.IssueCount > 0)
-                                {
-                                    <tr id="@rowId-details" class="health-details-row d-none">
-                                        <td colspan="7" class="p-0">
-                                            <div class="health-details-panel">
-                                                @foreach (var issue in item.Issues)
-                                                {
-                                                    <div class="health-issue-item">
-                                                        <span class="badge @SeverityBadge(issue.Severity)">@issue.Severity</span>
-                                                        <span class="badge text-bg-light border">@issue.Category</span>
-                                                        <span>@issue.Message</span>
-                                                        @if (!string.IsNullOrWhiteSpace(issue.ActionUrl))
-                                                        {
-                                                            <a href="@issue.ActionUrl" class="small ms-1">Fix</a>
-                                                        }
-                                                    </div>
-                                                }
-                                            </div>
-                                        </td>
-                                    </tr>
-                                }
                             }
                         </tbody>
                     </table>
+                </div>
+                <div id="healthIssueTemplates" class="d-none" aria-hidden="true">
+                    @foreach (var item in items.Where(i => i.IssueCount > 0))
+                    {
+                        <template id="health-issues-@item.FormId">
+                            <div class="health-details-panel">
+                                @foreach (var issue in item.Issues)
+                                {
+                                    <div class="health-issue-item">
+                                        <span class="badge @SeverityBadge(issue.Severity)">@issue.Severity</span>
+                                        <span class="badge text-bg-light border">@issue.Category</span>
+                                        <span>@issue.Message</span>
+                                        @if (!string.IsNullOrWhiteSpace(issue.ActionUrl))
+                                        {
+                                            <a href="@issue.ActionUrl" class="small ms-1">Fix</a>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        </template>
+                    }
                 </div>
             }
         </div>

@@ -3838,8 +3838,13 @@ code {
   font-size: 0.875rem;
 }
 
-.health-details-row td {
+.health-details-row td,
+.health-details-child {
   background: var(--dv-surface-muted);
+}
+
+.health-details-child {
+  padding: 0.65rem 0.85rem;
 }
 
 .health-row-attention td {
