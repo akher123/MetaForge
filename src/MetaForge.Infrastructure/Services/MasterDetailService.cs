@@ -119,7 +119,9 @@ public class MasterDetailService : IMasterDetailService
         masterData = DynamicEntityMapper.NormalizeDictionary(masterData);
         detailData = detailData?.Select(DynamicEntityMapper.NormalizeDictionary).ToList();
 
-        await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+        await using var transaction = _dbContext.Database.IsRelational() && _dbContext.Database.CurrentTransaction == null
+            ? await _dbContext.Database.BeginTransactionAsync(cancellationToken)
+            : null;
 
         object masterId;
         if (masterData.TryGetValue("Id", out var idVal) && idVal != null && DynamicEntityMapper.ToInt32(idVal) > 0)
@@ -199,7 +201,9 @@ public class MasterDetailService : IMasterDetailService
             }
         }
 
-        await transaction.CommitAsync(cancellationToken);
+        if (transaction != null)
+            await transaction.CommitAsync(cancellationToken);
+
         await _auditService.LogAsync(
             form.EntityName,
             masterId.ToString()!,

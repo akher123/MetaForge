@@ -47,6 +47,26 @@ public class FormSchemaSyncChangeDto
     public bool? ProposedIsRequired { get; set; }
 }
 
+/// <summary>Preview of schema differences for a child detail form in a master/detail screen.</summary>
+public class FormSchemaSyncChildPreviewDto
+{
+    public int FormId { get; set; }
+
+    public string EntityName { get; set; } = string.Empty;
+
+    public string FormName { get; set; } = string.Empty;
+
+    public string? TabLabel { get; set; }
+
+    public string ForeignKey { get; set; } = string.Empty;
+
+    public bool IsNewForm { get; set; }
+
+    public List<FormSchemaSyncChangeDto> Changes { get; set; } = [];
+
+    public bool HasChanges => Changes.Count > 0;
+}
+
 /// <summary>Preview of schema differences for a configured form.</summary>
 public class FormSchemaSyncPreviewDto
 {
@@ -62,13 +82,35 @@ public class FormSchemaSyncPreviewDto
 
     public List<FormSchemaSyncChangeDto> Changes { get; set; } = [];
 
-    public bool HasChanges => Changes.Count > 0;
+    /// <summary>True when preview includes master and detail child forms.</summary>
+    public bool IsCascadeSync { get; set; }
+
+    /// <summary>Master, MasterDetail, or MasterDetailTabular when cascade sync is active.</summary>
+    public string? ScreenType { get; set; }
+
+    public List<FormSchemaSyncChildPreviewDto> ChildForms { get; set; } = [];
+
+    public bool HasChanges => Changes.Count > 0 || ChildForms.Any(c => c.HasChanges);
 }
 
 /// <summary>Apply request — keys from <see cref="FormSchemaSyncChangeDto.Key"/>.</summary>
 public class FormSchemaSyncApplyDto
 {
     public List<string> AcceptedKeys { get; set; } = [];
+}
+
+/// <summary>Result after applying schema sync to a child detail form.</summary>
+public class FormSchemaSyncChildResultDto
+{
+    public int FormId { get; set; }
+
+    public string EntityName { get; set; } = string.Empty;
+
+    public int AppliedChangeCount { get; set; }
+
+    public bool WasCreated { get; set; }
+
+    public FormConfigDto Form { get; set; } = new();
 }
 
 /// <summary>Result after applying schema sync.</summary>
@@ -79,4 +121,8 @@ public class FormSchemaSyncResultDto
     public int AppliedChangeCount { get; set; }
 
     public FormConfigDto Form { get; set; } = new();
+
+    public bool IsCascadeSync { get; set; }
+
+    public List<FormSchemaSyncChildResultDto> ChildForms { get; set; } = [];
 }

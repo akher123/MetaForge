@@ -2,6 +2,7 @@ using MetaForge.Application.Configuration;
 using MetaForge.Application.Common;
 using MetaForge.Infrastructure.Dynamic;
 using ClosedXML.Excel;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Options;
 using System.Reflection;
 using System.Text;
@@ -122,9 +123,7 @@ public class GenericCrudService : IGenericCrudService
         var entityType = _typeResolver.Resolve(entityName);
         var entity = DynamicEntityMapper.CreateEntity(entityType, data);
 
-        await using var transaction = _dbContext.Database.IsRelational()
-            ? await _dbContext.Database.BeginTransactionAsync(cancellationToken)
-            : null;
+        await using var transaction = await BeginTransactionIfNeededAsync(cancellationToken);
 
         _dbContext.Add(entity);
         await _dbContext.SaveChangesAsync(cancellationToken);
@@ -161,9 +160,7 @@ public class GenericCrudService : IGenericCrudService
         var oldValue = JsonSerializer.Serialize(DynamicEntityMapper.ToDictionary(entity));
         DynamicEntityMapper.UpdateEntity(entity, data);
 
-        await using var transaction = _dbContext.Database.IsRelational()
-            ? await _dbContext.Database.BeginTransactionAsync(cancellationToken)
-            : null;
+        await using var transaction = await BeginTransactionIfNeededAsync(cancellationToken);
 
         await _mappingAssociationService.SyncAsync(entityName, id, mappingData, cancellationToken);
         await _dbContext.SaveChangesAsync(cancellationToken);
@@ -185,9 +182,7 @@ public class GenericCrudService : IGenericCrudService
 
         var oldValue = JsonSerializer.Serialize(DynamicEntityMapper.ToDictionary(entity));
 
-        await using var transaction = _dbContext.Database.IsRelational()
-            ? await _dbContext.Database.BeginTransactionAsync(cancellationToken)
-            : null;
+        await using var transaction = await BeginTransactionIfNeededAsync(cancellationToken);
 
         await _mappingAssociationService.DeleteMappingsAsync(entityName, id, cancellationToken);
         _dbContext.Remove(entity);
@@ -217,6 +212,14 @@ public class GenericCrudService : IGenericCrudService
     {
         var entityType = _typeResolver.Resolve(entityName);
         return await _dbContext.FindAsync(entityType, [DynamicEntityMapper.ToInt32(id)], cancellationToken);
+    }
+
+    private async Task<IDbContextTransaction?> BeginTransactionIfNeededAsync(CancellationToken cancellationToken)
+    {
+        if (!_dbContext.Database.IsRelational() || _dbContext.Database.CurrentTransaction != null)
+            return null;
+
+        return await _dbContext.Database.BeginTransactionAsync(cancellationToken);
     }
 }
 

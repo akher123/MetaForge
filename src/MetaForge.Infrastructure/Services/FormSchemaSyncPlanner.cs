@@ -328,8 +328,32 @@ public static class FormSchemaSyncPlanner
             .Where(p => !p.IsKey && !p.Name.Equals("Id", StringComparison.OrdinalIgnoreCase))
             .ToList();
 
-    private static string RelationKey(FormRelationConfigDto relation) =>
+    public static string RelationKey(FormRelationConfigDto relation) =>
         $"{relation.RelationType}:{relation.ChildEntity}:{relation.ForeignKey}";
+
+    public static string PrefixKey(string entityName, string key) =>
+        $"{entityName}|{key}";
+
+    public static bool TryParsePrefixedKey(string prefixedKey, out string entityName, out string localKey)
+    {
+        var separatorIndex = prefixedKey.IndexOf('|');
+        if (separatorIndex <= 0)
+        {
+            entityName = string.Empty;
+            localKey = prefixedKey;
+            return false;
+        }
+
+        entityName = prefixedKey[..separatorIndex];
+        localKey = prefixedKey[(separatorIndex + 1)..];
+        return !string.IsNullOrWhiteSpace(entityName) && !string.IsNullOrWhiteSpace(localKey);
+    }
+
+    public static void PrefixChanges(IEnumerable<FormSchemaSyncChangeDto> changes, string entityName)
+    {
+        foreach (var change in changes)
+            change.Key = PrefixKey(entityName, change.Key);
+    }
 
     private static FormConfigDto CloneForm(FormConfigDto form) => new()
     {

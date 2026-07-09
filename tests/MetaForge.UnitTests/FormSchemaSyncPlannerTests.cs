@@ -54,6 +54,31 @@ public class FormSchemaSyncPlannerTests
     }
 
     [Fact]
+    public void PrefixKey_AndTryParsePrefixedKey_RoundTrip()
+    {
+        var prefixed = FormSchemaSyncPlanner.PrefixKey("SalesOrderItem", "field:Quantity");
+
+        Assert.True(FormSchemaSyncPlanner.TryParsePrefixedKey(prefixed, out var entityName, out var localKey));
+        Assert.Equal("SalesOrderItem", entityName);
+        Assert.Equal("field:Quantity", localKey);
+    }
+
+    [Fact]
+    public void PrefixChanges_PrefixesAllChangeKeys()
+    {
+        var changes = new List<FormSchemaSyncChangeDto>
+        {
+            new() { Key = "field:Qty", ChangeType = FormSchemaSyncChangeTypes.Add },
+            new() { Key = "column:Qty", ChangeType = FormSchemaSyncChangeTypes.Add }
+        };
+
+        FormSchemaSyncPlanner.PrefixChanges(changes, "SalesOrderItem");
+
+        Assert.Equal("SalesOrderItem|field:Qty", changes[0].Key);
+        Assert.Equal("SalesOrderItem|column:Qty", changes[1].Key);
+    }
+
+    [Fact]
     public void BuildPreview_DetectsNewGridColumnForMasterForm()
     {
         var form = SampleForm(fields: ["OrderNo", "CustomerId"], columns: ["OrderNo"]);

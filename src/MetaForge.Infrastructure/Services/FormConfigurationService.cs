@@ -194,6 +194,47 @@ public class FormConfigurationService : IFormConfigurationService
         var form = await GetFormAsync(formId, cancellationToken)
             ?? throw new NotFoundException($"Form {formId} was not found.");
 
+        var preview = await BuildFormSchemaSyncPreviewAsync(form, cancellationToken);
+
+        if (!IsMasterDetailScreen(form))
+            return preview;
+
+        preview.IsCascadeSync = true;
+        preview.ScreenType = ResolveScreenType(form);
+        FormSchemaSyncPlanner.PrefixChanges(preview.Changes, form.EntityName);
+
+        var relations = GetEffectiveOneToManyRelations(form, preview);
+        foreach (var relation in relations)
+        {
+            var childPreview = await BuildChildSchemaSyncPreviewAsync(form, relation, cancellationToken);
+            if (childPreview.HasChanges)
+                preview.ChildForms.Add(childPreview);
+        }
+
+        return preview;
+    }
+
+    public async Task<FormSchemaSyncResultDto> ApplySchemaSyncAsync(
+        int formId,
+        FormSchemaSyncApplyDto request,
+        CancellationToken cancellationToken = default)
+    {
+        if (request.AcceptedKeys.Count == 0)
+            throw new BusinessException("Select at least one change to apply.");
+
+        var form = await GetFormAsync(formId, cancellationToken)
+            ?? throw new NotFoundException($"Form {formId} was not found.");
+
+        if (!IsMasterDetailScreen(form))
+            return await ApplySingleFormSchemaSyncAsync(formId, request, cancellationToken);
+
+        return await ApplyCascadeSchemaSyncAsync(form, request, cancellationToken);
+    }
+
+    private async Task<FormSchemaSyncPreviewDto> BuildFormSchemaSyncPreviewAsync(
+        FormConfigDto form,
+        CancellationToken cancellationToken)
+    {
         var metadata = _discoveryService.Discover(form.EntityName)
             ?? throw new NotFoundException($"Entity '{form.EntityName}' was not found.");
 
@@ -203,17 +244,59 @@ public class FormConfigurationService : IFormConfigurationService
         return FormSchemaSyncPlanner.BuildPreview(form, metadata, draft);
     }
 
-    public async Task<FormSchemaSyncResultDto> ApplySchemaSyncAsync(
+    private async Task<FormSchemaSyncChildPreviewDto> BuildChildSchemaSyncPreviewAsync(
+        FormConfigDto masterForm,
+        FormRelationConfigDto relation,
+        CancellationToken cancellationToken)
+    {
+        var metadata = _discoveryService.Discover(relation.ChildEntity);
+        if (metadata == null)
+        {
+            return new FormSchemaSyncChildPreviewDto
+            {
+                FormId = 0,
+                EntityName = relation.ChildEntity,
+                FormName = !string.IsNullOrWhiteSpace(relation.TabLabel)
+                    ? relation.TabLabel!
+                    : SplitPascalCase(relation.ChildEntity),
+                TabLabel = relation.TabLabel,
+                ForeignKey = relation.ForeignKey
+            };
+        }
+
+        var existingChild = await GetFormByEntityAsync(relation.ChildEntity, cancellationToken);
+        var childForm = existingChild ?? CreateEmptyChildFormShell(masterForm, relation);
+        var draft = await BuildDraftAsync(relation.ChildEntity, masterForm.GroupName, cancellationToken);
+        draft.FormType = FormType.Detail.ToString();
+        ApplyDetailFormDefaults(childForm, relation.ForeignKey);
+        ApplyDetailFormDefaults(draft, relation.ForeignKey);
+
+        var preview = FormSchemaSyncPlanner.BuildPreview(childForm, metadata, draft);
+        FormSchemaSyncPlanner.PrefixChanges(preview.Changes, relation.ChildEntity);
+
+        return new FormSchemaSyncChildPreviewDto
+        {
+            FormId = childForm.Id,
+            EntityName = relation.ChildEntity,
+            FormName = childForm.Name,
+            TabLabel = relation.TabLabel,
+            ForeignKey = relation.ForeignKey,
+            IsNewForm = existingChild == null,
+            Changes = preview.Changes
+        };
+    }
+
+    private async Task<FormSchemaSyncResultDto> ApplySingleFormSchemaSyncAsync(
         int formId,
         FormSchemaSyncApplyDto request,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken)
     {
-        var preview = await GetSchemaSyncPreviewAsync(formId, cancellationToken);
+        var preview = await BuildFormSchemaSyncPreviewAsync(
+            await GetFormAsync(formId, cancellationToken)
+                ?? throw new NotFoundException($"Form {formId} was not found."),
+            cancellationToken);
         var form = await GetFormAsync(formId, cancellationToken)
             ?? throw new NotFoundException($"Form {formId} was not found.");
-
-        if (request.AcceptedKeys.Count == 0)
-            throw new BusinessException("Select at least one change to apply.");
 
         var merged = FormSchemaSyncPlanner.Apply(form, preview, request.AcceptedKeys);
         await SaveFormAsync(merged, cancellationToken);
@@ -227,6 +310,211 @@ public class FormConfigurationService : IFormConfigurationService
             AppliedChangeCount = request.AcceptedKeys.Count,
             Form = updated
         };
+    }
+
+    private async Task<FormSchemaSyncResultDto> ApplyCascadeSchemaSyncAsync(
+        FormConfigDto masterForm,
+        FormSchemaSyncApplyDto request,
+        CancellationToken cancellationToken)
+    {
+        if (_dbContext.Database.IsRelational() && _dbContext.Database.CurrentTransaction == null)
+        {
+            await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+            var result = await ApplyCascadeSchemaSyncCoreAsync(masterForm, request, cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+            return result;
+        }
+
+        return await ApplyCascadeSchemaSyncCoreAsync(masterForm, request, cancellationToken);
+    }
+
+    private async Task<FormSchemaSyncResultDto> ApplyCascadeSchemaSyncCoreAsync(
+        FormConfigDto masterForm,
+        FormSchemaSyncApplyDto request,
+        CancellationToken cancellationToken)
+    {
+        var groupedKeys = GroupAcceptedKeys(masterForm.EntityName, request.AcceptedKeys, isCascadeSync: true);
+
+        var masterKeys = groupedKeys.GetValueOrDefault(masterForm.EntityName) ?? [];
+        var masterPreview = await BuildFormSchemaSyncPreviewAsync(masterForm, cancellationToken);
+        var mergedMaster = FormSchemaSyncPlanner.Apply(masterForm, masterPreview, masterKeys);
+        await SaveFormAsync(mergedMaster, cancellationToken);
+
+        var updatedMaster = await GetFormAsync(masterForm.Id, cancellationToken)
+            ?? throw new NotFoundException($"Form {masterForm.Id} was not found after sync.");
+
+        var childResults = new List<FormSchemaSyncChildResultDto>();
+        var relations = updatedMaster.Relations
+            .Where(r => r.RelationType.Equals(RelationType.OneToMany.ToString(), StringComparison.OrdinalIgnoreCase))
+            .OrderBy(r => r.DisplayOrder)
+            .ThenBy(r => r.ChildEntity, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        foreach (var relation in relations)
+        {
+            if (!groupedKeys.TryGetValue(relation.ChildEntity, out var childKeys) || childKeys.Count == 0)
+                continue;
+
+            var childResult = await ApplyChildSchemaSyncAsync(updatedMaster, relation, childKeys, cancellationToken);
+            if (childResult != null)
+                childResults.Add(childResult);
+        }
+
+        return new FormSchemaSyncResultDto
+        {
+            FormId = masterForm.Id,
+            AppliedChangeCount = request.AcceptedKeys.Count,
+            Form = updatedMaster,
+            IsCascadeSync = true,
+            ChildForms = childResults
+        };
+    }
+
+    private async Task<FormSchemaSyncChildResultDto?> ApplyChildSchemaSyncAsync(
+        FormConfigDto masterForm,
+        FormRelationConfigDto relation,
+        IReadOnlyList<string> acceptedKeys,
+        CancellationToken cancellationToken)
+    {
+        var metadata = _discoveryService.Discover(relation.ChildEntity);
+        if (metadata == null)
+            return null;
+
+        var existingChild = await GetFormByEntityAsync(relation.ChildEntity, cancellationToken);
+        var wasCreated = existingChild == null;
+        var childForm = existingChild ?? CreateEmptyChildFormShell(masterForm, relation);
+
+        var draft = await BuildDraftAsync(relation.ChildEntity, masterForm.GroupName, cancellationToken);
+        draft.FormType = FormType.Detail.ToString();
+        ApplyDetailFormDefaults(childForm, relation.ForeignKey);
+        ApplyDetailFormDefaults(draft, relation.ForeignKey);
+
+        var childPreview = FormSchemaSyncPlanner.BuildPreview(childForm, metadata, draft);
+        var mergedChild = FormSchemaSyncPlanner.Apply(childForm, childPreview, acceptedKeys);
+        ApplyDetailFormDefaults(mergedChild, relation.ForeignKey);
+
+        if (mergedChild.Id == 0)
+        {
+            mergedChild.FormType = FormType.Detail.ToString();
+            mergedChild.TableName = metadata.TableName;
+            mergedChild.GroupName = masterForm.GroupName;
+            mergedChild.DisplayOrder = masterForm.DisplayOrder + relation.DisplayOrder + 1;
+            if (string.IsNullOrWhiteSpace(mergedChild.Code))
+                mergedChild.Code = relation.ChildEntity.ToLowerInvariant();
+            if (string.IsNullOrWhiteSpace(mergedChild.Name))
+            {
+                mergedChild.Name = !string.IsNullOrWhiteSpace(relation.TabLabel)
+                    ? relation.TabLabel!
+                    : SplitPascalCase(relation.ChildEntity);
+            }
+        }
+
+        await SaveFormAsync(mergedChild, cancellationToken);
+
+        var updatedChild = await GetFormByEntityAsync(relation.ChildEntity, cancellationToken)
+            ?? throw new NotFoundException($"Detail form '{relation.ChildEntity}' was not found after sync.");
+
+        return new FormSchemaSyncChildResultDto
+        {
+            FormId = updatedChild.Id,
+            EntityName = relation.ChildEntity,
+            AppliedChangeCount = acceptedKeys.Count,
+            WasCreated = wasCreated,
+            Form = updatedChild
+        };
+    }
+
+    private static bool IsMasterDetailScreen(FormConfigDto form) =>
+        form.FormType.Equals(FormType.MasterDetail.ToString(), StringComparison.OrdinalIgnoreCase)
+        || form.FormType.Equals(FormType.MasterDetailTabular.ToString(), StringComparison.OrdinalIgnoreCase);
+
+    private static FormConfigDto CreateEmptyChildFormShell(FormConfigDto masterForm, FormRelationConfigDto relation) =>
+        new()
+        {
+            Code = relation.ChildEntity.ToLowerInvariant(),
+            Name = !string.IsNullOrWhiteSpace(relation.TabLabel)
+                ? relation.TabLabel!
+                : SplitPascalCase(relation.ChildEntity),
+            EntityName = relation.ChildEntity,
+            TableName = relation.ChildEntity + "s",
+            GroupName = masterForm.GroupName,
+            FormType = FormType.Detail.ToString(),
+            DisplayOrder = masterForm.DisplayOrder + relation.DisplayOrder + 1,
+            IsActive = true
+        };
+
+    private static List<FormRelationConfigDto> GetEffectiveOneToManyRelations(
+        FormConfigDto form,
+        FormSchemaSyncPreviewDto preview)
+    {
+        var relations = form.Relations
+            .Where(r => r.RelationType.Equals(RelationType.OneToMany.ToString(), StringComparison.OrdinalIgnoreCase))
+            .Select(CloneRelationForSync)
+            .ToList();
+
+        foreach (var change in preview.Changes)
+        {
+            if (!change.Target.Equals(FormSchemaSyncTargets.Relation, StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            if (change.ChangeType == FormSchemaSyncChangeTypes.Add && change.ProposedRelation != null)
+            {
+                var proposed = change.ProposedRelation;
+                if (!proposed.RelationType.Equals(RelationType.OneToMany.ToString(), StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                var key = FormSchemaSyncPlanner.RelationKey(proposed);
+                if (relations.Any(r => FormSchemaSyncPlanner.RelationKey(r).Equals(key, StringComparison.OrdinalIgnoreCase)))
+                    continue;
+
+                relations.Add(CloneRelationForSync(proposed));
+            }
+            else if (change.ChangeType == FormSchemaSyncChangeTypes.Remove)
+            {
+                relations.RemoveAll(r => FormSchemaSyncPlanner.RelationKey(r)
+                    .Equals(change.Name, StringComparison.OrdinalIgnoreCase));
+            }
+        }
+
+        return relations
+            .OrderBy(r => r.DisplayOrder)
+            .ThenBy(r => r.ChildEntity, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    private static FormRelationConfigDto CloneRelationForSync(FormRelationConfigDto relation) => new()
+    {
+        Id = relation.Id,
+        RelationType = relation.RelationType,
+        ParentEntity = relation.ParentEntity,
+        ChildEntity = relation.ChildEntity,
+        ForeignKey = relation.ForeignKey,
+        NavigationProperty = relation.NavigationProperty,
+        TabLabel = relation.TabLabel,
+        DisplayOrder = relation.DisplayOrder
+    };
+
+    private static Dictionary<string, List<string>> GroupAcceptedKeys(
+        string masterEntityName,
+        IReadOnlyList<string> acceptedKeys,
+        bool isCascadeSync)
+    {
+        var groups = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var key in acceptedKeys)
+        {
+            if (isCascadeSync && FormSchemaSyncPlanner.TryParsePrefixedKey(key, out var entityName, out var localKey))
+            {
+                groups.TryAdd(entityName, []);
+                groups[entityName].Add(localKey);
+                continue;
+            }
+
+            groups.TryAdd(masterEntityName, []);
+            groups[masterEntityName].Add(key);
+        }
+
+        return groups;
     }
 
     public async Task<int> SaveFormAsync(FormConfigDto config, CancellationToken cancellationToken = default)

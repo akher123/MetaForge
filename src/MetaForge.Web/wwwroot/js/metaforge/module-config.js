@@ -871,36 +871,68 @@ const FormBuilder = (function () {
     }
 
     function getActiveSyncTarget() {
+        const screenType = $('#screenType').val();
+        const isMasterDetailScreen = screenType === 'MasterDetail' || screenType === 'MasterDetailTabular';
+
+        if (isMasterDetailScreen) {
+            return {
+                formId: state.masterId,
+                label: `${$('#moduleName').val()?.trim() || 'Master'} (${$('#entityName').val()?.trim() || 'entity'})`,
+                cascade: true
+            };
+        }
+
         const activeTab = $('.form-builder-tabs .nav-link.active').attr('id');
         if (activeTab === 'tab-detail-btn') {
             if (!state.detailId || state.detailId <= 0) {
-                return { formId: 0, label: 'Detail form' };
+                return { formId: 0, label: 'Detail form', cascade: false };
             }
             return {
                 formId: state.detailId,
-                label: `${state.detailEntity || 'Detail'} form`
+                label: `${state.detailEntity || 'Detail'} form`,
+                cascade: false
             };
         }
 
         return {
             formId: state.masterId,
-            label: `${$('#moduleName').val()?.trim() || 'Master'} (${$('#entityName').val()?.trim() || 'entity'})`
+            label: `${$('#moduleName').val()?.trim() || 'Master'} (${$('#entityName').val()?.trim() || 'entity'})`,
+            cascade: false
         };
     }
 
     function openSchemaSync() {
         const target = getActiveSyncTarget();
         if (!target.formId || target.formId <= 0) {
-            notify('Save the form first, or switch to the master tab to sync the header form.', 'warning');
+            notify('Save the form first before syncing from the entity.', 'warning');
             return;
         }
 
         if (typeof EntitySchemaSync !== 'undefined') {
-            EntitySchemaSync.open(target.formId, target.label);
+            EntitySchemaSync.open(target.formId, target.label, { cascade: target.cascade });
         }
     }
 
     function handleSchemaSyncApplied(result) {
+        const isCascade = result?.IsCascadeSync ?? result?.isCascadeSync ?? false;
+
+        if (isCascade && state.masterId > 0) {
+            $.getJSON(`/api/metaforge/formconfig/screen/${state.masterId}`)
+                .done(function (screen) {
+                    loadScreen(screen);
+                    refreshPreviews();
+                })
+                .fail(function () {
+                    const form = result?.Form ?? result?.form;
+                    if (form) {
+                        state.masterId = form.Id ?? form.id ?? state.masterId;
+                        loadMasterConfig(form);
+                    }
+                    refreshPreviews();
+                });
+            return;
+        }
+
         const form = result?.Form ?? result?.form;
         if (!form) return;
 

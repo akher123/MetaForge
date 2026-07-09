@@ -1,5 +1,6 @@
 /**
  * Entity schema sync — compare configured form with EF Core entity and merge changes.
+ * Supports cascade sync for master/detail screens (master + child detail forms).
  */
 const EntitySchemaSync = (function () {
     let modalInstance = null;
@@ -53,22 +54,7 @@ const EntitySchemaSync = (function () {
                                         Clear selection
                                     </button>
                                 </div>
-                                <div class="table-responsive">
-                                    <table class="table table-sm table-striped mb-0" id="entitySchemaSyncTable">
-                                        <thead>
-                                            <tr>
-                                                <th style="width:40px"><input type="checkbox" id="schemaSyncCheckAll" title="Select all" /></th>
-                                                <th>Type</th>
-                                                <th>Target</th>
-                                                <th>Name</th>
-                                                <th>Current</th>
-                                                <th>Proposed</th>
-                                                <th>Description</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody></tbody>
-                                    </table>
-                                </div>
+                                <div id="entitySchemaSyncSections"></div>
                             </div>
                         </div>
                         <div class="modal-footer">
@@ -86,7 +72,7 @@ const EntitySchemaSync = (function () {
 
     function bindEvents() {
         $(document).on('click', '#btnSchemaSyncSelectAll', function () {
-            $('#entitySchemaSyncTable tbody input[type="checkbox"]').each(function () {
+            $('#entitySchemaSyncSections .schema-sync-check').each(function () {
                 const changeType = $(this).data('change-type');
                 if (changeType === 'Add') $(this).prop('checked', true);
             });
@@ -94,19 +80,19 @@ const EntitySchemaSync = (function () {
         });
 
         $(document).on('click', '#btnSchemaSyncClearAll', function () {
-            $('#entitySchemaSyncTable tbody input[type="checkbox"]').prop('checked', false);
+            $('#entitySchemaSyncSections .schema-sync-check').prop('checked', false);
             $('#schemaSyncCheckAll').prop('checked', false);
         });
 
         $(document).on('change', '#schemaSyncCheckAll', function () {
             const checked = $(this).is(':checked');
-            $('#entitySchemaSyncTable tbody input[type="checkbox"]').prop('checked', checked);
+            $('#entitySchemaSyncSections .schema-sync-check').prop('checked', checked);
         });
 
         $(document).on('click', '#btnApplySchemaSync', applySelected);
     }
 
-    function open(formId, contextLabel) {
+    function open(formId, contextLabel, options) {
         if (!formId || formId <= 0) {
             notify('Save the form first before syncing from the entity.', 'warning');
             return;
@@ -114,15 +100,18 @@ const EntitySchemaSync = (function () {
 
         activeFormId = formId;
         activePreview = null;
+        const isCascade = options?.cascade === true;
 
-        $('#entitySchemaSyncContext').html(
-            `Comparing <strong>${esc(contextLabel || 'form')}</strong> with the latest EF Core entity schema.`
-        );
+        const contextHtml = isCascade
+            ? `Comparing <strong>${esc(contextLabel || 'master/detail screen')}</strong> and its detail forms with the latest EF Core entity schemas.`
+            : `Comparing <strong>${esc(contextLabel || 'form')}</strong> with the latest EF Core entity schema.`;
+
+        $('#entitySchemaSyncContext').html(contextHtml);
         $('#entitySchemaSyncLoading').removeClass('d-none');
         $('#entitySchemaSyncEmpty').addClass('d-none');
         $('#entitySchemaSyncPanel').addClass('d-none');
         $('#btnApplySchemaSync').addClass('d-none');
-        $('#entitySchemaSyncTable tbody').empty();
+        $('#entitySchemaSyncSections').empty();
         modalInstance.show();
 
         $.getJSON(`/api/metaforge/formconfig/sync-preview/${formId}`)
@@ -139,48 +128,149 @@ const EntitySchemaSync = (function () {
             });
     }
 
+    function collectAllChanges(preview) {
+        const isCascade = preview.IsCascadeSync ?? preview.isCascadeSync ?? false;
+        const masterChanges = preview.Changes ?? preview.changes ?? [];
+        if (!isCascade) {
+            return masterChanges;
+        }
+
+        const childForms = preview.ChildForms ?? preview.childForms ?? [];
+        const childChanges = childForms.flatMap(function (child) {
+            return child.Changes ?? child.changes ?? [];
+        });
+
+        return masterChanges.concat(childChanges);
+    }
+
     function renderPreview(preview) {
-        const changes = preview.Changes ?? preview.changes ?? [];
+        const changes = collectAllChanges(preview);
 
         if (!changes.length) {
             $('#entitySchemaSyncEmpty').removeClass('d-none');
             return;
         }
 
-        const $tbody = $('#entitySchemaSyncTable tbody').empty();
+        const isCascade = preview.IsCascadeSync ?? preview.isCascadeSync ?? false;
+        const $sections = $('#entitySchemaSyncSections').empty();
 
-        changes.forEach(function (change) {
-            const key = change.Key ?? change.key;
-            const changeType = change.ChangeType ?? change.changeType;
-            const target = change.Target ?? change.target;
-            const name = change.Name ?? change.name;
-            const description = change.Description ?? change.description ?? '';
-            const current = change.CurrentSummary ?? change.currentSummary ?? '—';
-            const proposed = change.ProposedSummary ?? change.proposedSummary ?? '—';
-            const selected = change.SelectedByDefault ?? change.selectedByDefault ?? false;
-            const badgeClass = changeType === 'Add' ? 'text-bg-success' : changeType === 'Remove' ? 'text-bg-danger' : 'text-bg-warning';
+        if (isCascade) {
+            const masterChanges = preview.Changes ?? preview.changes ?? [];
+            if (masterChanges.length) {
+                renderSection(
+                    $sections,
+                    'Master',
+                    preview.FormName ?? preview.formName ?? preview.EntityName ?? preview.entityName,
+                    preview.EntityName ?? preview.entityName,
+                    masterChanges,
+                    false
+                );
+            }
 
-            $tbody.append(`
-                <tr>
-                    <td><input type="checkbox" class="form-check-input schema-sync-check" data-key="${escAttr(key)}" data-change-type="${escAttr(changeType)}" ${selected ? 'checked' : ''} /></td>
-                    <td><span class="badge ${badgeClass}">${esc(changeType)}</span></td>
-                    <td>${esc(target)}</td>
-                    <td><code>${esc(name)}</code></td>
-                    <td class="small">${esc(current)}</td>
-                    <td class="small">${esc(proposed)}</td>
-                    <td class="small">${esc(description)}</td>
-                </tr>`);
-        });
+            (preview.ChildForms ?? preview.childForms ?? []).forEach(function (child) {
+                const childChanges = child.Changes ?? child.changes ?? [];
+                if (!childChanges.length) return;
+
+                const tabLabel = child.TabLabel ?? child.tabLabel;
+                const formName = child.FormName ?? child.formName ?? child.EntityName ?? child.entityName;
+                const title = tabLabel ? `Detail: ${tabLabel}` : `Detail: ${formName}`;
+                const isNewForm = child.IsNewForm ?? child.isNewForm ?? false;
+
+                renderSection(
+                    $sections,
+                    title + (isNewForm ? ' (new form)' : ''),
+                    formName,
+                    child.EntityName ?? child.entityName,
+                    childChanges,
+                    isNewForm
+                );
+            });
+        } else {
+            renderSection(
+                $sections,
+                null,
+                preview.FormName ?? preview.formName,
+                preview.EntityName ?? preview.entityName,
+                preview.Changes ?? preview.changes ?? [],
+                false
+            );
+        }
 
         $('#entitySchemaSyncPanel').removeClass('d-none');
         $('#btnApplySchemaSync').removeClass('d-none');
+    }
+
+    function renderSection($container, title, formName, entityName, changes, isNewForm) {
+        const sectionId = 'schema-sync-section-' + String(entityName || 'master').replace(/[^a-z0-9]+/gi, '-').toLowerCase();
+        const headerHtml = title
+            ? `<div class="d-flex align-items-center gap-2 mb-2">
+                    <h6 class="mb-0">${esc(title)}</h6>
+                    <span class="badge text-bg-light border">${esc(entityName)}</span>
+                    ${isNewForm ? '<span class="badge text-bg-info">Will create detail form</span>' : ''}
+               </div>`
+            : '';
+
+        $container.append(`
+            <div class="schema-sync-section mb-4" id="${escAttr(sectionId)}">
+                ${headerHtml}
+                <div class="table-responsive">
+                    <table class="table table-sm table-striped mb-0">
+                        <thead>
+                            <tr>
+                                <th style="width:40px"><input type="checkbox" class="schema-sync-section-check-all" title="Select all in section" /></th>
+                                <th>Type</th>
+                                <th>Target</th>
+                                <th>Name</th>
+                                <th>Current</th>
+                                <th>Proposed</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>`);
+
+        const $tbody = $container.find(`#${sectionId} tbody`);
+
+        changes.forEach(function (change) {
+            appendChangeRow($tbody, change);
+        });
+
+        $container.find(`#${sectionId} .schema-sync-section-check-all`).on('change', function () {
+            const checked = $(this).is(':checked');
+            $tbody.find('.schema-sync-check').prop('checked', checked);
+        });
+    }
+
+    function appendChangeRow($tbody, change) {
+        const key = change.Key ?? change.key;
+        const changeType = change.ChangeType ?? change.changeType;
+        const target = change.Target ?? change.target;
+        const name = change.Name ?? change.name;
+        const description = change.Description ?? change.description ?? '';
+        const current = change.CurrentSummary ?? change.currentSummary ?? '—';
+        const proposed = change.ProposedSummary ?? change.proposedSummary ?? '—';
+        const selected = change.SelectedByDefault ?? change.selectedByDefault ?? false;
+        const badgeClass = changeType === 'Add' ? 'text-bg-success' : changeType === 'Remove' ? 'text-bg-danger' : 'text-bg-warning';
+
+        $tbody.append(`
+            <tr>
+                <td><input type="checkbox" class="form-check-input schema-sync-check" data-key="${escAttr(key)}" data-change-type="${escAttr(changeType)}" ${selected ? 'checked' : ''} /></td>
+                <td><span class="badge ${badgeClass}">${esc(changeType)}</span></td>
+                <td>${esc(target)}</td>
+                <td><code>${esc(name)}</code></td>
+                <td class="small">${esc(current)}</td>
+                <td class="small">${esc(proposed)}</td>
+                <td class="small">${esc(description)}</td>
+            </tr>`);
     }
 
     function applySelected() {
         if (!activePreview || !activeFormId) return;
 
         const keys = [];
-        $('#entitySchemaSyncTable tbody .schema-sync-check:checked').each(function () {
+        $('#entitySchemaSyncSections .schema-sync-check:checked').each(function () {
             const key = $(this).data('key');
             if (key) keys.push(key);
         });
@@ -199,7 +289,12 @@ const EntitySchemaSync = (function () {
             data: JSON.stringify({ AcceptedKeys: keys })
         }).done(function (result) {
             modalInstance.hide();
-            notify(`Applied ${keys.length} schema change(s) successfully.`, 'success');
+            const isCascade = result.IsCascadeSync ?? result.isCascadeSync ?? false;
+            const childCount = (result.ChildForms ?? result.childForms ?? []).length;
+            const message = isCascade && childCount > 0
+                ? `Applied ${keys.length} schema change(s) across master and ${childCount} detail form(s).`
+                : `Applied ${keys.length} schema change(s) successfully.`;
+            notify(message, 'success');
             if (typeof onApplied === 'function') {
                 onApplied(result);
             }
