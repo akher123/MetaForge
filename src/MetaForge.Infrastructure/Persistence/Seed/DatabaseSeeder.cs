@@ -1,3 +1,4 @@
+using MetaForge.Application.Configuration;
 using MetaForge.Application.Validation;
 using MetaForge.Domain.Business;
 using MetaForge.Domain.Notifications;
@@ -6,6 +7,7 @@ using MetaForge.Infrastructure.Services;
 using MetaForge.Infrastructure.Validation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace MetaForge.Infrastructure.Persistence.Seed;
 
@@ -47,10 +49,23 @@ public static class DatabaseSeeder
 
     private static async Task SeedDataAsync(IServiceScope scope, MetaForgeDbContext context, ILogger logger)
     {
-        SeedBusinessData(context);
-        SeedMetadata(context);
-        SeedLookups(context);
-        SeedSecurity(context);
+        var seedOptions = GetSeedOptions(scope);
+
+        SeedPlatformSecurity(context);
+
+        if (seedOptions.IncludeDemoData)
+        {
+            SeedBusinessData(context);
+            SeedMetadata(context);
+            SeedLookups(context);
+            SeedDemoFormPermissions(context);
+        }
+        else
+        {
+            logger.LogInformation(
+                "Demo business data and sample forms skipped (Seed:{Property}=false).",
+                nameof(SeedOptions.IncludeDemoData));
+        }
 
         await context.SaveChangesAsync();
         await ApplyDataUpgradesAsync(context, scope, logger);
@@ -62,10 +77,41 @@ public static class DatabaseSeeder
         IServiceScope scope,
         ILogger logger)
     {
+        await ApplyPlatformUpgradesAsync(context, scope, logger);
+
+        if (GetSeedOptions(scope).IncludeDemoData)
+            await ApplyDemoUpgradesAsync(context, scope, logger);
+        else
+            logger.LogInformation("Demo seed upgrades skipped (Seed:{Property}=false).", nameof(SeedOptions.IncludeDemoData));
+    }
+
+    /// <summary>
+    /// Idempotent platform fixes and framework metadata — safe for production.
+    /// </summary>
+    private static async Task ApplyPlatformUpgradesAsync(
+        MetaForgeDbContext context,
+        IServiceScope scope,
+        ILogger logger)
+    {
         await EnsureUserSecurityStampsAsync(context, logger);
         await UpgradeLegacyPasswordsAsync(context, logger);
         await EnsureSecurityPermissionsAsync(context, logger);
         await EnsureFormPermissionsAsync(context, logger);
+        await EnsureEmailDefaultsAsync(context, logger);
+        await EnsurePasswordResetEmailTemplateAsync(context, logger);
+        await EnsureEmailPermissionsAsync(context, logger);
+        await EnsureReportPermissionsAsync(context, logger);
+        await EnsureMenusAsync(scope, logger);
+    }
+
+    /// <summary>
+    /// Sample ERP demo layout, business data patches, and showcase reports — dev/demo only.
+    /// </summary>
+    private static async Task ApplyDemoUpgradesAsync(
+        MetaForgeDbContext context,
+        IServiceScope scope,
+        ILogger logger)
+    {
         await EnsureCascadeLookupUpgradeAsync(context, logger);
         await EnsureCustomerRegionMultiselectUpgradeAsync(context, logger);
         await EnsurePagedLookupUpgradeAsync(context, logger);
@@ -76,15 +122,12 @@ public static class DatabaseSeeder
         await EnsureSalesOrderAddressFieldAsync(context, logger);
         await EnsureSalesOrderGridActionsAsync(context, logger);
         await EnsureSalesOrderConditionalRulesAsync(context, logger);
-        await EnsureFormPermissionsAsync(context, logger);
         await EnsureSampleReportsAsync(context, logger);
         await EnsureReportExportLayoutAsync(context, logger);
-        await EnsureReportPermissionsAsync(context, logger);
-        await EnsureEmailDefaultsAsync(context, logger);
-        await EnsurePasswordResetEmailTemplateAsync(context, logger);
-        await EnsureEmailPermissionsAsync(context, logger);
-        await EnsureMenusAsync(scope, logger);
     }
+
+    private static SeedOptions GetSeedOptions(IServiceScope scope) =>
+        scope.ServiceProvider.GetRequiredService<IOptions<SeedOptions>>().Value;
 
     private static async Task EnsureSampleReportsAsync(MetaForgeDbContext context, ILogger logger)
     {
@@ -2128,7 +2171,7 @@ public static class DatabaseSeeder
             new LookupConfiguration { EntityName = "SalesOrder", ValueField = "Id", TextField = "OrderNo" });
     }
 
-    private static void SeedSecurity(MetaForgeDbContext context)
+    private static void SeedPlatformSecurity(MetaForgeDbContext context)
     {
         var adminRole = new Role { Name = "Administrator", Description = "Full access" };
         context.Roles.Add(adminRole);
@@ -2142,21 +2185,6 @@ public static class DatabaseSeeder
             IsActive = true,
             UserRoles = [new UserRole { Role = adminRole }]
         });
-
-        var moduleCodes = context.ForgeForms.Local.Select(m => m.Code).ToList();
-        foreach (var module in moduleCodes)
-        {
-            foreach (var action in PermissionAction.All)
-            {
-                context.Permissions.Add(new Permission
-                {
-                    Action = action,
-                    Code = $"{module}.{action}",
-                    Name = $"{module} - {action}",
-                    RolePermissions = [new RolePermission { Role = adminRole }]
-                });
-            }
-        }
 
         foreach (var (code, name, action) in Shared.Constants.SecurityPermissions.All)
         {
@@ -2178,6 +2206,27 @@ public static class DatabaseSeeder
                 Name = name,
                 RolePermissions = [new RolePermission { Role = adminRole }]
             });
+        }
+    }
+
+    private static void SeedDemoFormPermissions(MetaForgeDbContext context)
+    {
+        var adminRole = context.Roles.Local.FirstOrDefault(r => r.Name == "Administrator");
+        if (adminRole == null)
+            return;
+
+        foreach (var module in context.ForgeForms.Local.ToList())
+        {
+            foreach (var action in PermissionAction.All)
+            {
+                context.Permissions.Add(new Permission
+                {
+                    Action = action,
+                    Code = $"{module.Code}.{action}",
+                    Name = $"{module.Name} - {action}",
+                    RolePermissions = [new RolePermission { Role = adminRole }]
+                });
+            }
         }
     }
 

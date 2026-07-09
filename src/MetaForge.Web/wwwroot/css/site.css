@@ -1348,6 +1348,12 @@ html.sidebar-collapsed .sidebar-tree-children {
 .stat-card.stat-info    .stat-value { color: #0369a1; }
 .stat-card.stat-warning .stat-value { color: #b45309; }
 .stat-card.stat-success .stat-value { color: #047857; }
+.stat-card.stat-danger  .stat-value { color: #b91c1c; }
+
+.stat-card.stat-danger {
+  border-color: #fecaca;
+  background: #fef2f2;
+}
 
 .stat-card.stat-accent {
   background: linear-gradient(135deg, var(--dv-indigo-700) 0%, var(--dv-indigo-800) 100%);
@@ -3817,6 +3823,29 @@ code {
   min-width: 0;
 }
 
+.health-details-panel {
+  padding: 0.75rem 1rem 0.85rem 2.5rem;
+  background: var(--dv-surface-muted);
+  border-top: 1px solid var(--dv-border);
+}
+
+.health-issue-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.35rem 0;
+  font-size: 0.875rem;
+}
+
+.health-details-row td {
+  background: var(--dv-surface-muted);
+}
+
+.health-row-attention td {
+  background: rgba(254, 243, 199, 0.15);
+}
+
 .form-builder-save-bar {
   padding: 1rem 1.15rem;
   background: var(--dv-surface);
@@ -5000,6 +5029,16 @@ code {
 .security-status-pill.is-inactive {
   background: #fef3c7;
   color: #b45309;
+}
+
+.security-status-pill.is-warning {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.security-status-pill.is-error {
+  background: #fee2e2;
+  color: #b91c1c;
 }
 
 .security-status-pill::before {

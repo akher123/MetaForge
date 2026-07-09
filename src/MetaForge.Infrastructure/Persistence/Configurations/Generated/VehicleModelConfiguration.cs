@@ -13,6 +13,6 @@ public class VehicleModelConfiguration : IEntityTypeConfiguration<VehicleModel>
         builder.Property(x => x.VehicleMakeId).IsRequired();
         builder.Property(x => x.Code).HasMaxLength(50).IsUnicode(false).IsRequired();
         builder.Property(x => x.Name).HasMaxLength(100).IsRequired();
-        builder.HasOne(x => x.VehicleMake).WithMany().HasForeignKey(x => x.VehicleMakeId);
+        builder.HasOne(x => x.VehicleMake).WithMany().HasForeignKey(x => x.VehicleMakeId).OnDelete(DeleteBehavior.Restrict);
     }
 }

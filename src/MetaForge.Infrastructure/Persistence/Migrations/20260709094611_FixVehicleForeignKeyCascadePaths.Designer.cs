@@ -4,6 +4,7 @@ using MetaForge.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MetaForge.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(MetaForgeDbContext))]
-    partial class MetaForgeDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260709094611_FixVehicleForeignKeyCascadePaths")]
+    partial class FixVehicleForeignKeyCascadePaths
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

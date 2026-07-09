@@ -22,9 +22,9 @@ public class VehicleConfiguration : IEntityTypeConfiguration<Vehicle>
         builder.Property(x => x.CurrentOdometer).HasPrecision(18, 2).IsRequired();
         builder.Property(x => x.VehicleStatusId).IsRequired();
         builder.Property(x => x.IsDeleted).IsRequired();
-        builder.HasOne(x => x.VehicleType).WithMany().HasForeignKey(x => x.VehicleTypeId);
-        builder.HasOne(x => x.VehicleMake).WithMany().HasForeignKey(x => x.VehicleMakeId);
-        builder.HasOne(x => x.VehicleModel).WithMany().HasForeignKey(x => x.VehicleModelId);
-        builder.HasOne(x => x.VehicleStatus).WithMany().HasForeignKey(x => x.VehicleStatusId);
+        builder.HasOne(x => x.VehicleType).WithMany().HasForeignKey(x => x.VehicleTypeId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(x => x.VehicleMake).WithMany().HasForeignKey(x => x.VehicleMakeId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(x => x.VehicleModel).WithMany().HasForeignKey(x => x.VehicleModelId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(x => x.VehicleStatus).WithMany().HasForeignKey(x => x.VehicleStatusId).OnDelete(DeleteBehavior.Restrict);
     }
 }

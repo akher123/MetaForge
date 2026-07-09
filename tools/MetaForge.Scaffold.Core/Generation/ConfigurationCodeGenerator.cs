@@ -40,7 +40,7 @@ public static class ConfigurationCodeGenerator
             {
                 var navName = fk.Name[..^2];
                 var refEntity = fk.ReferencedTable!.Singularize(inputIsKnownToBePlural: true);
-                sb.AppendLine($"        builder.HasOne(x => x.{navName}).WithMany().HasForeignKey(x => x.{fk.Name});");
+                sb.AppendLine($"        builder.HasOne(x => x.{navName}).WithMany().HasForeignKey(x => x.{fk.Name}).OnDelete(DeleteBehavior.Restrict);");
             }
         }
 

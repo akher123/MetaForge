@@ -7,8 +7,15 @@ namespace MetaForge.Web.Controllers;
 public class FormConfigController : Controller
 {
     private readonly IFormConfigurationService _configService;
+    private readonly IFormHealthCheckService _healthCheckService;
 
-    public FormConfigController(IFormConfigurationService configService) => _configService = configService;
+    public FormConfigController(
+        IFormConfigurationService configService,
+        IFormHealthCheckService healthCheckService)
+    {
+        _configService = configService;
+        _healthCheckService = healthCheckService;
+    }
 
     [HttpGet("/ModuleConfig")]
     [HttpGet("/FormBuilder")]
@@ -31,6 +38,16 @@ public class FormConfigController : Controller
         ViewBag.Entities = await _configService.GetDiscoveredEntitiesAsync(cancellationToken);
         ViewBag.IsEdit = false;
         return View("Form");
+    }
+
+    [HttpGet("/FormBuilder/Health")]
+    public async Task<IActionResult> Health(CancellationToken cancellationToken)
+    {
+        var denied = await PermissionGuard.EnsurePermissionCodeAsync(HttpContext, ConfigPermissions.View, cancellationToken);
+        if (denied != null) return denied;
+
+        ViewBag.HealthReport = await _healthCheckService.GetReportAsync(cancellationToken);
+        return View("Health");
     }
 
     [HttpGet("/ModuleConfig/Edit/{id:int}")]

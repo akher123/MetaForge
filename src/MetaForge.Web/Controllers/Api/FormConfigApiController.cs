@@ -6,8 +6,15 @@ namespace MetaForge.Web.Controllers.Api;
 public class FormConfigApiController : ControllerBase
 {
     private readonly IFormConfigurationService _configService;
+    private readonly IFormHealthCheckService _healthCheckService;
 
-    public FormConfigApiController(IFormConfigurationService configService) => _configService = configService;
+    public FormConfigApiController(
+        IFormConfigurationService configService,
+        IFormHealthCheckService healthCheckService)
+    {
+        _configService = configService;
+        _healthCheckService = healthCheckService;
+    }
 
     [HttpGet]
     [RequirePermissionCode(ConfigPermissions.View)]
@@ -27,6 +34,19 @@ public class FormConfigApiController : ControllerBase
             actions = ConditionalRuleCatalog.GetActions(),
             operators = ConditionalRuleCatalog.GetOperators()
         });
+
+    [HttpGet("health")]
+    [RequirePermissionCode(ConfigPermissions.View)]
+    public async Task<IActionResult> GetHealthReport(CancellationToken cancellationToken) =>
+        Ok(await _healthCheckService.GetReportAsync(cancellationToken));
+
+    [HttpGet("health/{id:int}")]
+    [RequirePermissionCode(ConfigPermissions.View)]
+    public async Task<IActionResult> GetFormHealth(int id, CancellationToken cancellationToken)
+    {
+        var item = await _healthCheckService.GetFormHealthAsync(id, cancellationToken);
+        return item == null ? NotFound() : Ok(item);
+    }
 
     [HttpGet("sync-preview/{id:int}")]
     [RequirePermissionCode(ConfigPermissions.View)]

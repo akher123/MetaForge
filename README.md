@@ -148,15 +148,33 @@ Open the app in your browser (typically `https://localhost:5001` or the URL show
 
 MetaForge uses **SQL Server** (LocalDB or a full instance). Point `ConnectionStrings:DefaultConnection` in `src/MetaForge.Web/appsettings.json` at your server. The database is created automatically when migrations run (on startup or via the commands below).
 
-On startup, MetaForge applies pending **EF Core migrations** automatically, then runs idempotent data seed/upgrades.
+On startup, MetaForge applies pending **EF Core migrations** automatically, then runs idempotent **platform** data upgrades (security, permissions, email templates, menus). **Demo** sample data and showcase form upgrades run only when demo seeding is enabled.
 
 ```bash
-# Apply migrations and seed sample data (no web server)
+# Apply migrations and seed (no web server)
 dotnet run --project src/MetaForge.Web -- --seed-only
 
 # Reset and reseed the database (drops all data, reapplies migrations)
 dotnet run --project src/MetaForge.Web -- --reset-db
 
+# Production-style seed: platform only (admin user, no sample ERP data)
+dotnet run --project src/MetaForge.Web -- --seed-only --no-demo-seed
+
+# Force demo sample data even when Seed:IncludeDemoData is false
+dotnet run --project src/MetaForge.Web -- --seed-only --demo-seed
+```
+
+**Seed configuration** (`appsettings.json`):
+
+```json
+"Seed": {
+  "IncludeDemoData": false
+}
+```
+
+Development sets `IncludeDemoData` to `true` in `appsettings.Development.json`. When `false`, the app still seeds the **admin** account and runs **platform upgrades**, but skips sample customers, sales orders, demo forms, and demo-specific metadata patches.
+
+```bash
 # Apply migrations manually
 dotnet ef database update --project src/MetaForge.Infrastructure --startup-project src/MetaForge.Web
 

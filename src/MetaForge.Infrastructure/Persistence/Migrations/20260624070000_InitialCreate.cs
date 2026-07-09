@@ -781,7 +781,7 @@ namespace MetaForge.Infrastructure.Persistence.Migrations
                         column: x => x.VehicleMakeId,
                         principalTable: "VehicleMakes",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -842,25 +842,25 @@ namespace MetaForge.Infrastructure.Persistence.Migrations
                         column: x => x.VehicleMakeId,
                         principalTable: "VehicleMakes",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_Vehicles_VehicleModels_VehicleModelId",
                         column: x => x.VehicleModelId,
                         principalTable: "VehicleModels",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_Vehicles_VehicleStatus_VehicleStatusId",
                         column: x => x.VehicleStatusId,
                         principalTable: "VehicleStatus",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_Vehicles_VehicleTypes_VehicleTypeId",
                         column: x => x.VehicleTypeId,
                         principalTable: "VehicleTypes",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
