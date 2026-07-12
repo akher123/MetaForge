@@ -363,39 +363,6 @@ public class DynamicValidationService : IDynamicValidationService
 }
 
 /// <summary>
-/// Audit trail persistence service.
-/// </summary>
-public class AuditService : IAuditService
-{
-    private readonly MetaForgeDbContext _dbContext;
-    private readonly IHttpContextAccessor _httpContextAccessor;
-
-    public AuditService(MetaForgeDbContext dbContext, IHttpContextAccessor httpContextAccessor)
-    {
-        _dbContext = dbContext;
-        _httpContextAccessor = httpContextAccessor;
-    }
-
-    public async Task LogAsync(string entityName, string recordId, string action, string? oldValue, string? newValue, CancellationToken cancellationToken = default)
-    {
-        var userName = _httpContextAccessor.HttpContext?.User?.Identity?.Name ?? "system";
-
-        _dbContext.AuditLogs.Add(new Domain.Audit.AuditLog
-        {
-            EntityName = entityName,
-            RecordId = recordId,
-            Action = action,
-            UserName = userName,
-            Timestamp = DateTime.UtcNow,
-            OldValue = oldValue,
-            NewValue = newValue
-        });
-
-        await _dbContext.SaveChangesAsync(cancellationToken);
-    }
-}
-
-/// <summary>
 /// Role-based module authorization.
 /// </summary>
 public class FormAuthorizationService : IFormAuthorizationService

@@ -1,4 +1,5 @@
 using MetaForge.Application.Configuration;
+using MetaForge.Infrastructure.Audit;
 using MetaForge.Infrastructure.Dynamic;
 using MetaForge.Infrastructure.Email;
 using MetaForge.Infrastructure.Email.Providers;
@@ -45,7 +46,7 @@ public static class DependencyInjection
         services.AddScoped<IEntityMetadataDiscoveryService, EntityMetadataDiscoveryService>();
         services.AddScoped<INavigationService, NavigationService>();
         services.AddScoped<IDynamicValidationService, DynamicValidationService>();
-        services.AddScoped<IAuditService, AuditService>();
+        services.AddAuditServices();
         services.AddScoped<IAuditQueryService, AuditQueryService>();
         services.AddScoped<IFormAuthorizationService, FormAuthorizationService>();
         services.AddScoped<IUserAuthorizationSnapshotProvider, UserAuthorizationSnapshotProvider>();

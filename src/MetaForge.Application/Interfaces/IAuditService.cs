@@ -1,7 +1,7 @@
 namespace MetaForge.Application.Interfaces;
 
 /// <summary>
-/// Audit trail recording service.
+/// Audit trail recording service used by application code (e.g. CRUD operations).
 /// </summary>
 public interface IAuditService
 {
