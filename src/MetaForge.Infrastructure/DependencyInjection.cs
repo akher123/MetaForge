@@ -46,6 +46,7 @@ public static class DependencyInjection
         services.AddScoped<INavigationService, NavigationService>();
         services.AddScoped<IDynamicValidationService, DynamicValidationService>();
         services.AddScoped<IAuditService, AuditService>();
+        services.AddScoped<IAuditQueryService, AuditQueryService>();
         services.AddScoped<IFormAuthorizationService, FormAuthorizationService>();
         services.AddScoped<IUserAuthorizationSnapshotProvider, UserAuthorizationSnapshotProvider>();
         services.AddScoped<ISecurityStampService, SecurityStampService>();

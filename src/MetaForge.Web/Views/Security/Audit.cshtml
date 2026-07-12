@@ -1,0 +1,119 @@
+@{
+    ViewData["Title"] = "Audit Log";
+    ViewBag.SecurityNav = "audit";
+    ViewBag.BreadcrumbPage = "Audit Log";
+}
+
+@await Html.PartialAsync("_SecurityPageHeader")
+
+<div class="card admin-card admin-grid-card module-grid-card">
+    <div class="card-header module-grid-card-header">
+        <span class="fw-semibold"><i class="fa-solid fa-clipboard-list me-2"></i>Audit Trail</span>
+        <div class="module-grid-toolbar">
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="btnResetAuditFilters" title="Reset filters">
+                <i class="fa-solid fa-filter-circle-xmark me-1"></i>Reset
+            </button>
+        </div>
+    </div>
+    <div class="card-body border-bottom audit-filter-bar">
+        <div class="row g-2 align-items-end">
+            <div class="col-md-3 col-lg-2">
+                <label class="form-label small mb-1" for="filterEntity">Entity</label>
+                <select id="filterEntity" class="form-select form-select-sm">
+                    <option value="">All entities</option>
+                </select>
+            </div>
+            <div class="col-md-2 col-lg-2">
+                <label class="form-label small mb-1" for="filterAction">Action</label>
+                <select id="filterAction" class="form-select form-select-sm">
+                    <option value="">All actions</option>
+                </select>
+            </div>
+            <div class="col-md-2 col-lg-2">
+                <label class="form-label small mb-1" for="filterUser">User</label>
+                <input type="text" id="filterUser" class="form-control form-control-sm" placeholder="Username" />
+            </div>
+            <div class="col-md-2 col-lg-2">
+                <label class="form-label small mb-1" for="filterRecordId">Record ID</label>
+                <input type="text" id="filterRecordId" class="form-control form-control-sm" placeholder="Record ID" />
+            </div>
+            <div class="col-md-2 col-lg-2">
+                <label class="form-label small mb-1" for="filterFrom">From</label>
+                <input type="date" id="filterFrom" class="form-control form-control-sm" />
+            </div>
+            <div class="col-md-2 col-lg-2">
+                <label class="form-label small mb-1" for="filterTo">To</label>
+                <input type="date" id="filterTo" class="form-control form-control-sm" />
+            </div>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-sm table-striped table-hover table-bordered w-100 mb-0" id="auditLogTable">
+            <thead class="table-light">
+                <tr>
+                    <th>Timestamp</th>
+                    <th>Entity</th>
+                    <th>Record</th>
+                    <th>Action</th>
+                    <th>User</th>
+                    <th>Summary</th>
+                    <th style="width:90px">Actions</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</div>
+
+<div class="modal fade" id="auditDetailModal" tabindex="-1" aria-labelledby="auditDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h5 class="modal-title" id="auditDetailModalLabel">Audit Entry</h5>
+                    <p class="text-muted small mb-0" id="auditDetailSubtitle"></p>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <ul class="nav nav-tabs mb-3" id="auditDetailTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="changes-tab" data-bs-toggle="tab" data-bs-target="#auditChangesPane" type="button" role="tab">Changes</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="raw-tab" data-bs-toggle="tab" data-bs-target="#auditRawPane" type="button" role="tab">Raw JSON</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="timeline-tab" data-bs-toggle="tab" data-bs-target="#auditTimelinePane" type="button" role="tab">Timeline</button>
+                    </li>
+                </ul>
+                <div class="tab-content">
+                    <div class="tab-pane fade show active" id="auditChangesPane" role="tabpanel">
+                        <div id="auditChangesContent"></div>
+                    </div>
+                    <div class="tab-pane fade" id="auditRawPane" role="tabpanel">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <h6 class="small text-muted text-uppercase">Before</h6>
+                                <pre class="audit-json-block" id="auditOldJson">—</pre>
+                            </div>
+                            <div class="col-md-6">
+                                <h6 class="small text-muted text-uppercase">After</h6>
+                                <pre class="audit-json-block" id="auditNewJson">—</pre>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="auditTimelinePane" role="tabpanel">
+                        <div id="auditTimelineContent"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@await Html.PartialAsync("_SecurityPageFooter")
+
+@section Scripts {
+    <script src="~/js/metaforge/audit-log.js" asp-append-version="true"></script>
+}

@@ -7,6 +7,7 @@
     var canManageUsers = ViewBag.CanManageUsers == true;
     var canViewRoles = ViewBag.CanViewRoles == true;
     var canViewPermissions = ViewBag.CanViewPermissions == true;
+    var canViewAudit = ViewBag.CanViewAudit == true;
 }
 
 @await Html.PartialAsync("_SecurityPageHeader")
@@ -100,6 +101,21 @@
                     <p>Browse all module permissions and sync new ones when forms are added.</p>
                     <a href="/Security/Permissions" class="btn btn-primary btn-sm">
                         <i class="fa-solid fa-arrow-right me-1"></i>View Permissions
+                    </a>
+                </div>
+            </div>
+        </div>
+    }
+    @if (canViewAudit)
+    {
+        <div class="col-md-6 col-xl-4">
+            <div class="card admin-card security-hub-card h-100">
+                <div class="card-body">
+                    <span class="security-hub-icon security-hub-icon-perms"><i class="fa-solid fa-clipboard-list"></i></span>
+                    <h2 class="h6 mb-0 fw-bold">Audit Log</h2>
+                    <p>Review who changed what, when, and inspect before/after values for compliance.</p>
+                    <a href="/Security/Audit" class="btn btn-primary btn-sm">
+                        <i class="fa-solid fa-arrow-right me-1"></i>View Audit Log
                     </a>
                 </div>
             </div>

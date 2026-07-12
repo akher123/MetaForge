@@ -13,6 +13,7 @@ public static class SecurityPermissions
     public const string ManageRoles = "security.ManageRoles";
     public const string ViewPermissions = "security.ViewPermissions";
     public const string SyncPermissions = "security.SyncPermissions";
+    public const string ViewAudit = "security.ViewAudit";
 
     public static readonly IReadOnlyList<(string Code, string Name, string Action)> All =
     [
@@ -21,6 +22,7 @@ public static class SecurityPermissions
         (ViewRoles, "View Roles", "ViewRoles"),
         (ManageRoles, "Manage Roles", "ManageRoles"),
         (ViewPermissions, "View Permissions", "ViewPermissions"),
-        (SyncPermissions, "Sync Module Permissions", "SyncPermissions")
+        (SyncPermissions, "Sync Module Permissions", "SyncPermissions"),
+        (ViewAudit, "View Audit Log", "ViewAudit")
     ];
 }

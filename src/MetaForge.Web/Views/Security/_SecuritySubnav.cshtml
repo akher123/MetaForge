@@ -1,5 +1,12 @@
+@using System.Security.Claims
+@inject MetaForge.Application.Interfaces.IFormAuthorizationService AuthorizationService
 @{
     var active = ViewBag.SecurityNav as string ?? "";
+    var canViewAudit = false;
+    if (User.Identity?.IsAuthenticated == true)
+    {
+        canViewAudit = await AuthorizationService.HasPermissionCodeAsync(User, MetaForge.Shared.Constants.SecurityPermissions.ViewAudit);
+    }
 }
 
 <ul class="nav nav-pills security-subnav" role="tablist" aria-label="Security sections">
@@ -23,4 +30,12 @@
             <i class="fa-solid fa-key me-1"></i>Permissions
         </a>
     </li>
+    @if (canViewAudit)
+    {
+        <li class="nav-item" role="presentation">
+            <a class="nav-link @(active == "audit" ? "active" : "")" href="/Security/Audit" @(active == "audit" ? "aria-current=\"page\"" : "")>
+                <i class="fa-solid fa-clipboard-list me-1"></i>Audit Log
+            </a>
+        </li>
+    }
 </ul>

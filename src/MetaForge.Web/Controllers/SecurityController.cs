@@ -27,6 +27,7 @@ public class SecurityController : Controller
         ViewBag.CanManageRoles = await _authorizationService.HasPermissionCodeAsync(User, SecurityPermissions.ManageRoles, cancellationToken);
         ViewBag.CanViewPermissions = await _authorizationService.HasPermissionCodeAsync(User, SecurityPermissions.ViewPermissions, cancellationToken);
         ViewBag.CanSyncPermissions = await _authorizationService.HasPermissionCodeAsync(User, SecurityPermissions.SyncPermissions, cancellationToken);
+        ViewBag.CanViewAudit = await _authorizationService.HasPermissionCodeAsync(User, SecurityPermissions.ViewAudit, cancellationToken);
         return View();
     }
 
@@ -115,11 +116,21 @@ public class SecurityController : Controller
         return View();
     }
 
+    [HttpGet("/Security/Audit")]
+    public async Task<IActionResult> Audit(CancellationToken cancellationToken)
+    {
+        var denied = await PermissionGuard.EnsurePermissionCodeAsync(HttpContext, SecurityPermissions.ViewAudit, cancellationToken);
+        if (denied != null) return denied;
+
+        return View();
+    }
+
     private async Task<IActionResult?> EnsureAnySecurityViewAsync(CancellationToken cancellationToken)
     {
         if (await _authorizationService.HasPermissionCodeAsync(User, SecurityPermissions.ViewUsers, cancellationToken)
             || await _authorizationService.HasPermissionCodeAsync(User, SecurityPermissions.ViewRoles, cancellationToken)
-            || await _authorizationService.HasPermissionCodeAsync(User, SecurityPermissions.ViewPermissions, cancellationToken))
+            || await _authorizationService.HasPermissionCodeAsync(User, SecurityPermissions.ViewPermissions, cancellationToken)
+            || await _authorizationService.HasPermissionCodeAsync(User, SecurityPermissions.ViewAudit, cancellationToken))
         {
             return null;
         }
