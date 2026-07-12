@@ -15,6 +15,7 @@ public class MetaForgeDbContext : DbContext
     public DbSet<ForgeForm> ForgeForms => Set<ForgeForm>();
     public DbSet<ForgeField> ForgeFields => Set<ForgeField>();
     public DbSet<ForgeRelation> ForgeRelations => Set<ForgeRelation>();
+    public DbSet<ForgeTreeLevel> ForgeTreeLevels => Set<ForgeTreeLevel>();
     public DbSet<ForgeGridColumn> ForgeGridColumns => Set<ForgeGridColumn>();
     public DbSet<ForgeFormAction> ForgeFormActions => Set<ForgeFormAction>();
     public DbSet<ForgeReport> ForgeReports => Set<ForgeReport>();
@@ -37,6 +38,7 @@ public class MetaForgeDbContext : DbContext
 
     public DbSet<Country> Countries => Set<Country>();
     public DbSet<Region> Regions => Set<Region>();
+    public DbSet<City> Cities => Set<City>();
     public DbSet<Customer> Customers => Set<Customer>();
     public DbSet<CustomerRegion> CustomerRegions => Set<CustomerRegion>();
     public DbSet<Address> Addresses => Set<Address>();

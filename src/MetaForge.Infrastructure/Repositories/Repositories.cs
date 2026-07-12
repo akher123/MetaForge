@@ -66,6 +66,13 @@ public class ForgeFormRepository : IForgeFormRepository
             .Include(m => m.GridActions)
             .FirstOrDefaultAsync(m => m.Id == id, cancellationToken);
 
+    public async Task<IReadOnlyList<ForgeTreeLevel>> GetTreeLevelsAsync(int formId, CancellationToken cancellationToken = default) =>
+        await _context.ForgeTreeLevels
+            .AsNoTracking()
+            .Where(t => t.FormId == formId)
+            .OrderBy(t => t.LevelIndex)
+            .ToListAsync(cancellationToken);
+
     public async Task<bool> ExistsByCodeAsync(string code, int? excludeId = null, CancellationToken cancellationToken = default) =>
         await _context.ForgeForms.AnyAsync(m => m.Code == code && (!excludeId.HasValue || m.Id != excludeId.Value), cancellationToken);
 

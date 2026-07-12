@@ -184,12 +184,14 @@ public class DiscoveredEntityOptionDto
 /// </summary>
 public class FormBuilderScreenDto
 {
-    /// <summary>Master, MasterDetail, or MasterDetailTabular</summary>
+    /// <summary>Master, MasterDetail, MasterDetailTabular, TreeViewMultiTable</summary>
     public string ScreenType { get; set; } = "Master";
 
     public FormConfigDto Master { get; set; } = new();
 
     public FormConfigDto? Detail { get; set; }
+
+    public List<TreeLevelConfigDto> TreeLevels { get; set; } = [];
 }
 
 /// <summary>
@@ -202,4 +204,6 @@ public class FormBuilderSaveDto
     public FormConfigDto Master { get; set; } = new();
 
     public FormConfigDto? Detail { get; set; }
+
+    public List<TreeLevelConfigDto> TreeLevels { get; set; } = [];
 }

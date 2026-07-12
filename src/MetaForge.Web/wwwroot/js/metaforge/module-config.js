@@ -26,7 +26,8 @@ const FormBuilder = (function () {
         screenType: 'Master',
         detailEntity: null,
         detailForeignKey: null,
-        entities: []
+        entities: [],
+        treeLevels: []
     };
 
     function init() {
@@ -172,6 +173,8 @@ const FormBuilder = (function () {
         });
         $('#btnAddGridAction').on('click', () => addGridActionRow());
         $('#btnAddRelation').on('click', () => addRelationRow());
+        $('#btnAddTreeLevel').on('click', () => addTreeLevelRow());
+        $(document).on('change', '#treeLevelsTable .tree-level-entity', onTreeLevelEntityChanged);
         $('#btnSaveScreen').on('click', saveScreen);
         $('#btnSyncFromEntity').on('click', openSchemaSync);
 
@@ -223,6 +226,9 @@ const FormBuilder = (function () {
         if (!$('#moduleName').val()) {
             $('#moduleName').val(splitPascalCase($opt.val() || ''));
         }
+        if ($('#screenType').val() === 'TreeViewMultiTable') {
+            syncRootTreeLevel();
+        }
     }
 
     function onScreenTypeChanged() {
@@ -230,6 +236,12 @@ const FormBuilder = (function () {
         updateScreenTypeUi();
         if (state.screenType === 'MasterDetail' || state.screenType === 'MasterDetailTabular') {
             syncDetailFromRelations();
+        }
+        if (state.screenType === 'TreeViewMultiTable') {
+            syncRootTreeLevel();
+            if ($('#treeLevelsTable tbody tr').length === 0) {
+                addTreeLevelRow({ LevelIndex: 0, EntityName: $('#entityName').val(), DisplayColumn: 'Name' });
+            }
         }
         refreshMasterPreview();
     }
@@ -254,7 +266,10 @@ const FormBuilder = (function () {
         const screenType = $('#screenType').val();
         const isMasterDetail = screenType === 'MasterDetail' || screenType === 'MasterDetailTabular';
         const isTabbed = screenType === 'Tabbed';
+        const isTree = screenType === 'TreeViewMultiTable';
         $('#tab-detail-nav').toggleClass('d-none', !isMasterDetail);
+        $('#tab-tree-levels-nav').toggleClass('d-none', !isTree);
+        $('#tab-relations-btn').closest('.nav-item').toggleClass('d-none', isTree);
         $('#detailEntityInfo').toggleClass('d-none', !isMasterDetail || !state.detailEntity);
         $('#tabbedSectionHint').toggleClass('d-none', !isTabbed);
         syncScreenTypeCards();
@@ -271,6 +286,13 @@ const FormBuilder = (function () {
         loadMasterConfig(screen.Master ?? screen.master);
         if (screen.Detail ?? screen.detail) {
             loadDetailConfig(screen.Detail ?? screen.detail);
+        }
+
+        const treeLevels = screen.TreeLevels ?? screen.treeLevels ?? [];
+        if (treeLevels.length > 0) {
+            renderTreeLevels(treeLevels);
+        } else if ((screen.ScreenType ?? screen.screenType) === 'TreeViewMultiTable') {
+            syncRootTreeLevel();
         }
 
         updateScreenTypeUi();
@@ -755,6 +777,123 @@ const FormBuilder = (function () {
         return errors;
     }
 
+    function getEntityOptions(selected) {
+        return ['<option value="">— Select —</option>']
+            .concat(state.entities.map(e => {
+                const name = e.EntityName ?? e.entityName ?? '';
+                const sel = name === selected ? 'selected' : '';
+                return `<option value="${esc(name)}" ${sel}>${esc(name)}</option>`;
+            }))
+            .join('');
+    }
+
+    function findRelation(parentEntity, childEntity) {
+        const parentMeta = state.entities.find(e =>
+            (e.EntityName ?? e.entityName)?.toLowerCase() === (parentEntity || '').toLowerCase());
+        const relations = parentMeta?.Metadata?.Relations ?? parentMeta?.metadata?.relations ?? [];
+        return relations.find(r =>
+            (r.ParentEntity ?? r.parentEntity)?.toLowerCase() === (parentEntity || '').toLowerCase()
+            && (r.ChildEntity ?? r.childEntity)?.toLowerCase() === (childEntity || '').toLowerCase());
+    }
+
+    function syncRootTreeLevel() {
+        const entity = $('#entityName').val()?.trim() || $('#entitySelect').val()?.trim();
+        const $root = $('#treeLevelsTable tbody tr').first();
+        if (!$root.length) return;
+        $root.find('.tree-level-index').text('0');
+        $root.find('.tree-level-entity').val(entity);
+        $root.find('.tree-level-parent').val('');
+        $root.find('.tree-level-fk').val('').prop('readonly', true);
+        if (!$root.find('.tree-level-display').val()?.trim()) {
+            $root.find('.tree-level-display').val('Name');
+        }
+    }
+
+    function renderTreeLevels(levels) {
+        const $tbody = $('#treeLevelsTable tbody').empty();
+        levels.forEach(level => addTreeLevelRow(level, $tbody));
+        reindexTreeLevels();
+    }
+
+    function addTreeLevelRow(level = {}, $tbody) {
+        const $target = $tbody || $('#treeLevelsTable tbody');
+        const index = $target.find('tr').length;
+        const isRoot = index === 0 && (level.LevelIndex ?? level.levelIndex ?? index) === 0;
+        const entity = level.EntityName ?? level.entityName ?? '';
+        const parent = level.ParentEntity ?? level.parentEntity ?? '';
+        const fk = level.ForeignKey ?? level.foreignKey ?? '';
+        const display = level.DisplayColumn ?? level.displayColumn ?? 'Name';
+
+        $target.append(`
+            <tr>
+                <td class="tree-level-index">${level.LevelIndex ?? level.levelIndex ?? index}</td>
+                <td>
+                    <select class="form-select form-select-sm tree-level-entity"${isRoot ? ' disabled' : ''}>
+                        ${getEntityOptions(entity)}
+                    </select>
+                </td>
+                <td><input type="text" class="form-control form-control-sm tree-level-parent" value="${esc(parent)}" readonly /></td>
+                <td><input type="text" class="form-control form-control-sm tree-level-fk" value="${esc(fk)}" ${isRoot ? 'readonly' : ''} /></td>
+                <td><input type="text" class="form-control form-control-sm tree-level-display" value="${esc(display)}" placeholder="Code, Name" title="Comma-separated property names" /></td>
+                <td>
+                    ${isRoot ? '' : '<button type="button" class="btn btn-sm btn-outline-danger btn-icon btn-remove-row" title="Remove" aria-label="Remove"><i class="fa-solid fa-trash"></i></button>'}
+                </td>
+            </tr>`);
+
+        if (isRoot) {
+            syncRootTreeLevel();
+        }
+    }
+
+    function reindexTreeLevels() {
+        $('#treeLevelsTable tbody tr').each(function (index) {
+            $(this).find('.tree-level-index').text(index);
+            if (index === 0) {
+                $(this).find('.tree-level-parent').val('');
+                $(this).find('.tree-level-fk').val('').prop('readonly', true);
+                return;
+            }
+
+            const $prev = $('#treeLevelsTable tbody tr').eq(index - 1);
+            const parentEntity = $prev.find('.tree-level-entity').val()?.trim() || '';
+            $(this).find('.tree-level-parent').val(parentEntity);
+        });
+    }
+
+    function onTreeLevelEntityChanged() {
+        const $row = $(this).closest('tr');
+        const index = $row.index();
+        if (index === 0) return;
+
+        const parentEntity = $('#treeLevelsTable tbody tr').eq(index - 1).find('.tree-level-entity').val()?.trim();
+        const childEntity = $(this).val()?.trim();
+        $row.find('.tree-level-parent').val(parentEntity || '');
+
+        const relation = findRelation(parentEntity, childEntity);
+        if (relation) {
+            $row.find('.tree-level-fk').val(relation.ForeignKey ?? relation.foreignKey ?? '');
+        }
+        reindexTreeLevels();
+    }
+
+    function collectTreeLevels() {
+        const levels = [];
+        $('#treeLevelsTable tbody tr').each(function (index) {
+            const entity = $(this).find('.tree-level-entity').val()?.trim();
+            if (!entity) return;
+            levels.push({
+                LevelIndex: index,
+                EntityName: entity,
+                ParentEntity: index === 0 ? null : ($(this).find('.tree-level-parent').val()?.trim() || null),
+                ForeignKey: index === 0 ? null : ($(this).find('.tree-level-fk').val()?.trim() || null),
+                DisplayColumn: $(this).find('.tree-level-display').val()?.trim() || 'Name',
+                Fields: [],
+                GridColumns: []
+            });
+        });
+        return levels;
+    }
+
     function saveScreen() {
         const screenType = $('#screenType').val();
         const master = collectMasterConfig();
@@ -811,6 +950,16 @@ const FormBuilder = (function () {
             payload.Detail = collectDetailConfig();
         }
 
+        if (screenType === 'TreeViewMultiTable') {
+            const treeLevels = collectTreeLevels();
+            if (treeLevels.length < 2) {
+                notify('Multi-Table Tree requires at least two levels (root + one child).', 'warning');
+                return;
+            }
+            payload.TreeLevels = treeLevels;
+            payload.Master.EntityName = treeLevels[0].EntityName;
+        }
+
         const $btn = $('#btnSaveScreen').prop('disabled', true);
 
         $.ajax({
@@ -841,7 +990,7 @@ const FormBuilder = (function () {
         const screenType = $('#screenType').val();
         DynamicForm.renderPreview('#masterFormPreview', {
             FormName: $('#moduleName').val() || 'Master Form',
-            FormType: screenType === 'Tabbed' ? 'Tabbed' : 'Master',
+            FormType: screenType === 'Tabbed' ? 'Tabbed' : screenType === 'TreeViewMultiTable' ? 'TreeViewMultiTable' : 'Master',
             Fields: fields
         }, {
             layoutClass: 'admin-form-preview-layout',

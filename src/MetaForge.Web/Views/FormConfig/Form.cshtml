@@ -51,6 +51,7 @@
                             <option value="Tabbed">Tabbed Form</option>
                             <option value="MasterDetail">Master + Detail</option>
                             <option value="MasterDetailTabular">Master + Tabular Details</option>
+                            <option value="TreeViewMultiTable">Multi-Table Tree</option>
                         </select>
                         <div class="form-builder-type-options" role="radiogroup" aria-label="Screen type">
                             <label class="form-builder-type-option @(defaultScreenType == "Master" ? "is-selected" : "")" data-type="Master">
@@ -76,6 +77,12 @@
                                 <span class="form-builder-type-option-icon type-tabular"><i class="fa-solid fa-table-list"></i></span>
                                 <span class="form-builder-type-option-label">Master + Tabular</span>
                                 <span class="form-builder-type-option-desc">Header with multiple tabbed child grids.</span>
+                            </label>
+                            <label class="form-builder-type-option" data-type="TreeViewMultiTable">
+                                <input type="radio" name="screenTypeOption" value="TreeViewMultiTable" />
+                                <span class="form-builder-type-option-icon type-tree"><i class="fa-solid fa-sitemap"></i></span>
+                                <span class="form-builder-type-option-label">Multi-Table Tree</span>
+                                <span class="form-builder-type-option-desc">Hierarchical tree across related entities with paging and search.</span>
                             </label>
                         </div>
                     </div>
@@ -168,6 +175,11 @@
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="tab-grid-btn" data-bs-toggle="tab" data-bs-target="#tabGrid" type="button" role="tab">
                     <i class="fa-solid fa-table me-1"></i> List Grid
+                </button>
+            </li>
+            <li class="nav-item d-none" id="tab-tree-levels-nav" role="presentation">
+                <button class="nav-link" id="tab-tree-levels-btn" data-bs-toggle="tab" data-bs-target="#tabTreeLevels" type="button" role="tab">
+                    <i class="fa-solid fa-sitemap me-1"></i> Tree Levels
                 </button>
             </li>
             <li class="nav-item" role="presentation">
@@ -358,6 +370,37 @@
                     <strong>Row</strong> actions appear on each line (e.g. Approve, Print).
                     Use placeholders <code>{id}</code>, <code>{formCode}</code>, <code>{entity}</code>, and any row property name in targets and JSON bodies.
                     <strong>Script</strong> handlers call <code>MetaForgeGridActionHandlers[code](context)</code> registered in custom JavaScript.
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="tabTreeLevels" role="tabpanel">
+                <div class="form-builder-panel-header">
+                    <span class="fw-semibold"><i class="fa-solid fa-sitemap me-1"></i> Tree Level Chain</span>
+                    <button type="button" id="btnAddTreeLevel" class="btn btn-sm btn-outline-primary">
+                        <i class="fa-solid fa-plus me-1"></i>Add Level
+                    </button>
+                </div>
+                <div class="form-builder-info-banner mx-0 mb-0 rounded-0 border-start-0 border-end-0 border-top-0">
+                    <i class="fa-solid fa-circle-info me-2 text-primary"></i>
+                    Level 0 is the <strong>root entity</strong> (synced from Entity &amp; Screen Type).
+                    Each child level must link to the previous entity via a foreign key (e.g. Country → Region via <code>CountryId</code>).
+                    Configure root fields on <strong>Master Form</strong> and <strong>List Grid</strong> tabs.
+                    Child entity forms are auto-created when saved (or reuse existing entity forms).
+                </div>
+                <div class="table-responsive px-3 pb-3">
+                    <table class="table table-sm table-striped mb-0 form-builder-field-table" id="treeLevelsTable">
+                        <thead>
+                            <tr>
+                                <th>Level</th>
+                                <th>Entity</th>
+                                <th>Parent Entity</th>
+                                <th>Foreign Key</th>
+                                <th title="Comma-separated property names shown in the tree grid for this level">Display Columns</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
                 </div>
             </div>
 

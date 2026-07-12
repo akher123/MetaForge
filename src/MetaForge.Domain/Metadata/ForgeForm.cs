@@ -30,4 +30,6 @@ public class ForgeForm
     public ICollection<ForgeGridColumn> GridColumns { get; set; } = [];
 
     public ICollection<ForgeFormAction> GridActions { get; set; } = [];
+
+    public ICollection<ForgeTreeLevel> TreeLevels { get; set; } = [];
 }

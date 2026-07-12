@@ -1,3 +1,4 @@
+using MetaForge.Application.Common;
 using MetaForge.Application.Validation;
 using MetaForge.Infrastructure.Dynamic;
 using MetaForge.Infrastructure.Validation;
@@ -95,11 +96,20 @@ public class FormConfigurationService : IFormConfigurationService
             ApplyDetailFormDefaults(detail, detailRelation.ForeignKey);
         }
 
+        var treeLevels = new List<TreeLevelConfigDto>();
+        if (master.FormType.Equals(FormType.TreeViewMultiTable.ToString(), StringComparison.OrdinalIgnoreCase))
+        {
+            var storedLevels = await _unitOfWork.Forms.GetTreeLevelsAsync(id, cancellationToken);
+            if (storedLevels.Count > 0)
+                treeLevels = await BuildTreeLevelConfigsAsync(storedLevels, master, cancellationToken);
+        }
+
         return new FormBuilderScreenDto
         {
             ScreenType = ResolveScreenType(master),
             Master = master,
-            Detail = detail
+            Detail = detail,
+            TreeLevels = treeLevels
         };
     }
 
@@ -529,8 +539,21 @@ public class FormConfigurationService : IFormConfigurationService
         if (await _unitOfWork.Forms.ExistsByCodeAsync(config.Code, config.Id > 0 ? config.Id : null, cancellationToken))
             throw new BusinessException($"Form code '{config.Code}' already exists.");
 
-        if (await _unitOfWork.Forms.ExistsByEntityNameAsync(config.EntityName, config.Id > 0 ? config.Id : null, cancellationToken))
+        var isTreeScreen = config.FormType.Equals(FormType.TreeViewMultiTable.ToString(), StringComparison.OrdinalIgnoreCase);
+        if (isTreeScreen)
+        {
+            var existingForms = await _unitOfWork.Forms.GetAllAsync(cancellationToken);
+            var conflictingTree = existingForms.FirstOrDefault(f =>
+                f.FormType == FormType.TreeViewMultiTable
+                && f.EntityName.Equals(config.EntityName, StringComparison.OrdinalIgnoreCase)
+                && f.Id != config.Id);
+            if (conflictingTree != null)
+                throw new BusinessException($"A multi-table tree screen for entity '{config.EntityName}' already exists.");
+        }
+        else if (await _unitOfWork.Forms.ExistsByEntityNameAsync(config.EntityName, config.Id > 0 ? config.Id : null, cancellationToken))
+        {
             throw new BusinessException($"Entity '{config.EntityName}' is already configured.");
+        }
 
         ForgeForm module;
         string? previousEntityName = null;
@@ -657,8 +680,21 @@ public class FormConfigurationService : IFormConfigurationService
         var isMasterDetail = screen.ScreenType.Equals("MasterDetail", StringComparison.OrdinalIgnoreCase);
         var isTabular = screen.ScreenType.Equals("MasterDetailTabular", StringComparison.OrdinalIgnoreCase);
         var isTabbed = screen.ScreenType.Equals("Tabbed", StringComparison.OrdinalIgnoreCase);
+        var isTreeMultiTable = screen.ScreenType.Equals("TreeViewMultiTable", StringComparison.OrdinalIgnoreCase);
 
-        screen.Master.FormType = isTabular
+        if (isTreeMultiTable)
+        {
+            ValidateTreeLevels(screen.TreeLevels);
+            var root = screen.TreeLevels.OrderBy(l => l.LevelIndex).First();
+            screen.Master.EntityName = root.EntityName;
+            var rootMetadata = _discoveryService.Discover(root.EntityName);
+            if (rootMetadata != null && string.IsNullOrWhiteSpace(screen.Master.TableName))
+                screen.Master.TableName = rootMetadata.TableName;
+        }
+
+        screen.Master.FormType = isTreeMultiTable
+            ? FormType.TreeViewMultiTable.ToString()
+            : isTabular
             ? FormType.MasterDetailTabular.ToString()
             : isMasterDetail
                 ? FormType.MasterDetail.ToString()
@@ -691,6 +727,13 @@ public class FormConfigurationService : IFormConfigurationService
         }
 
         var masterId = await SaveFormAsync(screen.Master, cancellationToken);
+
+        if (isTreeMultiTable)
+        {
+            await SaveTreeLevelsAsync(masterId, screen.TreeLevels, cancellationToken);
+            await SaveTreeLevelFormsAsync(screen, cancellationToken);
+            return masterId;
+        }
 
         if ((isMasterDetail || isTabular) && screen.Detail != null && screen.Detail.Fields.Count > 0)
         {
@@ -1047,8 +1090,147 @@ public class FormConfigurationService : IFormConfigurationService
             MultiSelectFieldInference.ApplyDefaults(field, metadata, _dbContext);
     }
 
+    private async Task<List<TreeLevelConfigDto>> BuildTreeLevelConfigsAsync(
+        IEnumerable<ForgeTreeLevel> levels,
+        FormConfigDto screenForm,
+        CancellationToken cancellationToken)
+    {
+        var result = new List<TreeLevelConfigDto>();
+        foreach (var level in levels.OrderBy(l => l.LevelIndex))
+        {
+            var dto = new TreeLevelConfigDto
+            {
+                Id = level.Id,
+                LevelIndex = level.LevelIndex,
+                EntityName = level.EntityName,
+                ParentEntity = level.ParentEntity,
+                ForeignKey = level.ForeignKey,
+                DisplayColumn = level.DisplayColumn
+            };
+
+            if (level.LevelIndex == 0)
+            {
+                dto.GridColumns = screenForm.GridColumns;
+                dto.DisplayColumns = TreeDisplayColumnParser.BuildColumns(level.DisplayColumn, screenForm.GridColumns);
+            }
+            else
+            {
+                var entityForm = await GetFormByEntityAsync(level.EntityName, cancellationToken);
+                if (entityForm != null)
+                {
+                    dto.Fields = entityForm.Fields;
+                    dto.GridColumns = entityForm.GridColumns;
+                    dto.DisplayColumns = TreeDisplayColumnParser.BuildColumns(level.DisplayColumn, entityForm.GridColumns);
+                }
+                else
+                {
+                    dto.DisplayColumns = TreeDisplayColumnParser.BuildColumns(level.DisplayColumn);
+                }
+            }
+
+            result.Add(dto);
+        }
+
+        return result;
+    }
+
+    private static void ValidateTreeLevels(IReadOnlyList<TreeLevelConfigDto> levels)
+    {
+        if (levels.Count < 2)
+            throw new BusinessException("Multi-table tree requires at least two levels (root and one child).");
+
+        var ordered = levels.OrderBy(l => l.LevelIndex).ToList();
+        for (var i = 0; i < ordered.Count; i++)
+        {
+            var level = ordered[i];
+            if (string.IsNullOrWhiteSpace(level.EntityName))
+                throw new BusinessException($"Tree level {i}: entity is required.");
+
+            if (string.IsNullOrWhiteSpace(level.DisplayColumn))
+                throw new BusinessException($"Tree level {i}: at least one display column is required.");
+
+            if (i == 0)
+                continue;
+
+            if (string.IsNullOrWhiteSpace(level.ForeignKey))
+                throw new BusinessException($"Tree level {i}: foreign key is required.");
+
+            var previous = ordered[i - 1];
+            if (!string.Equals(level.ParentEntity, previous.EntityName, StringComparison.OrdinalIgnoreCase))
+                throw new BusinessException($"Tree level {i}: parent entity must be '{previous.EntityName}'.");
+        }
+    }
+
+    private async Task SaveTreeLevelsAsync(int formId, List<TreeLevelConfigDto> levels, CancellationToken cancellationToken)
+    {
+        var module = await _unitOfWork.Forms.GetByIdTrackedAsync(formId, cancellationToken)
+            ?? throw new NotFoundException($"Form {formId} was not found.");
+
+        var existing = await _dbContext.ForgeTreeLevels
+            .Where(t => t.FormId == formId)
+            .ToListAsync(cancellationToken);
+        _dbContext.ForgeTreeLevels.RemoveRange(existing);
+
+        foreach (var (level, index) in levels.OrderBy(l => l.LevelIndex).Select((l, i) => (l, i)))
+        {
+            _dbContext.ForgeTreeLevels.Add(new ForgeTreeLevel
+            {
+                FormId = formId,
+                LevelIndex = level.LevelIndex >= 0 ? level.LevelIndex : index,
+                EntityName = level.EntityName.Trim(),
+                ParentEntity = string.IsNullOrWhiteSpace(level.ParentEntity) ? null : level.ParentEntity.Trim(),
+                ForeignKey = string.IsNullOrWhiteSpace(level.ForeignKey) ? null : level.ForeignKey.Trim(),
+                DisplayColumn = string.IsNullOrWhiteSpace(level.DisplayColumn) ? "Name" : level.DisplayColumn.Trim(),
+                DisplayOrder = index
+            });
+        }
+
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        await _formMetadataService.InvalidateCacheAsync(module.Code, module.EntityName, cancellationToken);
+    }
+
+    private async Task SaveTreeLevelFormsAsync(FormBuilderSaveDto screen, CancellationToken cancellationToken)
+    {
+        foreach (var level in screen.TreeLevels.Where(l => l.LevelIndex > 0))
+        {
+            var existing = await _unitOfWork.Forms.GetByEntityNameAsync(level.EntityName, cancellationToken);
+            if (existing != null)
+                continue;
+
+            FormConfigDto config;
+            if (level.Fields.Count > 0 || level.GridColumns.Count > 0)
+            {
+                var draft = await BuildDraftAsync(level.EntityName, screen.Master.GroupName, cancellationToken);
+                config = new FormConfigDto
+                {
+                    EntityName = level.EntityName,
+                    TableName = draft.TableName,
+                    Code = level.EntityName.ToLowerInvariant(),
+                    Name = SplitPascalCase(level.EntityName),
+                    GroupName = screen.Master.GroupName,
+                    FormType = FormType.Detail.ToString(),
+                    Fields = level.Fields.Count > 0 ? level.Fields : draft.Fields,
+                    GridColumns = level.GridColumns.Count > 0 ? level.GridColumns : draft.GridColumns
+                };
+            }
+            else
+            {
+                config = await BuildDraftAsync(level.EntityName, screen.Master.GroupName, cancellationToken);
+                config.FormType = FormType.Detail.ToString();
+                config.Code = level.EntityName.ToLowerInvariant();
+                config.Name = SplitPascalCase(level.EntityName);
+            }
+
+            ApplyDetailFormDefaults(config, level.ForeignKey ?? string.Empty);
+            await SaveFormAsync(config, cancellationToken);
+        }
+    }
+
     private static string ResolveScreenType(FormConfigDto master)
     {
+        if (master.FormType.Equals(FormType.TreeViewMultiTable.ToString(), StringComparison.OrdinalIgnoreCase))
+            return "TreeViewMultiTable";
+
         if (master.FormType.Equals(FormType.MasterDetailTabular.ToString(), StringComparison.OrdinalIgnoreCase))
             return "MasterDetailTabular";
 

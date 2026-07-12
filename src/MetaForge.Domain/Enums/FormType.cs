@@ -10,5 +10,7 @@ public enum FormType
     Tabbed,
     MasterDetail,
     MasterDetailTabular,
+    /// <summary>Hierarchical tree grid spanning multiple related entities (e.g. Country → Region → City).</summary>
+    TreeViewMultiTable,
     Detail
 }

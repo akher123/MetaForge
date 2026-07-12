@@ -41,6 +41,7 @@ public static class DependencyInjection
         services.AddScoped<ILookupService, LookupService>();
         services.AddScoped<IMappingAssociationService, MappingAssociationService>();
         services.AddScoped<IMasterDetailService, MasterDetailService>();
+        services.AddScoped<ITreeGridService, TreeGridService>();
         services.AddScoped<IEntityMetadataDiscoveryService, EntityMetadataDiscoveryService>();
         services.AddScoped<INavigationService, NavigationService>();
         services.AddScoped<IDynamicValidationService, DynamicValidationService>();

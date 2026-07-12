@@ -20,6 +20,7 @@ public class ForgeFormConfiguration : IEntityTypeConfiguration<ForgeForm>
         builder.HasMany(x => x.Relations).WithOne(x => x.Form).HasForeignKey(x => x.FormId);
         builder.HasMany(x => x.GridColumns).WithOne(x => x.Form).HasForeignKey(x => x.FormId);
         builder.HasMany(x => x.GridActions).WithOne(x => x.Form).HasForeignKey(x => x.FormId);
+        builder.HasMany(x => x.TreeLevels).WithOne(x => x.Form).HasForeignKey(x => x.FormId);
     }
 }
 
@@ -51,6 +52,20 @@ public class ForgeRelationConfiguration : IEntityTypeConfiguration<ForgeRelation
         builder.Property(x => x.ChildEntity).HasMaxLength(200).IsRequired();
         builder.Property(x => x.ForeignKey).HasMaxLength(200).IsRequired();
         builder.Property(x => x.TabLabel).HasMaxLength(200);
+    }
+}
+
+public class ForgeTreeLevelConfiguration : IEntityTypeConfiguration<ForgeTreeLevel>
+{
+    public void Configure(EntityTypeBuilder<ForgeTreeLevel> builder)
+    {
+        builder.ToTable("ForgeTreeLevels");
+        builder.HasKey(x => x.Id);
+        builder.Property(x => x.EntityName).HasMaxLength(200).IsRequired();
+        builder.Property(x => x.ParentEntity).HasMaxLength(200);
+        builder.Property(x => x.ForeignKey).HasMaxLength(200);
+        builder.Property(x => x.DisplayColumn).HasMaxLength(200).IsRequired();
+        builder.HasIndex(x => new { x.FormId, x.LevelIndex }).IsUnique();
     }
 }
 

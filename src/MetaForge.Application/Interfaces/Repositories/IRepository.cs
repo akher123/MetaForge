@@ -32,6 +32,8 @@ public interface IForgeFormRepository : IRepository<ForgeForm>
     Task<bool> ExistsByCodeAsync(string code, int? excludeId = null, CancellationToken cancellationToken = default);
 
     Task<bool> ExistsByEntityNameAsync(string entityName, int? excludeId = null, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<ForgeTreeLevel>> GetTreeLevelsAsync(int formId, CancellationToken cancellationToken = default);
 }
 
 /// <summary>

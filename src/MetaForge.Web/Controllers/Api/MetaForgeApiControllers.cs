@@ -349,6 +349,38 @@ public class LookupsApiController : ControllerBase
     }
 }
 
+[Authorize]
+[ApiController]
+[Route("api/metaforge/tree")]
+public class TreeApiController : ControllerBase
+{
+    private readonly ITreeGridService _treeGridService;
+
+    public TreeApiController(ITreeGridService treeGridService) => _treeGridService = treeGridService;
+
+    [HttpGet("{formCode}/screen")]
+    [RequireFormPermission(PermissionAction.View)]
+    public async Task<IActionResult> LoadScreen(string formCode, CancellationToken cancellationToken)
+    {
+        var screen = await _treeGridService.LoadScreenAsync(formCode, cancellationToken);
+        return screen == null ? NotFound() : Ok(screen);
+    }
+
+    [HttpPost("{formCode}/level")]
+    [RequireFormPermission(PermissionAction.View)]
+    public async Task<IActionResult> GetLevelData(
+        string formCode,
+        [FromBody] TreeLevelQueryRequest? request,
+        CancellationToken cancellationToken)
+    {
+        if (request == null)
+            return BadRequest(new { error = "Request body is required." });
+
+        request.FormCode = formCode;
+        return Ok(await _treeGridService.GetLevelDataAsync(request, cancellationToken));
+    }
+}
+
 public class MasterDetailSaveRequest
 {
     public Dictionary<string, object?> Master { get; set; } = [];

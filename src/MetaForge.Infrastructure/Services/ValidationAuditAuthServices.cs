@@ -478,9 +478,12 @@ public class FormAuthorizationService : IFormAuthorizationService
     {
         var form = await _dbContext.ForgeForms
             .AsNoTracking()
-            .FirstOrDefaultAsync(f => f.EntityName == entityName, cancellationToken);
+            .Where(f => f.EntityName == entityName && f.FormType != FormType.TreeViewMultiTable)
+            .OrderBy(f => f.DisplayOrder)
+            .Select(f => f.Code)
+            .FirstOrDefaultAsync(cancellationToken);
 
-        return form?.Code;
+        return form;
     }
 
     public async Task<bool> CanAccessLookupAsync(ClaimsPrincipal user, string entityName, CancellationToken cancellationToken = default)

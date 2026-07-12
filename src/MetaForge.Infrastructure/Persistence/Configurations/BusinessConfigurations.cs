@@ -72,6 +72,18 @@ public class RegionConfiguration : IEntityTypeConfiguration<Region>
     }
 }
 
+public class CityConfiguration : IEntityTypeConfiguration<City>
+{
+    public void Configure(EntityTypeBuilder<City> builder)
+    {
+        builder.ToTable("Cities");
+        builder.HasKey(x => x.Id);
+        builder.Property(x => x.Code).HasMaxLength(50).IsRequired();
+        builder.Property(x => x.Name).HasMaxLength(200).IsRequired();
+        builder.HasOne(x => x.Region).WithMany().HasForeignKey(x => x.RegionId);
+    }
+}
+
 public class CustomerRegionConfiguration : IEntityTypeConfiguration<CustomerRegion>
 {
     public void Configure(EntityTypeBuilder<CustomerRegion> builder)

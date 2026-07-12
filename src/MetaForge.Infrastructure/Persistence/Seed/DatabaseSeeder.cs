@@ -102,6 +102,7 @@ public static class DatabaseSeeder
         await EnsureEmailPermissionsAsync(context, logger);
         await EnsureReportPermissionsAsync(context, logger);
         await EnsureMenusAsync(scope, logger);
+        await EnsureLocationTreeUpgradeAsync(context, logger);
     }
 
     /// <summary>
@@ -1946,6 +1947,14 @@ public static class DatabaseSeeder
         var deBavaria = new Region { Code = "DE-B", Name = "Bavaria", Country = de };
         context.Regions.AddRange(usWest, usEast, ukLondon, deBavaria);
 
+        context.Cities.AddRange(
+            new City { Code = "SEA", Name = "Seattle", Region = usWest },
+            new City { Code = "LAX", Name = "Los Angeles", Region = usWest },
+            new City { Code = "NYC", Name = "New York", Region = usEast },
+            new City { Code = "BOS", Name = "Boston", Region = usEast },
+            new City { Code = "LON", Name = "London", Region = ukLondon },
+            new City { Code = "MUC", Name = "Munich", Region = deBavaria });
+
         context.Products.AddRange(
             new Product { Code = "P001", Name = "Widget A", UnitPrice = 19.99m },
             new Product { Code = "P002", Name = "Widget B", UnitPrice = 29.99m });
@@ -2093,6 +2102,220 @@ public static class DatabaseSeeder
                     ("Amount", ControlType.Number, true, null, null)
                 ],
                 grid: ["ChargeType", "Description", "Amount"]));
+
+        var locationTree = BuildForm("locationtree", "Location Tree", "Country", "Countries", "Master Data", 5, FormType.TreeViewMultiTable,
+            fields: [("Code", ControlType.TextBox, true, null, null), ("Name", ControlType.TextBox, true, null, null), ("IsActive", ControlType.Checkbox, false, null, null)],
+            grid: ["Code", "Name", "IsActive"]);
+        locationTree.TreeLevels = CreateLocationTreeLevels();
+        context.ForgeForms.Add(locationTree);
+
+        context.ForgeForms.AddRange(
+            BuildForm("region", "Region", "Region", "Regions", "Master Data", 6, FormType.Detail,
+                fields:
+                [
+                    ("Code", ControlType.TextBox, true, null, null),
+                    ("Name", ControlType.TextBox, true, null, null),
+                    ("CountryId", ControlType.Dropdown, true, null, "Country")
+                ],
+                grid: ["Code", "Name", "CountryId"]),
+
+            BuildForm("city", "City", "City", "Cities", "Master Data", 7, FormType.Detail,
+                fields:
+                [
+                    ("Code", ControlType.TextBox, true, null, null),
+                    ("Name", ControlType.TextBox, true, null, null),
+                    ("RegionId", ControlType.Dropdown, true, null, "Region")
+                ],
+                grid: ["Code", "Name", "RegionId"]));
+    }
+
+    private static List<ForgeTreeLevel> CreateLocationTreeLevels() =>
+    [
+        new ForgeTreeLevel
+        {
+            LevelIndex = 0,
+            EntityName = "Country",
+            DisplayColumn = "Code, Name",
+            DisplayOrder = 0
+        },
+        new ForgeTreeLevel
+        {
+            LevelIndex = 1,
+            EntityName = "Region",
+            ParentEntity = "Country",
+            ForeignKey = "CountryId",
+            DisplayColumn = "Code, Name",
+            DisplayOrder = 1
+        },
+        new ForgeTreeLevel
+        {
+            LevelIndex = 2,
+            EntityName = "City",
+            ParentEntity = "Region",
+            ForeignKey = "RegionId",
+            DisplayColumn = "Code, Name",
+            DisplayOrder = 2
+        }
+    ];
+
+    private static async Task EnsureLocationTreeUpgradeAsync(MetaForgeDbContext context, ILogger logger)
+    {
+        await EnsureSampleCitiesAsync(context, logger);
+
+        if (!await context.ForgeForms.AnyAsync(f => f.EntityName == "Region"))
+        {
+            context.ForgeForms.Add(BuildForm("region", "Region", "Region", "Regions", "Master Data", 6, FormType.Detail,
+                fields:
+                [
+                    ("Code", ControlType.TextBox, true, null, null),
+                    ("Name", ControlType.TextBox, true, null, null),
+                    ("CountryId", ControlType.Dropdown, true, null, "Country")
+                ],
+                grid: ["Code", "Name", "CountryId"]));
+            logger.LogInformation("Added Region detail form for location tree.");
+        }
+
+        if (!await context.ForgeForms.AnyAsync(f => f.EntityName == "City"))
+        {
+            context.ForgeForms.Add(BuildForm("city", "City", "City", "Cities", "Master Data", 7, FormType.Detail,
+                fields:
+                [
+                    ("Code", ControlType.TextBox, true, null, null),
+                    ("Name", ControlType.TextBox, true, null, null),
+                    ("RegionId", ControlType.Dropdown, true, null, "Region")
+                ],
+                grid: ["Code", "Name", "RegionId"]));
+            logger.LogInformation("Added City detail form for location tree.");
+        }
+
+        await ApplyLocationTreeDetailDefaultsAsync(context);
+
+        if (!await context.LookupConfigurations.AnyAsync(c => c.EntityName == "City"))
+        {
+            context.LookupConfigurations.Add(new LookupConfiguration { EntityName = "City", ValueField = "Id", TextField = "Name" });
+            await context.SaveChangesAsync();
+        }
+
+        var locationTree = await context.ForgeForms
+            .Include(f => f.TreeLevels)
+            .FirstOrDefaultAsync(f => f.Code == "locationtree");
+
+        if (locationTree == null)
+        {
+            locationTree = BuildForm("locationtree", "Location Tree", "Country", "Countries", "Master Data", 5, FormType.TreeViewMultiTable,
+                fields: [("Code", ControlType.TextBox, true, null, null), ("Name", ControlType.TextBox, true, null, null), ("IsActive", ControlType.Checkbox, false, null, null)],
+                grid: ["Code", "Name", "IsActive"]);
+            locationTree.TreeLevels = CreateLocationTreeLevels();
+            context.ForgeForms.Add(locationTree);
+            await context.SaveChangesAsync();
+            logger.LogInformation("Added Location Tree multi-table tree screen.");
+            return;
+        }
+
+        var changed = false;
+        if (locationTree.FormType != FormType.TreeViewMultiTable)
+        {
+            locationTree.FormType = FormType.TreeViewMultiTable;
+            changed = true;
+        }
+
+        if (locationTree.TreeLevels.Count == 0)
+        {
+            foreach (var level in CreateLocationTreeLevels())
+                locationTree.TreeLevels.Add(level);
+            changed = true;
+        }
+        else
+        {
+            foreach (var level in locationTree.TreeLevels.Where(l => string.Equals(l.DisplayColumn, "Name", StringComparison.OrdinalIgnoreCase)))
+            {
+                level.DisplayColumn = "Code, Name";
+                changed = true;
+            }
+        }
+
+        if (changed)
+        {
+            await context.SaveChangesAsync();
+            logger.LogInformation("Upgraded Location Tree multi-table tree screen.");
+        }
+    }
+
+    private static async Task ApplyLocationTreeDetailDefaultsAsync(MetaForgeDbContext context)
+    {
+        var regionForm = await context.ForgeForms
+            .Include(f => f.Fields)
+            .FirstOrDefaultAsync(f => f.EntityName == "Region");
+
+        if (regionForm != null)
+        {
+            var countryField = regionForm.Fields.FirstOrDefault(f => f.PropertyName == "CountryId");
+            if (countryField != null)
+            {
+                countryField.ControlType = ControlType.Hidden;
+                countryField.IsVisible = false;
+            }
+        }
+
+        var cityForm = await context.ForgeForms
+            .Include(f => f.Fields)
+            .FirstOrDefaultAsync(f => f.EntityName == "City");
+
+        if (cityForm != null)
+        {
+            var regionField = cityForm.Fields.FirstOrDefault(f => f.PropertyName == "RegionId");
+            if (regionField != null)
+            {
+                regionField.ControlType = ControlType.Hidden;
+                regionField.IsVisible = false;
+            }
+        }
+
+        await context.SaveChangesAsync();
+    }
+
+    private static async Task EnsureSampleCitiesAsync(MetaForgeDbContext context, ILogger logger)
+    {
+        if (await context.Cities.AnyAsync())
+            return;
+
+        var regions = await context.Regions
+            .AsNoTracking()
+            .ToDictionaryAsync(r => r.Code, r => r.Id, StringComparer.OrdinalIgnoreCase);
+
+        if (regions.Count == 0)
+            return;
+
+        var sampleCities = new (string Code, string Name, string RegionCode)[]
+        {
+            ("SEA", "Seattle", "US-W"),
+            ("LAX", "Los Angeles", "US-W"),
+            ("NYC", "New York", "US-E"),
+            ("BOS", "Boston", "US-E"),
+            ("LON", "London", "UK-L"),
+            ("MUC", "Munich", "DE-B")
+        };
+
+        var added = false;
+        foreach (var sample in sampleCities)
+        {
+            if (!regions.TryGetValue(sample.RegionCode, out var regionId))
+                continue;
+
+            context.Cities.Add(new City
+            {
+                Code = sample.Code,
+                Name = sample.Name,
+                RegionId = regionId
+            });
+            added = true;
+        }
+
+        if (added)
+        {
+            await context.SaveChangesAsync();
+            logger.LogInformation("Ensured sample cities exist for location tree.");
+        }
     }
 
     private static ForgeForm BuildForm(
@@ -2166,6 +2389,7 @@ public static class DatabaseSeeder
         context.LookupConfigurations.AddRange(
             new LookupConfiguration { EntityName = "Country", ValueField = "Id", TextField = "Name" },
             new LookupConfiguration { EntityName = "Region", ValueField = "Id", TextField = "Name" },
+            new LookupConfiguration { EntityName = "City", ValueField = "Id", TextField = "Name" },
             new LookupConfiguration { EntityName = "Customer", ValueField = "Id", TextField = "Name" },
             new LookupConfiguration { EntityName = "Product", ValueField = "Id", TextField = "Name" },
             new LookupConfiguration { EntityName = "SalesOrder", ValueField = "Id", TextField = "OrderNo" });

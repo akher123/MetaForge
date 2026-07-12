@@ -1,0 +1,215 @@
+@{
+    ViewData["Title"] = ViewBag.Form?.FormName ?? "Tree";
+    var form = ViewBag.Form as MetaForge.Application.DTOs.FormDefinition;
+    var treeScreen = ViewBag.TreeScreen as MetaForge.Application.DTOs.TreeScreenDto;
+    var formCode = ViewBag.FormCode as string;
+    var perms = ViewBag.Permissions as MetaForge.Application.DTOs.FormPermissionsDto;
+    var canSave = perms?.CanCreate == true || perms?.CanEdit == true;
+    var levels = treeScreen?.Levels ?? [];
+    var formName = form?.FormName ?? "Tree";
+    var levelPermissions = ViewBag.LevelPermissions as Dictionary<string, FormPermissionsDto> ?? new(StringComparer.OrdinalIgnoreCase);
+    var rootLevel = levels.OrderBy(l => l.LevelIndex).FirstOrDefault();
+    var rootEntityPerms = rootLevel != null && levelPermissions.TryGetValue(rootLevel.EntityName, out var rootPerms)
+        ? rootPerms
+        : null;
+    var canAddRoot = perms?.CanCreate == true && rootEntityPerms?.CanCreate == true;
+    var canDeleteAny = perms?.CanDelete == true && levelPermissions.Values.Any(p => p.CanDelete);
+}
+
+<div class="app-page-fill module-page module-page--tree">
+    <div class="page-header module-page-header d-flex align-items-center flex-wrap gap-3">
+        <div class="d-flex align-items-center gap-3">
+            <span class="module-page-icon" aria-hidden="true"><i class="fa-solid fa-sitemap"></i></span>
+            <div>
+                <h1 class="h3 mb-0">@formName</h1>
+                @await Component.InvokeAsync("Breadcrumb", new { requestPath = $"/Modules/{formCode}" })
+                <p class="page-subtitle mb-0">Browse the hierarchy and edit node details in the panel on the right</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="card admin-card admin-grid-card admin-grid-card--fill module-grid-card module-tree-card">
+        <div class="card-header module-grid-card-header module-tree-toolbar-header">
+            <div class="module-grid-toolbar module-tree-toolbar-row w-100 d-flex align-items-center gap-2">
+                <div class="module-tree-search-group" role="search">
+                    <div class="module-tree-search-wrap">
+                        <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                        <input type="search"
+                               id="treeSearchInput"
+                               class="form-control form-control-sm"
+                               placeholder="Search nodes..."
+                               autocomplete="off"
+                               aria-label="Search tree nodes" />
+                        <button type="button"
+                                class="btn btn-sm btn-link module-tree-search-clear d-none"
+                                id="btnTreeSearchClear"
+                                title="Clear search"
+                                aria-label="Clear search">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                    <select id="treeSearchLevel"
+                            class="form-select form-select-sm module-tree-search-level"
+                            aria-label="Search level">
+                        <option value="-1">All levels</option>
+                        @foreach (var level in levels.OrderBy(l => l.LevelIndex))
+                        {
+                            <option value="@level.LevelIndex">@level.EntityName only</option>
+                        }
+                    </select>
+                </div>
+                @if (canAddRoot)
+                {
+                    <button type="button" class="btn btn-primary btn-sm module-tree-add-root flex-shrink-0" id="btnTreeAddRoot" title="Add root node">
+                        <i class="fa-solid fa-plus me-1"></i>Add Root
+                    </button>
+                }
+                @if (levels.Count > 0)
+                {
+                    <div class="module-tree-level-chips d-none d-xl-flex ms-auto flex-shrink-0" id="treeLevelChips" aria-label="Tree levels">
+                        @foreach (var level in levels.OrderBy(l => l.LevelIndex))
+                        {
+                            <span class="module-tree-level-chip" data-level="@level.LevelIndex">@level.EntityName</span>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+        <div class="card-body p-0 module-tree-body">
+            <div class="module-tree-layout">
+                <div class="module-tree-panel module-detail-card">
+                    <div class="card-header d-flex align-items-center justify-content-between gap-2 flex-wrap module-tree-subheader">
+                        <div>
+                            <span class="module-tree-level-label" id="treeLevelLabel">Tree</span>
+                            <span class="module-tree-level-hint small text-muted d-block" id="treeLevelHint">Browse and expand nodes</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <button type="button"
+                                    class="btn btn-sm btn-outline-secondary module-tree-collapse-all"
+                                    id="btnTreeCollapseAll"
+                                    title="Collapse all expanded nodes">
+                                <i class="fa-solid fa-compress me-1"></i>Collapse
+                            </button>
+                            <label class="small text-muted mb-0 visually-hidden" for="treePageSize">Page size</label>
+                            <select id="treePageSize" class="form-select form-select-sm module-tree-page-size" aria-label="Page size">
+                                <option value="10">10</option>
+                                <option value="25" selected>25</option>
+                                <option value="50">50</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="treeGridContainer" class="module-tree-grid-container">
+                        <div class="table-responsive">
+                            <table class="table table-sm table-striped table-hover table-bordered w-100 mb-0 module-tree-table" id="multiTreeGrid">
+                                <thead>
+                                    <tr id="multiTreeGridHeadRow"></tr>
+                                </thead>
+                                <tbody id="multiTreeGridBody"></tbody>
+                            </table>
+                        </div>
+                        <div id="treeEmptyState" class="module-tree-empty d-none">
+                            <div class="module-tree-empty-icon">
+                                <i class="fa-solid fa-sitemap" aria-hidden="true"></i>
+                            </div>
+                            <p class="module-tree-empty-title mb-1">No nodes found</p>
+                            <p class="module-tree-empty-text mb-0 text-muted" id="treeEmptyMessage">No nodes at this level.</p>
+                        </div>
+                        <div id="treeLoadingState" class="module-tree-loading d-none">
+                            <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <span class="small text-muted ms-2">Loading tree...</span>
+                        </div>
+                    </div>
+                    <div class="module-tree-pagination card-footer d-flex align-items-center justify-content-between gap-2">
+                        <span class="small text-muted" id="treePageInfo">Page 1</span>
+                        <div class="btn-group btn-group-sm">
+                            <button type="button" class="btn btn-outline-secondary" id="btnTreePrev" disabled aria-label="Previous page">
+                                <i class="fa-solid fa-chevron-left"></i>
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" id="btnTreeNext" disabled aria-label="Next page">
+                                <i class="fa-solid fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="module-tree-form-panel module-form-card">
+                    <div class="card-header d-flex align-items-start gap-2">
+                        <i class="fa-solid fa-file-pen mt-1" aria-hidden="true"></i>
+                        <div>
+                            <span class="fw-semibold" id="treeFormTitle">Select a node</span>
+                            <span class="small text-muted d-block" id="treeFormSubtitle">Click a tree node to view or edit its details.</span>
+                        </div>
+                    </div>
+                    <div class="card-body module-tree-form-body">
+                        <div class="module-form-shell module-tree-form-shell d-none">
+                            <form id="treeDynamicForm" class="master-detail-form" data-module="@formCode"></form>
+                        </div>
+                        <div id="treeFormPlaceholder" class="module-tree-form-placeholder">
+                            <i class="fa-solid fa-hand-pointer" aria-hidden="true"></i>
+                            <p class="mb-0">Select a node from the tree to load its form.</p>
+                        </div>
+                    </div>
+                    @if (canSave)
+                    {
+                        <div class="card-footer module-form-actions d-flex flex-wrap gap-2">
+                            <button type="button" class="btn btn-primary btn-sm" id="btnTreeSave" disabled>
+                                <i class="fa-solid fa-floppy-disk me-1"></i>Save
+                            </button>
+                            @if (canDeleteAny)
+                            {
+                                <button type="button" class="btn btn-outline-danger btn-sm" id="btnTreeDelete" disabled>
+                                    <i class="fa-solid fa-trash me-1"></i>Delete
+                                </button>
+                            }
+                            <button type="button" class="btn btn-outline-secondary btn-sm ms-auto" id="btnTreeClear" disabled>
+                                <i class="fa-solid fa-xmark me-1"></i>Clear
+                            </button>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/metaforge/dynamic-multi-tree-grid.js" asp-append-version="true"></script>
+    <script>
+        $(function () {
+            const treeScreen = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(treeScreen));
+            const permissions = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(perms));
+            const levelPermissions = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(levelPermissions));
+            const formCode = '@formCode';
+
+            DynamicMultiTreeGrid.init({
+                formCode,
+                treeScreen,
+                permissions,
+                levelPermissions,
+                formSelector: '#treeDynamicForm',
+                tableBodySelector: '#multiTreeGridBody',
+                searchSelector: '#treeSearchInput',
+                searchLevelSelector: '#treeSearchLevel',
+                searchClearSelector: '#btnTreeSearchClear',
+                pageSizeSelector: '#treePageSize',
+                pageInfoSelector: '#treePageInfo',
+                prevSelector: '#btnTreePrev',
+                nextSelector: '#btnTreeNext',
+                emptySelector: '#treeEmptyState',
+                emptyMessageSelector: '#treeEmptyMessage',
+                loadingSelector: '#treeLoadingState',
+                formTitleSelector: '#treeFormTitle',
+                formSubtitleSelector: '#treeFormSubtitle',
+                formPlaceholderSelector: '#treeFormPlaceholder',
+                saveSelector: '#btnTreeSave',
+                deleteSelector: '#btnTreeDelete',
+                clearSelector: '#btnTreeClear',
+                addRootSelector: '#btnTreeAddRoot',
+                collapseAllSelector: '#btnTreeCollapseAll',
+                levelLabelSelector: '#treeLevelLabel',
+                levelHintSelector: '#treeLevelHint'
+            });
+        });
+    </script>
+}
