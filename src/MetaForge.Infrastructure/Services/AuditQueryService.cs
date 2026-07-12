@@ -121,7 +121,9 @@ public class AuditQueryService : IAuditQueryService
             .Select(f => new { f.EntityName, f.Name })
             .ToListAsync(cancellationToken);
 
-        var formNames = forms.ToDictionary(f => f.EntityName, f => f.Name, StringComparer.OrdinalIgnoreCase);
+        var formNames = forms
+            .GroupBy(f => f.EntityName, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.First().Name, StringComparer.OrdinalIgnoreCase);
 
         return entityNames.Select(name => new AuditEntityOptionDto
         {
