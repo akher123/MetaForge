@@ -1,8 +1,10 @@
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text.Json;
+using System.Globalization;
 using System.Security.Claims;
 using MetaForge.Domain.Enums;
+using MetaForge.Application.Validation;
 using MetaForge.Infrastructure.Dynamic;
 using MetaForge.Infrastructure.Validation;
 using MetaForge.Shared.Constants;
@@ -89,12 +91,182 @@ public class DynamicValidationService : IDynamicValidationService
             if (string.IsNullOrWhiteSpace(field.ValidationRule))
                 continue;
 
-            FieldValidationRuleEngine.ApplyRules(field.PropertyName, field.Label, field.ValidationRule, data, failures);
+            await ApplyValidationRulesAsync(entityName, field, data, failures, cancellationToken);
         }
 
         if (failures.Count > 0)
             throw new ValidationException(failures);
     }
+
+    private async Task ApplyValidationRulesAsync(
+        string entityName,
+        Domain.Metadata.ForgeField field,
+        Dictionary<string, object?> data,
+        List<ValidationFailure> failures,
+        CancellationToken cancellationToken)
+    {
+        var ruleSet = FieldValidationRuleEngine.Parse(field.ValidationRule);
+        if (ruleSet?.Rules == null || ruleSet.Rules.Count == 0)
+            return;
+
+        foreach (var rule in ruleSet.Rules)
+        {
+            if (!FieldValidationRuleEngine.IsUniqueRule(rule))
+                continue;
+
+            await ApplyUniqueRuleAsync(entityName, field, rule, data, failures, cancellationToken);
+        }
+
+        FieldValidationRuleEngine.ApplyRules(field.PropertyName, field.Label, field.ValidationRule, data, failures);
+    }
+
+    private async Task ApplyUniqueRuleAsync(
+        string entityName,
+        Domain.Metadata.ForgeField field,
+        FieldValidationRuleDefinition rule,
+        Dictionary<string, object?> data,
+        List<ValidationFailure> failures,
+        CancellationToken cancellationToken)
+    {
+        var columns = FieldValidationRuleEngine.ResolveUniqueColumns(rule, field.PropertyName);
+        if (columns.Count == 0)
+            return;
+
+        if (columns.Any(column => !data.ContainsKey(column)))
+            return;
+
+        if (columns.All(column => string.IsNullOrWhiteSpace(DynamicEntityMapper.ToStringValue(data.GetValueOrDefault(column)))))
+            return;
+
+        var excludeId = data.TryGetValue("Id", out var idValue) ? DynamicEntityMapper.ToInt32(idValue) : 0;
+        var exists = await ExistsByColumnsAsync(entityName, columns, data, excludeId, cancellationToken);
+        if (exists)
+        {
+            failures.Add(new ValidationFailure(
+                field.PropertyName,
+                rule.Message ?? $"{field.Label} already exists."));
+        }
+    }
+
+    private async Task<bool> ExistsByColumnsAsync(
+        string entityName,
+        IReadOnlyList<string> columnNames,
+        Dictionary<string, object?> data,
+        int excludeId,
+        CancellationToken cancellationToken)
+    {
+        var entityType = _typeResolver.Resolve(entityName);
+        var setMethod = typeof(DbContext).GetMethod(nameof(DbContext.Set), Type.EmptyTypes)!.MakeGenericMethod(entityType);
+        var dbSet = setMethod.Invoke(_dbContext, null)!;
+
+        var parameter = Expression.Parameter(entityType, "e");
+        Expression? predicate = null;
+
+        foreach (var columnName in columnNames)
+        {
+            var property = entityType.GetProperty(columnName, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+            if (property == null)
+                return false;
+
+            var propertyExpr = Expression.Property(parameter, property);
+            var converted = ConvertForProperty(data.GetValueOrDefault(columnName), property.PropertyType);
+            var constant = Expression.Constant(converted, property.PropertyType);
+            var equality = Expression.Equal(propertyExpr, constant);
+            predicate = predicate == null ? equality : Expression.AndAlso(predicate, equality);
+        }
+
+        if (predicate == null)
+            return false;
+
+        if (excludeId > 0)
+        {
+            var idProperty = entityType.GetProperty("Id", BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+            if (idProperty != null)
+            {
+                var idExpr = Expression.Property(parameter, idProperty);
+                var idConstant = Expression.Constant(ConvertForProperty(excludeId, idProperty.PropertyType), idProperty.PropertyType);
+                predicate = Expression.AndAlso(predicate, Expression.NotEqual(idExpr, idConstant));
+            }
+        }
+
+        var lambda = Expression.Lambda(predicate, parameter);
+        var anyAsyncMethod = typeof(EntityFrameworkQueryableExtensions)
+            .GetMethods()
+            .First(m => m.Name == nameof(EntityFrameworkQueryableExtensions.AnyAsync)
+                        && m.GetParameters().Length == 3)
+            .MakeGenericMethod(entityType);
+
+        var query = (IQueryable)dbSet;
+        var task = (Task<bool>)anyAsyncMethod.Invoke(null, [query, lambda, cancellationToken])!;
+        return await task.ConfigureAwait(false);
+    }
+
+    private static object? ConvertForProperty(object? rawValue, Type targetType)
+    {
+        if (rawValue is JsonElement jsonElement)
+            rawValue = UnwrapJsonElement(jsonElement);
+
+        if (rawValue == null)
+            return null;
+
+        var underlying = Nullable.GetUnderlyingType(targetType) ?? targetType;
+        var isNullable = Nullable.GetUnderlyingType(targetType) != null;
+
+        if (rawValue is string str)
+        {
+            if (string.IsNullOrWhiteSpace(str))
+                return isNullable ? null : (underlying == typeof(string) ? string.Empty : null);
+
+            if (underlying == typeof(string))
+                return str;
+            if (underlying == typeof(bool))
+                return bool.Parse(str);
+            if (underlying == typeof(int))
+                return int.Parse(str, CultureInfo.InvariantCulture);
+            if (underlying == typeof(long))
+                return long.Parse(str, CultureInfo.InvariantCulture);
+            if (underlying == typeof(decimal))
+                return decimal.Parse(str, CultureInfo.InvariantCulture);
+            if (underlying == typeof(double))
+                return double.Parse(str, CultureInfo.InvariantCulture);
+            if (underlying == typeof(float))
+                return float.Parse(str, CultureInfo.InvariantCulture);
+            if (underlying == typeof(DateTime))
+                return DateTime.Parse(str, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind);
+            if (underlying == typeof(Guid))
+                return Guid.Parse(str);
+            if (underlying.IsEnum)
+                return Enum.Parse(underlying, str, ignoreCase: true);
+        }
+
+        if (underlying.IsEnum)
+            return Enum.Parse(underlying, rawValue.ToString()!, ignoreCase: true);
+
+        if (underlying == typeof(Guid) && rawValue is Guid guid)
+            return guid;
+
+        if (underlying == typeof(DateTime) && rawValue is DateTime dateTime)
+            return dateTime;
+
+        if (rawValue.GetType() == underlying)
+            return rawValue;
+
+        return Convert.ChangeType(rawValue, underlying, CultureInfo.InvariantCulture);
+    }
+
+    private static object? UnwrapJsonElement(JsonElement element) =>
+        element.ValueKind switch
+        {
+            JsonValueKind.Null or JsonValueKind.Undefined => null,
+            JsonValueKind.String => element.GetString(),
+            JsonValueKind.True => true,
+            JsonValueKind.False => false,
+            JsonValueKind.Number when element.TryGetInt32(out var intValue) => intValue,
+            JsonValueKind.Number when element.TryGetInt64(out var longValue) => longValue,
+            JsonValueKind.Number when element.TryGetDecimal(out var decimalValue) => decimalValue,
+            JsonValueKind.Number => element.GetDouble(),
+            _ => element.ToString()
+        };
 
     private async Task ValidateMultiSelectFieldAsync(
         Domain.Metadata.ForgeField field,

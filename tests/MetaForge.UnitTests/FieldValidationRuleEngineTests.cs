@@ -129,4 +129,37 @@ public class FieldValidationRuleEngineTests
         Assert.Contains("Max 50 chars", summary, StringComparison.Ordinal);
         Assert.Contains("Email", summary, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void ResolveUniqueColumns_UsesFieldNameWhenColumnsMissing()
+    {
+        var columns = FieldValidationRuleEngine.ResolveUniqueColumns(
+            new FieldValidationRuleDefinition { Type = ValidationRuleTypes.Unique },
+            "Code");
+
+        Assert.Single(columns);
+        Assert.Equal("Code", columns[0]);
+    }
+
+    [Fact]
+    public void ResolveUniqueColumns_ParsesCommaSeparatedColumns()
+    {
+        var columns = FieldValidationRuleEngine.ResolveUniqueColumns(
+            new FieldValidationRuleDefinition { Type = ValidationRuleTypes.Unique, Columns = "Code, CountryId" },
+            "Code");
+
+        Assert.Equal(2, columns.Count);
+        Assert.Equal("Code", columns[0]);
+        Assert.Equal("CountryId", columns[1]);
+    }
+
+    [Fact]
+    public void Summarize_UniqueRule_ReturnsReadableText()
+    {
+        const string json = """{"rules":[{"type":"unique","columns":"Code,CountryId"}]}""";
+
+        var summary = FieldValidationRuleEngine.Summarize(json);
+
+        Assert.Contains("Unique (Code, CountryId)", summary, StringComparison.Ordinal);
+    }
 }

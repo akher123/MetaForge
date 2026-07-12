@@ -141,4 +141,123 @@ public class DynamicValidationServiceTests
         await Assert.ThrowsAsync<FluentValidation.ValidationException>(() =>
             service.ValidateAsync("Customer", new Dictionary<string, object?>()));
     }
+
+    [Fact]
+    public async Task ValidateAsync_UniqueRule_ThrowsWhenDuplicateExists()
+    {
+        const string uniqueRule = """{"rules":[{"type":"unique","message":"Code already exists."}]}""";
+
+        var module = new ForgeForm
+        {
+            EntityName = "Customer",
+            Fields =
+            [
+                new ForgeField
+                {
+                    PropertyName = "Code",
+                    Label = "Code",
+                    ValidationRule = uniqueRule
+                }
+            ]
+        };
+
+        var cache = new Mock<IFormMetadataCache>();
+        cache.Setup(c => c.GetByEntityNameAsync("Customer", It.IsAny<CancellationToken>())).ReturnsAsync(module);
+
+        var options = new DbContextOptionsBuilder<MetaForgeDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+        await using var context = new MetaForgeDbContext(options);
+        context.Customers.Add(new Customer { Code = "C001", Name = "Existing Customer" });
+        await context.SaveChangesAsync();
+
+        var service = new DynamicValidationService(cache.Object, context, new EntityTypeResolver(context));
+
+        var ex = await Assert.ThrowsAsync<FluentValidation.ValidationException>(() =>
+            service.ValidateAsync("Customer", new Dictionary<string, object?>
+            {
+                ["Code"] = "C001",
+                ["Name"] = "New Customer"
+            }));
+
+        Assert.Contains("Code already exists.", ex.Errors.First().ErrorMessage, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ValidateAsync_UniqueRule_AllowsSameValueWhenEditingSameRecord()
+    {
+        const string uniqueRule = """{"rules":[{"type":"unique"}]}""";
+
+        var module = new ForgeForm
+        {
+            EntityName = "Customer",
+            Fields =
+            [
+                new ForgeField
+                {
+                    PropertyName = "Code",
+                    Label = "Code",
+                    ValidationRule = uniqueRule
+                }
+            ]
+        };
+
+        var cache = new Mock<IFormMetadataCache>();
+        cache.Setup(c => c.GetByEntityNameAsync("Customer", It.IsAny<CancellationToken>())).ReturnsAsync(module);
+
+        var options = new DbContextOptionsBuilder<MetaForgeDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+        await using var context = new MetaForgeDbContext(options);
+        var existing = new Customer { Code = "C001", Name = "Existing Customer" };
+        context.Customers.Add(existing);
+        await context.SaveChangesAsync();
+
+        var service = new DynamicValidationService(cache.Object, context, new EntityTypeResolver(context));
+
+        await service.ValidateAsync("Customer", new Dictionary<string, object?>
+        {
+            ["Id"] = existing.Id,
+            ["Code"] = "C001",
+            ["Name"] = "Updated Customer"
+        });
+    }
+
+    [Fact]
+    public async Task ValidateAsync_UniqueRule_PassesForNewUniqueValue()
+    {
+        const string uniqueRule = """{"rules":[{"type":"unique"}]}""";
+
+        var module = new ForgeForm
+        {
+            EntityName = "Customer",
+            Fields =
+            [
+                new ForgeField
+                {
+                    PropertyName = "Code",
+                    Label = "Code",
+                    ValidationRule = uniqueRule
+                }
+            ]
+        };
+
+        var cache = new Mock<IFormMetadataCache>();
+        cache.Setup(c => c.GetByEntityNameAsync("Customer", It.IsAny<CancellationToken>())).ReturnsAsync(module);
+
+        var options = new DbContextOptionsBuilder<MetaForgeDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+        await using var context = new MetaForgeDbContext(options);
+        context.Customers.Add(new Customer { Code = "C001", Name = "Existing Customer" });
+        await context.SaveChangesAsync();
+
+        var service = new DynamicValidationService(cache.Object, context, new EntityTypeResolver(context));
+
+        await service.ValidateAsync("Customer", new Dictionary<string, object?>
+        {
+            ["Code"] = "C002",
+            ["Name"] = "New Customer"
+        });
+    }
 }

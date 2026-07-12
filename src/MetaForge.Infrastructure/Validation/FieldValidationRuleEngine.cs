@@ -98,11 +98,31 @@ public static class FieldValidationRuleEngine
 
         foreach (var rule in ruleSet.Rules)
         {
+            if (IsUniqueRule(rule))
+                continue;
+
             if (string.IsNullOrWhiteSpace(strValue) && !IsCompareFieldRule(rule))
                 continue;
 
             ApplyRule(propertyName, label, rule, strValue ?? string.Empty, rawValue, data, failures);
         }
+    }
+
+    public static bool IsUniqueRule(FieldValidationRuleDefinition rule) =>
+        string.Equals(rule.Type, ValidationRuleTypes.Unique, StringComparison.OrdinalIgnoreCase);
+
+    public static IReadOnlyList<string> ResolveUniqueColumns(FieldValidationRuleDefinition rule, string defaultColumn)
+    {
+        var source = !string.IsNullOrWhiteSpace(rule.Columns)
+            ? rule.Columns
+            : rule.Value;
+
+        if (string.IsNullOrWhiteSpace(source))
+            return [defaultColumn];
+
+        return source
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .ToList();
     }
 
     private static bool IsCompareFieldRule(FieldValidationRuleDefinition rule) =>
@@ -378,6 +398,15 @@ public static class FieldValidationRuleEngine
             ValidationRuleTypes.Url => "URL",
             ValidationRuleTypes.Regex => "Pattern",
             ValidationRuleTypes.CompareField => $"Compare {rule.Operator} {rule.OtherField}",
+            ValidationRuleTypes.Unique => SummarizeUniqueRule(rule),
             _ => rule.Type ?? "Rule"
         };
+
+    private static string SummarizeUniqueRule(FieldValidationRuleDefinition rule)
+    {
+        var columns = ResolveUniqueColumns(rule, string.Empty).Where(c => !string.IsNullOrWhiteSpace(c)).ToList();
+        return columns.Count > 0
+            ? $"Unique ({string.Join(", ", columns)})"
+            : "Unique";
+    }
 }

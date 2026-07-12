@@ -11,7 +11,7 @@ public sealed class FieldValidationRuleSet
 
 public sealed class FieldValidationRuleDefinition
 {
-    /// <summary>Rule type: maxLength, minLength, range, regex, email, phone, url, compareField.</summary>
+    /// <summary>Rule type: maxLength, minLength, range, regex, email, phone, url, compareField, unique.</summary>
     public string Type { get; set; } = string.Empty;
 
     /// <summary>Primary value (maxLength count, regex pattern, etc.).</summary>
@@ -26,6 +26,9 @@ public sealed class FieldValidationRuleDefinition
 
     /// <summary>Other field name for compareField rules.</summary>
     public string? OtherField { get; set; }
+
+    /// <summary>Comma-separated column names for unique rules (defaults to the field property name).</summary>
+    public string? Columns { get; set; }
 
     public string? Message { get; set; }
 }
@@ -76,10 +79,11 @@ public static class ValidationRuleTypes
     public const string Phone = "phone";
     public const string Url = "url";
     public const string CompareField = "comparefield";
+    public const string Unique = "unique";
 
     public static readonly IReadOnlyList<string> All =
     [
-        MaxLength, MinLength, Range, Regex, Email, Phone, Url, CompareField
+        MaxLength, MinLength, Range, Regex, Email, Phone, Url, CompareField, Unique
     ];
 }
 
@@ -208,6 +212,24 @@ public static class ValidationRuleCatalog
                         new ValidationRuleOptionDto { Value = "equal", Label = "Equal to" },
                         new ValidationRuleOptionDto { Value = "notEqual", Label = "Not equal to" }
                     ]
+                }
+            ]
+        },
+        new ValidationRuleTypeDto
+        {
+            Type = ValidationRuleTypes.Unique,
+            Label = "Must Be Unique",
+            Description = "Value must not already exist in the database for this entity.",
+            Category = "Data Integrity",
+            Parameters =
+            [
+                new ValidationRuleParameterDto
+                {
+                    Name = "columns",
+                    Label = "Columns (comma-separated, optional)",
+                    InputType = "text",
+                    Required = false,
+                    Placeholder = "Code"
                 }
             ]
         }

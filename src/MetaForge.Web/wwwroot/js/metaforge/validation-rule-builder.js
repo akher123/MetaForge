@@ -34,7 +34,8 @@ const ValidationRuleBuilder = (function () {
             { type: 'phone', label: 'Phone Number', category: 'Format', parameters: [] },
             { type: 'url', label: 'URL / Website', category: 'Format', parameters: [] },
             { type: 'regex', label: 'Custom Pattern (Regex)', category: 'Advanced', parameters: [{ name: 'value', label: 'Regular expression', inputType: 'text', required: true }] },
-            { type: 'compareField', label: 'Compare to Another Field', category: 'Cross-field', parameters: [{ name: 'otherField', label: 'Other field', inputType: 'text', required: true }, { name: 'operator', label: 'Comparison', inputType: 'select', required: true, options: [{ value: 'gte', label: 'Greater than or equal' }, { value: 'gt', label: 'Greater than' }, { value: 'lte', label: 'Less than or equal' }, { value: 'lt', label: 'Less than' }, { value: 'equal', label: 'Equal to' }, { value: 'notEqual', label: 'Not equal to' }] }] }
+            { type: 'compareField', label: 'Compare to Another Field', category: 'Cross-field', parameters: [{ name: 'otherField', label: 'Other field', inputType: 'text', required: true }, { name: 'operator', label: 'Comparison', inputType: 'select', required: true, options: [{ value: 'gte', label: 'Greater than or equal' }, { value: 'gt', label: 'Greater than' }, { value: 'lte', label: 'Less than or equal' }, { value: 'lt', label: 'Less than' }, { value: 'equal', label: 'Equal to' }, { value: 'notEqual', label: 'Not equal to' }] }] },
+            { type: 'unique', label: 'Must Be Unique', category: 'Data Integrity', parameters: [{ name: 'columns', label: 'Columns (comma-separated, optional)', inputType: 'text', required: false, placeholder: 'Code' }] }
         ];
     }
 
@@ -217,22 +218,31 @@ const ValidationRuleBuilder = (function () {
         const message = $('#validationRuleCustomMessage').val()?.trim();
         if (message) rule.message = message;
 
+        const def = catalog.find(function (item) { return (item.type || item.Type) === type; });
         let valid = true;
         $('.vr-param').each(function () {
             const name = $(this).data('param');
-            const value = $(this).val()?.trim();
+            let value = $(this).val()?.trim();
+            const paramDef = (def?.parameters || def?.Parameters || []).find(function (p) {
+                return (p.name || p.Name) === name;
+            });
+            const isRequired = paramDef && (paramDef.required || paramDef.Required);
+
             if (!value) {
-                valid = false;
-                return false;
+                if (isRequired) {
+                    valid = false;
+                    return false;
+                }
+                return;
             }
 
             if (name === 'min' || name === 'max') rule[name] = value;
             else if (name === 'operator') rule.operator = value;
             else if (name === 'otherField') rule.otherField = value;
+            else if (name === 'columns') rule.columns = value;
             else rule.value = value;
         });
 
-        const def = catalog.find(function (item) { return (item.type || item.Type) === type; });
         const requiredParams = (def?.parameters || def?.Parameters || []).filter(function (p) {
             return p.required || p.Required;
         });
@@ -242,7 +252,7 @@ const ValidationRuleBuilder = (function () {
             return;
         }
 
-        if (type === 'email' || type === 'phone' || type === 'url') {
+        if (type === 'email' || type === 'phone' || type === 'url' || type === 'unique') {
             const exists = activeRules.some(function (r) { return r.type === type; });
             if (exists) {
                 notify('This rule type is already added.', 'warning');
@@ -369,6 +379,8 @@ const ValidationRuleBuilder = (function () {
             case 'url': return 'URL format';
             case 'regex': return 'Pattern match';
             case 'comparefield': return compareLabel(rule.operator) + ' ' + (rule.otherField || '');
+            case 'unique':
+                return rule.columns ? 'Unique (' + rule.columns + ')' : 'Unique in database';
             default: return rule.type || 'Rule';
         }
     }
