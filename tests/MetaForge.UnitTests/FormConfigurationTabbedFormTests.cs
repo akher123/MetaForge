@@ -165,6 +165,121 @@ public class FormConfigurationTabbedFormTests
         Assert.Equal("Id", lookupConfig.ValueField);
     }
 
+    [Fact]
+    public async Task SaveFormAsync_AllowsMasterAndTreeForSameEntity()
+    {
+        await using var context = CreateContext();
+        var service = CreateService(context);
+
+        var treeId = await service.SaveFormAsync(new FormConfigDto
+        {
+            Code = "locationtree",
+            Name = "Location Tree",
+            EntityName = "Country",
+            TableName = "Countries",
+            GroupName = "Master Data",
+            FormType = FormType.TreeViewMultiTable.ToString(),
+            IsActive = true,
+            Fields =
+            [
+                new FormFieldConfigDto
+                {
+                    PropertyName = "Name",
+                    Label = "Name",
+                    ControlType = ControlType.TextBox,
+                    IsVisible = true
+                }
+            ],
+            GridColumns =
+            [
+                new FormGridColumnConfigDto
+                {
+                    PropertyName = "Name",
+                    Label = "Name",
+                    IsVisible = true
+                }
+            ]
+        });
+
+        var masterId = await service.SaveFormAsync(new FormConfigDto
+        {
+            Code = "country",
+            Name = "Country",
+            EntityName = "Country",
+            TableName = "Countries",
+            GroupName = "Master Data",
+            FormType = FormType.Master.ToString(),
+            IsActive = true,
+            Fields =
+            [
+                new FormFieldConfigDto
+                {
+                    PropertyName = "Name",
+                    Label = "Name",
+                    ControlType = ControlType.TextBox,
+                    IsVisible = true
+                }
+            ],
+            GridColumns =
+            [
+                new FormGridColumnConfigDto
+                {
+                    PropertyName = "Name",
+                    Label = "Name",
+                    IsVisible = true
+                }
+            ]
+        });
+
+        var updatedMasterId = await service.SaveFormAsync(new FormConfigDto
+        {
+            Id = masterId,
+            Code = "country",
+            Name = "Country",
+            EntityName = "Country",
+            TableName = "Countries",
+            GroupName = "Master Data",
+            FormType = FormType.Master.ToString(),
+            IsActive = true,
+            Fields =
+            [
+                new FormFieldConfigDto
+                {
+                    PropertyName = "Name",
+                    Label = "Name",
+                    ControlType = ControlType.TextBox,
+                    IsVisible = true
+                },
+                new FormFieldConfigDto
+                {
+                    PropertyName = "Code",
+                    Label = "Code",
+                    ControlType = ControlType.TextBox,
+                    IsVisible = true
+                }
+            ],
+            GridColumns =
+            [
+                new FormGridColumnConfigDto
+                {
+                    PropertyName = "Name",
+                    Label = "Name",
+                    IsVisible = true
+                },
+                new FormGridColumnConfigDto
+                {
+                    PropertyName = "Code",
+                    Label = "Code",
+                    IsVisible = true
+                }
+            ]
+        });
+
+        Assert.NotEqual(treeId, masterId);
+        Assert.Equal(masterId, updatedMasterId);
+        Assert.Equal(2, await context.ForgeForms.CountAsync(f => f.EntityName == "Country"));
+    }
+
     private static FormConfigurationService CreateService(
         MetaForgeDbContext context,
         IEntityMetadataDiscoveryService? discoveryService = null)

@@ -246,7 +246,7 @@ public class MenuSyncService : IMenuSyncService
         }
         else
         {
-            existing.ParentId = folder.Id;
+            // Preserve parent folder from Menu Management; only assign on first sync.
             existing.Name = resolvedModule.Name;
             existing.ItemType = MenuItemType.Form;
             existing.FormId = resolvedModule.Id;

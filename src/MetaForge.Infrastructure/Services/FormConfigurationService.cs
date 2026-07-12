@@ -550,7 +550,7 @@ public class FormConfigurationService : IFormConfigurationService
             if (conflictingTree != null)
                 throw new BusinessException($"A multi-table tree screen for entity '{config.EntityName}' already exists.");
         }
-        else if (await _unitOfWork.Forms.ExistsByEntityNameAsync(config.EntityName, config.Id > 0 ? config.Id : null, cancellationToken))
+        else if (await HasEntityNameConflictAsync(config, cancellationToken))
         {
             throw new BusinessException($"Entity '{config.EntityName}' is already configured.");
         }
@@ -1224,6 +1224,38 @@ public class FormConfigurationService : IFormConfigurationService
             ApplyDetailFormDefaults(config, level.ForeignKey ?? string.Empty);
             await SaveFormAsync(config, cancellationToken);
         }
+    }
+
+    private async Task<bool> HasEntityNameConflictAsync(FormConfigDto config, CancellationToken cancellationToken)
+    {
+        var excludeId = config.Id > 0 ? config.Id : (int?)null;
+        var entityName = config.EntityName.Trim();
+        var formType = ParseFormType(config.FormType);
+
+        var others = await _unitOfWork.Forms.GetAllAsync(cancellationToken);
+        foreach (var existing in others)
+        {
+            if (excludeId.HasValue && existing.Id == excludeId.Value)
+                continue;
+
+            if (!existing.EntityName.Equals(entityName, StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            if (existing.FormType == FormType.TreeViewMultiTable || formType == FormType.TreeViewMultiTable)
+                continue;
+
+            if (existing.FormType == FormType.Detail || formType == FormType.Detail)
+            {
+                if (existing.FormType == FormType.Detail && formType == FormType.Detail)
+                    return true;
+
+                continue;
+            }
+
+            return true;
+        }
+
+        return false;
     }
 
     private static string ResolveScreenType(FormConfigDto master)

@@ -35,7 +35,7 @@ const FormBuilder = (function () {
         state.isEdit = $app.data('is-edit') === true || $app.data('is-edit') === 'true';
         state.entities = window.__formBuilderData?.entities || [];
 
-        $('#groupName').val($app.data('default-group') || 'Master Data');
+        ensureGroupOption($app.data('default-group') || 'Master Data');
         $('#screenType').val($app.data('default-screen-type') || 'Master');
 
         if (typeof ValidationRuleBuilder !== 'undefined') {
@@ -274,9 +274,18 @@ const FormBuilder = (function () {
         $('#tabbedSectionHint').toggleClass('d-none', !isTabbed);
         syncScreenTypeCards();
 
-        if (isMasterDetail) {
+        if (isMasterDetail && !state.isEdit) {
             $('#groupName').val('Transaction');
         }
+    }
+
+    function ensureGroupOption(groupName) {
+        const value = String(groupName || 'Master Data').trim();
+        const $select = $('#groupName');
+        if ($select.find('option').filter(function () { return $(this).val() === value; }).length === 0) {
+            $select.append($('<option>').val(value).text(value));
+        }
+        $select.val(value);
     }
 
     function loadScreen(screen) {
@@ -304,7 +313,7 @@ const FormBuilder = (function () {
         $('#moduleName').val(config.Name ?? config.name ?? '');
         $('#entityName').val(config.EntityName ?? config.entityName ?? '');
         $('#tableName').val(config.TableName ?? config.tableName ?? '');
-        $('#groupName').val(config.GroupName ?? config.groupName ?? 'Master Data');
+        ensureGroupOption(config.GroupName ?? config.groupName ?? 'Master Data');
         $('#displayOrder').val(config.DisplayOrder ?? config.displayOrder ?? 0);
         $('#isActive').prop('checked', config.IsActive ?? config.isActive ?? true);
         $('#entitySelect').val(config.EntityName ?? config.entityName ?? '');
