@@ -261,7 +261,8 @@ html[data-theme] .modal .modal-header {
 
 html[data-theme] .admin-modal .modal-header .modal-title,
 html[data-theme] .admin-modal .modal-header .modal-title::before,
-html[data-theme] .modal .modal-header .modal-title {
+html[data-theme] .modal .modal-header .modal-title,
+html[data-theme] .audit-detail-modal .modal-header .audit-detail-modal-subtitle {
   color: var(--dv-text-on-primary);
 }
 

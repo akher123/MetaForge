@@ -214,16 +214,16 @@ const AuditLog = (function () {
             return '<p class="text-muted mb-0">No related history for this record.</p>';
         }
 
-        let html = '<div class="list-group list-group-flush">';
+        let html = '<div class="list-group list-group-flush audit-timeline-list">';
         timeline.forEach(item => {
             const id = item.id ?? item.Id;
             const isCurrent = id === (detail.id ?? detail.Id);
-            html += `<button type="button" class="list-group-item list-group-item-action d-flex justify-content-between align-items-start btn-timeline-entry ${isCurrent ? 'active' : ''}" data-id="${id}">
+            html += `<button type="button" class="list-group-item list-group-item-action d-flex justify-content-between align-items-start btn-timeline-entry${isCurrent ? ' audit-timeline-entry--current' : ''}" data-id="${id}">
                 <div>
-                    <div class="fw-semibold">${actionBadge(item.action ?? item.Action)} <span class="ms-2">${escapeHtml(item.summary ?? item.Summary ?? '')}</span></div>
-                    <div class="small ${isCurrent ? '' : 'text-muted'}">${formatTimestamp(item.timestamp ?? item.Timestamp)} · ${escapeHtml(item.userName ?? item.UserName ?? 'system')}</div>
+                    <div class="fw-semibold audit-timeline-summary">${actionBadge(item.action ?? item.Action)} <span class="ms-2">${escapeHtml(item.summary ?? item.Summary ?? '')}</span></div>
+                    <div class="small ${isCurrent ? 'audit-timeline-meta' : 'text-muted'}">${formatTimestamp(item.timestamp ?? item.Timestamp)} · ${escapeHtml(item.userName ?? item.UserName ?? 'system')}</div>
                 </div>
-                ${isCurrent ? '<span class="badge bg-light text-dark">Current</span>' : '<i class="fa-solid fa-chevron-right text-muted"></i>'}
+                ${isCurrent ? '<span class="badge audit-timeline-current-badge">Current</span>' : '<i class="fa-solid fa-chevron-right audit-timeline-chevron" aria-hidden="true"></i>'}
             </button>`;
         });
         html += '</div>';

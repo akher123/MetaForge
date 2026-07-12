@@ -4773,6 +4773,38 @@ code {
   background: var(--dv-surface-alt, rgba(0, 0, 0, 0.02));
 }
 
+.audit-detail-modal .modal-header .modal-title,
+.audit-detail-modal .modal-header .audit-detail-modal-subtitle {
+  color: var(--dv-text-on-primary) !important;
+}
+
+.audit-detail-modal .modal-header .audit-detail-modal-subtitle {
+  opacity: 0.9;
+}
+
+.audit-detail-modal .audit-detail-tabs {
+  border-bottom-color: var(--dv-border);
+}
+
+.audit-detail-modal .audit-detail-tabs .nav-link {
+  color: var(--dv-text-secondary);
+  border-color: transparent;
+}
+
+.audit-detail-modal .audit-detail-tabs .nav-link:hover,
+.audit-detail-modal .audit-detail-tabs .nav-link:focus {
+  color: var(--dv-text);
+  border-color: var(--dv-border) var(--dv-border) transparent;
+  background: var(--dv-surface-hover);
+}
+
+.audit-detail-modal .audit-detail-tabs .nav-link.active {
+  color: var(--dv-primary);
+  background: var(--dv-surface);
+  border-color: var(--dv-border) var(--dv-border) var(--dv-surface);
+  font-weight: 600;
+}
+
 .audit-json-block {
   background: var(--dv-surface-alt, #f8f9fa);
   border: 1px solid var(--dv-border);
@@ -4786,12 +4818,41 @@ code {
   margin-bottom: 0;
 }
 
-#auditTimelineContent .list-group-item.active {
-  border-color: var(--bs-primary);
+.audit-detail-modal .audit-timeline-list .btn-timeline-entry {
+  cursor: pointer;
+  background: var(--dv-surface);
+  border-color: var(--dv-border);
+  color: var(--dv-text);
+  transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-#auditTimelineContent .btn-timeline-entry {
-  cursor: pointer;
+.audit-detail-modal .audit-timeline-list .btn-timeline-entry:hover,
+.audit-detail-modal .audit-timeline-list .btn-timeline-entry:focus {
+  background: var(--dv-surface-hover);
+  border-color: var(--dv-border-strong);
+  color: var(--dv-text);
+}
+
+.audit-detail-modal .audit-timeline-list .btn-timeline-entry.audit-timeline-entry--current {
+  background: color-mix(in srgb, var(--dv-primary) 12%, var(--dv-surface));
+  border-color: color-mix(in srgb, var(--dv-primary) 45%, var(--dv-border));
+  color: var(--dv-text);
+  box-shadow: inset 3px 0 0 var(--dv-primary);
+}
+
+.audit-detail-modal .audit-timeline-list .btn-timeline-entry.audit-timeline-entry--current .audit-timeline-meta {
+  color: var(--dv-text-muted) !important;
+}
+
+.audit-detail-modal .audit-timeline-list .audit-timeline-chevron {
+  color: var(--dv-text-muted);
+}
+
+.audit-detail-modal .audit-timeline-current-badge {
+  background: color-mix(in srgb, var(--dv-primary) 16%, var(--dv-surface)) !important;
+  color: var(--dv-primary) !important;
+  border: 1px solid color-mix(in srgb, var(--dv-primary) 35%, transparent);
+  font-weight: 600;
 }
 
 .security-page-body {

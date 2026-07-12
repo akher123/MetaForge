@@ -81,6 +81,12 @@ html[data-theme$="-dark"] .page-header .h3 {
   color: var(--dv-text) !important;
 }
 
+html[data-theme$="-dark"] .audit-detail-modal .modal-header h5,
+html[data-theme$="-dark"] .audit-detail-modal .modal-header .modal-title,
+html[data-theme$="-dark"] .audit-detail-modal .modal-header .audit-detail-modal-subtitle {
+  color: var(--dv-text-on-primary) !important;
+}
+
 html[data-theme$="-dark"] .text-muted {
   color: var(--dv-text-muted) !important;
 }
