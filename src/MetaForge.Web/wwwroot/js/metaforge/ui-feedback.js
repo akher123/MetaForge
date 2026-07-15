@@ -5,6 +5,20 @@ const MetaForgeUi = (function () {
     let deleteModal = null;
     let deleteResolve = null;
 
+    function getStrings() {
+        return (window.__METAFORGE_LOCALE__ && window.__METAFORGE_LOCALE__.strings) || {};
+    }
+
+    function t(key, fallback) {
+        const strings = getStrings();
+        return strings[key] || fallback;
+    }
+
+    function formatTemplate(template, value) {
+        if (!template || value == null) return template || '';
+        return String(template).replace(/\{0\}/g, String(value));
+    }
+
     function escapeHtml(text) {
         return String(text ?? '')
             .replace(/&/g, '&amp;')
@@ -64,7 +78,7 @@ const MetaForgeUi = (function () {
         options = options || {};
 
         if (!deleteModal) {
-            return Promise.resolve(window.confirm(options.message || 'Delete this item?'));
+            return Promise.resolve(window.confirm(options.message || t('deleteThisItem', 'Delete this item?')));
         }
 
         return new Promise(function (resolve) {
@@ -76,16 +90,16 @@ const MetaForgeUi = (function () {
             const confirmBtn = document.getElementById('confirmDeleteModalConfirm');
             const cancelBtn = document.getElementById('confirmDeleteModalCancel');
             const variant = resolveConfirmVariant(options);
-            const detail = options.detail ?? 'This action cannot be undone.';
-            const confirmLabel = options.confirmLabel || 'Yes';
-            const cancelLabel = options.cancelLabel || 'No';
+            const detail = options.detail ?? t('confirmDeleteDetail', 'This action cannot be undone.');
+            const confirmLabel = options.confirmLabel || t('yes', 'Yes');
+            const cancelLabel = options.cancelLabel || t('no', 'No');
 
             if (titleEl) {
-                titleEl.textContent = options.title || 'Confirm Delete';
+                titleEl.textContent = options.title || t('confirmDeleteTitle', 'Confirm Delete');
             }
 
             if (messageEl) {
-                messageEl.textContent = options.message || 'Are you sure you want to delete this item?';
+                messageEl.textContent = options.message || t('confirmDeleteMessage', 'Are you sure you want to delete this item?');
             }
 
             if (detailEl) {
@@ -113,7 +127,7 @@ const MetaForgeUi = (function () {
      */
     function entityLabelFromFormName(formName) {
         const name = String(formName ?? '').trim();
-        if (!name) return 'Record';
+        if (!name) return t('record', 'Record');
 
         const words = name.split(/\s+/).filter(Boolean);
         if (words.length <= 1) return name;
@@ -122,7 +136,7 @@ const MetaForgeUi = (function () {
     }
 
     function formatSavedMessage(formName) {
-        return `${entityLabelFromFormName(formName)} saved successfully.`;
+        return formatTemplate(t('savedSuccessfully', '{0} saved successfully.'), entityLabelFromFormName(formName));
     }
 
     function showAlert(message, type, autoDismissMs) {
@@ -148,7 +162,7 @@ const MetaForgeUi = (function () {
             '<div class="mf-alert-inner">' +
                 '<span class="mf-alert-icon" aria-hidden="true"><i class="fa-solid ' + iconClass + '"></i></span>' +
                 '<div class="mf-alert-body">' + escapeHtml(message) + '</div>' +
-                '<button type="button" class="btn-close mf-alert-close" data-bs-dismiss="alert" aria-label="Close"></button>' +
+                '<button type="button" class="btn-close mf-alert-close" data-bs-dismiss="alert" aria-label="' + escapeHtml(t('close', 'Close')) + '"></button>' +
             '</div>';
 
         container.appendChild(alert);

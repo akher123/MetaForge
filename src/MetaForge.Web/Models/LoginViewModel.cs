@@ -4,11 +4,13 @@ namespace MetaForge.Web.Models;
 
 public class LoginViewModel
 {
-    [Required(ErrorMessage = "Username is required")]
+    [Required(ErrorMessage = "Validation_UsernameRequired")]
+    [Display(Name = "Auth_Username")]
     public string UserName { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "Password is required")]
+    [Required(ErrorMessage = "Validation_PasswordRequired")]
     [DataType(DataType.Password)]
+    [Display(Name = "Auth_Password")]
     public string Password { get; set; } = string.Empty;
 
     public bool RememberMe { get; set; }

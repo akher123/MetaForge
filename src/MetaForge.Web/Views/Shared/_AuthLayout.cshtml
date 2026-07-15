@@ -1,5 +1,10 @@
+@using MetaForge.Web.Middleware
+@{
+    var effectiveCulture = Context.Items[CultureMiddleware.EffectiveCultureItemKey] as string ?? "en-US";
+    var isRtl = Context.Items[CultureMiddleware.IsRtlItemKey] as bool? ?? false;
+}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="@effectiveCulture" dir="@(isRtl ? "rtl" : "ltr")">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -16,9 +21,9 @@
     <link rel="stylesheet" href="~/css/top-progress.css" asp-append-version="true" />
 </head>
 <body class="auth-body">
-    <a href="#main-content" class="mf-skip-link">Skip to sign in</a>
+    <a href="#main-content" class="mf-skip-link">@Localizer["Auth_SignIn"]</a>
 
-    <div id="topProgress" class="top-progress top-progress--auth" aria-hidden="true" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Page loading">
+    <div id="topProgress" class="top-progress top-progress--auth" aria-hidden="true" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="@Localizer["Nav_PageLoading"]">
         <div id="topProgressBar" class="top-progress-bar"></div>
     </div>
 

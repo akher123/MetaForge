@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Common_Close" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="Common_Yes" xml:space="preserve"><value>نعم</value></data>
+  <data name="Common_No" xml:space="preserve"><value>لا</value></data>
+  <data name="Common_SkipToMainContent" xml:space="preserve"><value>انتقل إلى المحتوى الرئيسي</value></data>
+  <data name="Common_SignedIn" xml:space="preserve"><value>تم تسجيل الدخول</value></data>
+  <data name="Common_Record" xml:space="preserve"><value>سجل</value></data>
+  <data name="Nav_Preferences" xml:space="preserve"><value>التفضيلات</value></data>
+  <data name="Nav_PreferencesHint" xml:space="preserve"><value>الثقافة وتنسيقات التاريخ</value></data>
+  <data name="Nav_Appearance" xml:space="preserve"><value>المظهر</value></data>
+  <data name="Nav_AppearanceHint" xml:space="preserve"><value>سمة الألوان</value></data>
+  <data name="Nav_SignOut" xml:space="preserve"><value>تسجيل الخروج</value></data>
+  <data name="Nav_SignOutHint" xml:space="preserve"><value>إنهاء جلستك</value></data>
+  <data name="Nav_ChangeTheme" xml:space="preserve"><value>تغيير سمة الألوان، الحالية: {0}</value></data>
+  <data name="Nav_AppearanceTitle" xml:space="preserve"><value>المظهر: {0}</value></data>
+  <data name="Nav_AccountMenu" xml:space="preserve"><value>قائمة الحساب لـ {0}</value></data>
+  <data name="Nav_CollapseSidebar" xml:space="preserve"><value>طي القائمة الجانبية</value></data>
+  <data name="Nav_OpenNavigation" xml:space="preserve"><value>فتح قائمة التنقل</value></data>
+  <data name="Nav_PageLoading" xml:space="preserve"><value>جارٍ تحميل الصفحة</value></data>
+  <data name="Footer_Copyright" xml:space="preserve"><value>© 2026 MetaForge — منصة إدارة MetaForge (.NET 10)</value></data>
+  <data name="Footer_CopyrightShort" xml:space="preserve"><value>© 2026 MetaForge</value></data>
+  <data name="Auth_SignIn" xml:space="preserve"><value>تسجيل الدخول</value></data>
+  <data name="Auth_SignInTitle" xml:space="preserve"><value>تسجيل الدخول</value></data>
+  <data name="Auth_SignInSubtitle" xml:space="preserve"><value>أدخل بيانات الاعتماد للوصول إلى لوحة التحكم</value></data>
+  <data name="Auth_Username" xml:space="preserve"><value>اسم المستخدم</value></data>
+  <data name="Auth_Password" xml:space="preserve"><value>كلمة المرور</value></data>
+  <data name="Auth_UsernamePlaceholder" xml:space="preserve"><value>مثال: admin</value></data>
+  <data name="Auth_PasswordPlaceholder" xml:space="preserve"><value>أدخل كلمة المرور</value></data>
+  <data name="Auth_RememberMe" xml:space="preserve"><value>إبقائي مسجلاً</value></data>
+  <data name="Auth_ForgotPassword" xml:space="preserve"><value>نسيت كلمة المرور؟</value></data>
+  <data name="Auth_BackToHome" xml:space="preserve"><value>العودة إلى الرئيسية</value></data>
+  <data name="Auth_DemoCredentials" xml:space="preserve"><value>بيانات اعتماد تجريبية</value></data>
+  <data name="Auth_DemoCredentialsDetail" xml:space="preserve"><value>اسم المستخدم {0} · كلمة المرور {1}</value></data>
+  <data name="Auth_SecuredFooter" xml:space="preserve"><value>محمي بمصادقة ملفات تعريف الارتباط وRBAC على مستوى النماذج</value></data>
+  <data name="Auth_BrandHeadline" xml:space="preserve"><value>إدارة مدفوعة بالبيانات الوصفية لـ .NET</value></data>
+  <data name="Auth_BrandLead" xml:space="preserve"><value>سجّل الدخول لإدارة الوحدات والأمان وشاشات CRUD الديناميكية المدعومة بنموذج EF Core.</value></data>
+  <data name="Auth_RuntimeForms" xml:space="preserve"><value>نماذج وشبكات وقت التشغيل</value></data>
+  <data name="Auth_RoleBasedAccess" xml:space="preserve"><value>التحكم في الوصول المستند إلى الأدوار</value></data>
+  <data name="Auth_CleanArchitecture" xml:space="preserve"><value>حل Clean Architecture</value></data>
+  <data name="Auth_ShowPassword" xml:space="preserve"><value>إظهار كلمة المرور</value></data>
+  <data name="Auth_HidePassword" xml:space="preserve"><value>إخفاء كلمة المرور</value></data>
+  <data name="Validation_UsernameRequired" xml:space="preserve"><value>اسم المستخدم مطلوب</value></data>
+  <data name="Validation_PasswordRequired" xml:space="preserve"><value>كلمة المرور مطلوبة</value></data>
+  <data name="Culture_LanguageRegion" xml:space="preserve"><value>اللغة والمنطقة</value></data>
+  <data name="Culture_Subtitle" xml:space="preserve"><value>تتبع التواريخ والأرقام والتنسيقات الثقافة وتفضيلات التنسيق المحددة.</value></data>
+  <data name="Culture_Custom" xml:space="preserve"><value>مخصص</value></data>
+  <data name="Culture_SystemDefault" xml:space="preserve"><value>الإعداد الافتراضي للنظام</value></data>
+  <data name="Culture_CultureLabel" xml:space="preserve"><value>الثقافة</value></data>
+  <data name="Culture_DateFormat" xml:space="preserve"><value>تنسيق التاريخ</value></data>
+  <data name="Culture_DateTimeFormat" xml:space="preserve"><value>تنسيق التاريخ والوقت</value></data>
+  <data name="Culture_SystemDefaultHint" xml:space="preserve"><value>الإعداد الافتراضي للنظام هو {0}. تغيير الثقافة يعيد تحميل الصفحة لتحديث التواريخ في كل مكان.</value></data>
+  <data name="Culture_UseSystemDefault" xml:space="preserve"><value>استخدام الإعداد الافتراضي للنظام ({0})</value></data>
+  <data name="Culture_UseSystemDefaultShort" xml:space="preserve"><value>استخدام الإعداد الافتراضي للنظام</value></data>
+  <data name="Culture_FormatPreview" xml:space="preserve"><value>معاينة التنسيق</value></data>
+  <data name="Culture_Date" xml:space="preserve"><value>التاريخ</value></data>
+  <data name="Culture_DateTime" xml:space="preserve"><value>التاريخ والوقت</value></data>
+  <data name="Culture_Number" xml:space="preserve"><value>الرقم</value></data>
+  <data name="Culture_Reset" xml:space="preserve"><value>إعادة التعيين إلى إعدادات النظام</value></data>
+  <data name="Culture_ResetHint" xml:space="preserve"><value>يمسح تجاوزات الثقافة وتنسيق التاريخ. السمة تبقى دون تغيير.</value></data>
+  <data name="Culture_Saving" xml:space="preserve"><value>جارٍ الحفظ</value></data>
+  <data name="Culture_CustomDateFormat" xml:space="preserve"><value>تجاوز مخصص لتنسيق التاريخ.</value></data>
+  <data name="Culture_CustomDateTimeFormat" xml:space="preserve"><value>تجاوز مخصص لتنسيق التاريخ والوقت.</value></data>
+  <data name="Prefs_Title" xml:space="preserve"><value>التفضيلات</value></data>
+  <data name="Prefs_Lead" xml:space="preserve"><value>تجاوز إعدادات اللغة للنظام لحسابك. اختر ثقافة وتنسيقات التاريخ؛ اترك أي خيار على الإعداد الافتراضي للنظام لاتباع إعدادات المؤسسة.</value></data>
+  <data name="Prefs_LivePreview" xml:space="preserve"><value>معاينة مباشرة</value></data>
+  <data name="Prefs_PreviewHint" xml:space="preserve"><value>القيم النموذجية أدناه تعكس اختياراتك الحالية قبل الحفظ.</value></data>
+  <data name="Prefs_HowOverridesWork" xml:space="preserve"><value>كيف تعمل التجاوزات</value></data>
+  <data name="Prefs_CultureHelp" xml:space="preserve"><value>تتحكم الثقافة في تجميع الأرقام والتقويم واتجاه النص (RTL).</value></data>
+  <data name="Prefs_DateFormatHelp" xml:space="preserve"><value>ينطبق تنسيق التاريخ على التواريخ المعروضة في الشبكات والتقارير وعروض التفاصيل.</value></data>
+  <data name="Prefs_SystemDefaultHelp" xml:space="preserve"><value>يستخدم الإعداد الافتراضي للنظام القيم التي يحددها المسؤول في إعدادات النظام.</value></data>
+  <data name="Landing_SignIn" xml:space="preserve"><value>تسجيل الدخول</value></data>
+  <data name="Landing_SignInDashboard" xml:space="preserve"><value>تسجيل الدخول إلى لوحة التحكم</value></data>
+  <data name="Landing_ExplorePlatform" xml:space="preserve"><value>استكشاف المنصة</value></data>
+  <data name="Landing_OpenDashboard" xml:space="preserve"><value>فتح لوحة التحكم</value></data>
+  <data name="Landing_Capabilities" xml:space="preserve"><value>القدرات</value></data>
+  <data name="Landing_Platform" xml:space="preserve"><value>المنصة</value></data>
+  <data name="Landing_Architecture" xml:space="preserve"><value>البنية</value></data>
+  <data name="Landing_GetStarted" xml:space="preserve"><value>البدء</value></data>
+  <data name="Landing_ToggleNavigation" xml:space="preserve"><value>تبديل التنقل</value></data>
+  <data name="Landing_FooterTagline" xml:space="preserve"><value>إطار إدارة مدفوع بالبيانات الوصفية لـ .NET 10 — نماذج وشبكات وأمان وتوطين من نموذج منصة واحد.</value></data>
+  <data name="Landing_ScreenTypes" xml:space="preserve"><value>أنواع الشاشات</value></data>
+  <data name="Landing_DemoApplication" xml:space="preserve"><value>تطبيق تجريبي</value></data>
+  <data name="Landing_FooterBuiltWith" xml:space="preserve"><value>مبني بـ ASP.NET Core MVC و Entity Framework Core.</value></data>
+  <data name="ConfirmDelete_Title" xml:space="preserve"><value>تأكيد الحذف</value></data>
+  <data name="ConfirmDelete_Message" xml:space="preserve"><value>هل أنت متأكد أنك تريد حذف هذا العنصر؟</value></data>
+  <data name="ConfirmDelete_Detail" xml:space="preserve"><value>لا يمكن التراجع عن هذا الإجراء.</value></data>
+  <data name="Ui_DeleteThisItem" xml:space="preserve"><value>حذف هذا العنصر؟</value></data>
+  <data name="Ui_SavedSuccessfully" xml:space="preserve"><value>تم حفظ {0} بنجاح.</value></data>
+</root>

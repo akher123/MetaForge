@@ -27,10 +27,10 @@
                 </p>
                 <div class="hero-actions">
                     <a asp-controller="Account" asp-action="Login" class="btn btn-hero-primary btn-lg">
-                        <i class="fa-solid fa-right-to-bracket me-2" aria-hidden="true"></i>Sign in to dashboard
+                        <i class="fa-solid fa-right-to-bracket me-2" aria-hidden="true"></i>@Localizer["Landing_SignInDashboard"]
                     </a>
                     <a href="#capabilities" class="btn btn-hero-outline btn-lg">
-                        Explore the platform<span class="mf-sr-only"> capabilities</span>
+                        @Localizer["Landing_ExplorePlatform"]<span class="mf-sr-only"> capabilities</span>
                     </a>
                 </div>
                 <div class="hero-stats" aria-label="Platform at a glance">
@@ -346,7 +346,7 @@
                     themes, and the included ERP demo dataset.
                 </p>
                 <a asp-controller="Account" asp-action="Login" class="btn btn-cta-primary btn-lg">
-                    <i class="fa-solid fa-gauge-high me-2" aria-hidden="true"></i>Open dashboard
+                    <i class="fa-solid fa-gauge-high me-2" aria-hidden="true"></i>@Localizer["Landing_OpenDashboard"]
                 </a>
                 <p class="demo-credentials" id="demo-credentials-label">
                     <span class="demo-credentials-label">Demo credentials:</span>

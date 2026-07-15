@@ -1,5 +1,11 @@
+@using MetaForge.Web.Localization
+@using MetaForge.Web.Middleware
+@{
+    var effectiveCulture = Context.Items[CultureMiddleware.EffectiveCultureItemKey] as string ?? "en-US";
+    var isRtl = Context.Items[CultureMiddleware.IsRtlItemKey] as bool? ?? false;
+}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="@effectiveCulture" dir="@(isRtl ? "rtl" : "ltr")">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -16,7 +22,7 @@
     <link rel="stylesheet" href="~/css/top-progress.css" asp-append-version="true" />
 </head>
 <body class="landing-body">
-    <a href="#main-content" class="mf-skip-link">Skip to main content</a>
+    <a href="#main-content" class="mf-skip-link">@Localizer["Common_SkipToMainContent"]</a>
 
     <header class="landing-header">
         <nav class="navbar navbar-expand-lg landing-nav" aria-label="Primary">
@@ -25,25 +31,25 @@
                     <span class="landing-brand-mark" aria-hidden="true"><i class="fa-solid fa-bolt"></i></span>
                     <span class="landing-brand-text">Meta<span class="landing-brand-accent">Forge</span></span>
                 </a>
-                <button class="navbar-toggler landing-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#landingNav" aria-controls="landingNav" aria-expanded="false" aria-label="Toggle navigation">
+                <button class="navbar-toggler landing-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#landingNav" aria-controls="landingNav" aria-expanded="false" aria-label="@Localizer["Landing_ToggleNavigation"]">
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="collapse navbar-collapse" id="landingNav">
                     <ul class="navbar-nav ms-auto align-items-lg-center">
-                        <li class="nav-item"><a class="nav-link" href="#capabilities">Capabilities</a></li>
-                        <li class="nav-item"><a class="nav-link" href="#platform">Platform</a></li>
-                        <li class="nav-item"><a class="nav-link" href="#architecture">Architecture</a></li>
-                        <li class="nav-item"><a class="nav-link" href="#get-started">Get started</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#capabilities">@Localizer["Landing_Capabilities"]</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#platform">@Localizer["Landing_Platform"]</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#architecture">@Localizer["Landing_Architecture"]</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#get-started">@Localizer["Landing_GetStarted"]</a></li>
                         <li class="nav-item ms-lg-2">
                             <a class="btn btn-signin" asp-controller="Account" asp-action="Login">
-                                <i class="fa-solid fa-right-to-bracket me-2" aria-hidden="true"></i>Sign In
+                                <i class="fa-solid fa-right-to-bracket me-2" aria-hidden="true"></i>@Localizer["Landing_SignIn"]
                             </a>
                         </li>
                     </ul>
                 </div>
             </div>
         </nav>
-        <div id="topProgress" class="top-progress" aria-hidden="true" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Page loading">
+        <div id="topProgress" class="top-progress" aria-hidden="true" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="@Localizer["Nav_PageLoading"]">
             <div id="topProgressBar" class="top-progress-bar"></div>
         </div>
     </header>
@@ -61,27 +67,27 @@
                         <span>MetaForge</span>
                     </div>
                     <p class="landing-footer-tagline">
-                        Metadata-driven admin framework for .NET 10 — forms, grids, security, and localization from a single platform model.
+                        @Localizer["Landing_FooterTagline"]
                     </p>
                 </div>
                 <div class="landing-footer-col">
-                    <h3 class="landing-footer-heading">Platform</h3>
+                    <h3 class="landing-footer-heading">@Localizer["Landing_Platform"]</h3>
                     <ul class="landing-footer-links">
-                        <li><a href="#capabilities">Capabilities</a></li>
-                        <li><a href="#platform">Screen types</a></li>
-                        <li><a href="#architecture">Architecture</a></li>
+                        <li><a href="#capabilities">@Localizer["Landing_Capabilities"]</a></li>
+                        <li><a href="#platform">@Localizer["Landing_ScreenTypes"]</a></li>
+                        <li><a href="#architecture">@Localizer["Landing_Architecture"]</a></li>
                     </ul>
                 </div>
                 <div class="landing-footer-col">
-                    <h3 class="landing-footer-heading">Get started</h3>
+                    <h3 class="landing-footer-heading">@Localizer["Landing_GetStarted"]</h3>
                     <ul class="landing-footer-links">
-                        <li><a asp-controller="Account" asp-action="Login">Sign in</a></li>
-                        <li><a href="#get-started">Demo application</a></li>
+                        <li><a asp-controller="Account" asp-action="Login">@Localizer["Auth_SignIn"]</a></li>
+                        <li><a href="#get-started">@Localizer["Landing_DemoApplication"]</a></li>
                     </ul>
                 </div>
             </div>
             <div class="landing-footer-bottom">
-                <p class="landing-footer-copy mb-0">&copy; @DateTime.UtcNow.Year MetaForge. Built with ASP.NET Core MVC and Entity Framework Core.</p>
+                <p class="landing-footer-copy mb-0">&copy; @DateTime.UtcNow.Year MetaForge. @Localizer["Landing_FooterBuiltWith"]</p>
             </div>
         </div>
     </footer>

@@ -1,7 +1,7 @@
 @model MetaForge.Web.Models.LoginViewModel
 @{
     Layout = "_AuthLayout";
-    ViewData["Title"] = "Sign In";
+    ViewData["Title"] = Localizer["Auth_SignInTitle"];
 }
 
 <div class="auth-shell">
@@ -16,22 +16,22 @@
                 <span class="auth-brand-mark"><i class="fa-solid fa-bolt"></i></span>
                 <span>Meta<span class="auth-brand-accent">Forge</span></span>
             </a>
-            <h1 class="auth-brand-headline">Metadata-driven admin for .NET</h1>
+            <h1 class="auth-brand-headline">@Localizer["Auth_BrandHeadline"]</h1>
             <p class="auth-brand-lead">
-                Sign in to manage modules, security, and dynamic CRUD screens powered by your EF Core domain model.
+                @Localizer["Auth_BrandLead"]
             </p>
             <ul class="auth-brand-highlights">
                 <li>
                     <i class="fa-solid fa-table-cells" aria-hidden="true"></i>
-                    <span>Runtime forms &amp; grids</span>
+                    <span>@Localizer["Auth_RuntimeForms"]</span>
                 </li>
                 <li>
                     <i class="fa-solid fa-shield-halved" aria-hidden="true"></i>
-                    <span>Role-based access control</span>
+                    <span>@Localizer["Auth_RoleBasedAccess"]</span>
                 </li>
                 <li>
                     <i class="fa-solid fa-layer-group" aria-hidden="true"></i>
-                    <span>Clean Architecture solution</span>
+                    <span>@Localizer["Auth_CleanArchitecture"]</span>
                 </li>
             </ul>
         </div>
@@ -41,13 +41,13 @@
     <section class="auth-signin-panel">
         <a asp-controller="Home" asp-action="Landing" class="auth-back-link">
             <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
-            <span>Back to home</span>
+            <span>@Localizer["Auth_BackToHome"]</span>
         </a>
 
         <div class="auth-form-card">
             <header class="auth-form-header">
-                <h2 class="auth-form-title">Sign in</h2>
-                <p class="auth-form-subtitle">Enter your credentials to access the dashboard</p>
+                <h2 class="auth-form-title">@Localizer["Auth_SignIn"]</h2>
+                <p class="auth-form-subtitle">@Localizer["Auth_SignInSubtitle"]</p>
             </header>
 
             @if (!string.IsNullOrEmpty(Model.SuccessMessage))
@@ -71,12 +71,12 @@
                 <input type="hidden" asp-for="ReturnUrl" />
 
                 <div class="auth-field">
-                    <label asp-for="UserName" class="auth-label">Username</label>
+                    <label asp-for="UserName" class="auth-label">@Localizer["Auth_Username"]</label>
                     <div class="auth-input-wrap">
                         <i class="fa-solid fa-user auth-input-icon" aria-hidden="true"></i>
                         <input asp-for="UserName"
                                class="form-control auth-input"
-                               placeholder="e.g. admin"
+                               placeholder="@Localizer["Auth_UsernamePlaceholder"]"
                                autofocus
                                autocomplete="username"
                                aria-required="true" />
@@ -85,21 +85,23 @@
                 </div>
 
                 <div class="auth-field">
-                    <label asp-for="Password" class="auth-label">Password</label>
+                    <label asp-for="Password" class="auth-label">@Localizer["Auth_Password"]</label>
                     <div class="auth-input-wrap">
                         <i class="fa-solid fa-lock auth-input-icon" aria-hidden="true"></i>
                         <input asp-for="Password"
                                type="password"
                                id="passwordInput"
                                class="form-control auth-input auth-input--password"
-                               placeholder="Enter your password"
+                               placeholder="@Localizer["Auth_PasswordPlaceholder"]"
                                autocomplete="current-password"
                                aria-required="true" />
                         <button type="button"
                                 class="auth-password-toggle"
                                 id="passwordToggle"
-                                aria-label="Show password"
-                                aria-pressed="false">
+                                aria-label="@Localizer["Auth_ShowPassword"]"
+                                aria-pressed="false"
+                                data-label-show="@Localizer["Auth_ShowPassword"]"
+                                data-label-hide="@Localizer["Auth_HidePassword"]">
                             <i class="fa-solid fa-eye" aria-hidden="true"></i>
                         </button>
                     </div>
@@ -109,13 +111,13 @@
                 <div class="auth-form-options">
                     <div class="form-check auth-remember">
                         <input asp-for="RememberMe" class="form-check-input" id="RememberMe" />
-                        <label asp-for="RememberMe" class="form-check-label" for="RememberMe">Keep me signed in</label>
+                        <label asp-for="RememberMe" class="form-check-label" for="RememberMe">@Localizer["Auth_RememberMe"]</label>
                     </div>
-                    <a asp-action="ForgotPassword" class="auth-forgot-link">Forgot password?</a>
+                    <a asp-action="ForgotPassword" class="auth-forgot-link">@Localizer["Auth_ForgotPassword"]</a>
                 </div>
 
                 <button type="submit" class="btn btn-auth-submit w-100">
-                    Sign in
+                    @Localizer["Auth_SignIn"]
                     <i class="fa-solid fa-arrow-right ms-2" aria-hidden="true"></i>
                 </button>
             </form>
@@ -125,16 +127,16 @@
                     <i class="fa-solid fa-circle-info"></i>
                 </div>
                 <div>
-                    <p class="auth-demo-title">Demo credentials</p>
+                    <p class="auth-demo-title">@Localizer["Auth_DemoCredentials"]</p>
                     <p class="auth-demo-text mb-0">
-                        Username <kbd>admin</kbd> &middot; Password <kbd>admin</kbd>
+                        @Localizer["Auth_DemoCredentialsDetail", "admin", "admin"]
                     </p>
                 </div>
             </div>
         </div>
 
         <p class="auth-panel-footer">
-            Secured with cookie authentication &amp; form-level RBAC
+            @Localizer["Auth_SecuredFooter"]
         </p>
     </section>
 </div>
@@ -151,7 +153,7 @@
                 var show = input.type === 'password';
                 input.type = show ? 'text' : 'password';
                 toggle.setAttribute('aria-pressed', show ? 'true' : 'false');
-                toggle.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+                toggle.setAttribute('aria-label', show ? toggle.getAttribute('data-label-hide') : toggle.getAttribute('data-label-show'));
                 toggle.querySelector('i').className = show ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye';
             });
         })();

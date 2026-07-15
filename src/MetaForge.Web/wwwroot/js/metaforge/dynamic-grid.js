@@ -189,12 +189,13 @@ const DynamicGrid = (function () {
                     return;
                 }
 
+                const localeStrings = (window.__METAFORGE_LOCALE__ && window.__METAFORGE_LOCALE__.strings) || {};
                 MetaForgeUi.confirmDelete({
                     title: hasMasterDetail ? 'Delete Document' : 'Delete Record',
                     message: hasMasterDetail
                         ? 'Delete this document and all its line items?'
                         : 'Delete this record?',
-                    detail: 'This action cannot be undone.'
+                    detail: localeStrings.confirmDeleteDetail || 'This action cannot be undone.'
                 }).then(function (confirmed) {
                     if (!confirmed) return;
 

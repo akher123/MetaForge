@@ -1,0 +1,322 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Common_Close" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="Common_Yes" xml:space="preserve">
+    <value>Yes</value>
+  </data>
+  <data name="Common_No" xml:space="preserve">
+    <value>No</value>
+  </data>
+  <data name="Common_SkipToMainContent" xml:space="preserve">
+    <value>Skip to main content</value>
+  </data>
+  <data name="Common_SignedIn" xml:space="preserve">
+    <value>Signed in</value>
+  </data>
+  <data name="Common_Record" xml:space="preserve">
+    <value>Record</value>
+  </data>
+  <data name="Nav_Preferences" xml:space="preserve">
+    <value>Preferences</value>
+  </data>
+  <data name="Nav_PreferencesHint" xml:space="preserve">
+    <value>Culture &amp; date formats</value>
+  </data>
+  <data name="Nav_Appearance" xml:space="preserve">
+    <value>Appearance</value>
+  </data>
+  <data name="Nav_AppearanceHint" xml:space="preserve">
+    <value>Color theme</value>
+  </data>
+  <data name="Nav_SignOut" xml:space="preserve">
+    <value>Sign out</value>
+  </data>
+  <data name="Nav_SignOutHint" xml:space="preserve">
+    <value>End your session</value>
+  </data>
+  <data name="Nav_ChangeTheme" xml:space="preserve">
+    <value>Change color theme, current: {0}</value>
+  </data>
+  <data name="Nav_AppearanceTitle" xml:space="preserve">
+    <value>Appearance: {0}</value>
+  </data>
+  <data name="Nav_AccountMenu" xml:space="preserve">
+    <value>Account menu for {0}</value>
+  </data>
+  <data name="Nav_CollapseSidebar" xml:space="preserve">
+    <value>Collapse sidebar menu</value>
+  </data>
+  <data name="Nav_OpenNavigation" xml:space="preserve">
+    <value>Open navigation menu</value>
+  </data>
+  <data name="Nav_PageLoading" xml:space="preserve">
+    <value>Page loading</value>
+  </data>
+  <data name="Footer_Copyright" xml:space="preserve">
+    <value>© 2026 MetaForge — MetaForge Admin Platform (.NET 10)</value>
+  </data>
+  <data name="Footer_CopyrightShort" xml:space="preserve">
+    <value>© 2026 MetaForge</value>
+  </data>
+  <data name="Auth_SignIn" xml:space="preserve">
+    <value>Sign in</value>
+  </data>
+  <data name="Auth_SignInTitle" xml:space="preserve">
+    <value>Sign In</value>
+  </data>
+  <data name="Auth_SignInSubtitle" xml:space="preserve">
+    <value>Enter your credentials to access the dashboard</value>
+  </data>
+  <data name="Auth_Username" xml:space="preserve">
+    <value>Username</value>
+  </data>
+  <data name="Auth_Password" xml:space="preserve">
+    <value>Password</value>
+  </data>
+  <data name="Auth_UsernamePlaceholder" xml:space="preserve">
+    <value>e.g. admin</value>
+  </data>
+  <data name="Auth_PasswordPlaceholder" xml:space="preserve">
+    <value>Enter your password</value>
+  </data>
+  <data name="Auth_RememberMe" xml:space="preserve">
+    <value>Keep me signed in</value>
+  </data>
+  <data name="Auth_ForgotPassword" xml:space="preserve">
+    <value>Forgot password?</value>
+  </data>
+  <data name="Auth_BackToHome" xml:space="preserve">
+    <value>Back to home</value>
+  </data>
+  <data name="Auth_DemoCredentials" xml:space="preserve">
+    <value>Demo credentials</value>
+  </data>
+  <data name="Auth_DemoCredentialsDetail" xml:space="preserve">
+    <value>Username {0} · Password {1}</value>
+  </data>
+  <data name="Auth_SecuredFooter" xml:space="preserve">
+    <value>Secured with cookie authentication &amp; form-level RBAC</value>
+  </data>
+  <data name="Auth_BrandHeadline" xml:space="preserve">
+    <value>Metadata-driven admin for .NET</value>
+  </data>
+  <data name="Auth_BrandLead" xml:space="preserve">
+    <value>Sign in to manage modules, security, and dynamic CRUD screens powered by your EF Core domain model.</value>
+  </data>
+  <data name="Auth_RuntimeForms" xml:space="preserve">
+    <value>Runtime forms &amp; grids</value>
+  </data>
+  <data name="Auth_RoleBasedAccess" xml:space="preserve">
+    <value>Role-based access control</value>
+  </data>
+  <data name="Auth_CleanArchitecture" xml:space="preserve">
+    <value>Clean Architecture solution</value>
+  </data>
+  <data name="Auth_ShowPassword" xml:space="preserve">
+    <value>Show password</value>
+  </data>
+  <data name="Auth_HidePassword" xml:space="preserve">
+    <value>Hide password</value>
+  </data>
+  <data name="Validation_UsernameRequired" xml:space="preserve">
+    <value>Username is required</value>
+  </data>
+  <data name="Validation_PasswordRequired" xml:space="preserve">
+    <value>Password is required</value>
+  </data>
+  <data name="Culture_LanguageRegion" xml:space="preserve">
+    <value>Language &amp; region</value>
+  </data>
+  <data name="Culture_Subtitle" xml:space="preserve">
+    <value>Dates, numbers, and formats follow your selected culture and format preferences.</value>
+  </data>
+  <data name="Culture_Custom" xml:space="preserve">
+    <value>Custom</value>
+  </data>
+  <data name="Culture_SystemDefault" xml:space="preserve">
+    <value>System default</value>
+  </data>
+  <data name="Culture_CultureLabel" xml:space="preserve">
+    <value>Culture</value>
+  </data>
+  <data name="Culture_DateFormat" xml:space="preserve">
+    <value>Date format</value>
+  </data>
+  <data name="Culture_DateTimeFormat" xml:space="preserve">
+    <value>Date &amp; time format</value>
+  </data>
+  <data name="Culture_SystemDefaultHint" xml:space="preserve">
+    <value>System default is {0}. Changing culture reloads the page so dates update everywhere.</value>
+  </data>
+  <data name="Culture_UseSystemDefault" xml:space="preserve">
+    <value>Use system default ({0})</value>
+  </data>
+  <data name="Culture_UseSystemDefaultShort" xml:space="preserve">
+    <value>Use system default</value>
+  </data>
+  <data name="Culture_FormatPreview" xml:space="preserve">
+    <value>Format preview</value>
+  </data>
+  <data name="Culture_Date" xml:space="preserve">
+    <value>Date</value>
+  </data>
+  <data name="Culture_DateTime" xml:space="preserve">
+    <value>Date &amp; time</value>
+  </data>
+  <data name="Culture_Number" xml:space="preserve">
+    <value>Number</value>
+  </data>
+  <data name="Culture_Reset" xml:space="preserve">
+    <value>Reset to system defaults</value>
+  </data>
+  <data name="Culture_ResetHint" xml:space="preserve">
+    <value>Clears your culture and date format overrides. Theme is unchanged.</value>
+  </data>
+  <data name="Culture_Saving" xml:space="preserve">
+    <value>Saving</value>
+  </data>
+  <data name="Culture_CustomDateFormat" xml:space="preserve">
+    <value>Custom date format override.</value>
+  </data>
+  <data name="Culture_CustomDateTimeFormat" xml:space="preserve">
+    <value>Custom date-time format override.</value>
+  </data>
+  <data name="Prefs_Title" xml:space="preserve">
+    <value>Preferences</value>
+  </data>
+  <data name="Prefs_Lead" xml:space="preserve">
+    <value>Override system locale settings for your account. Choose a culture and date formats; leave any option on system default to follow organization-wide settings.</value>
+  </data>
+  <data name="Prefs_LivePreview" xml:space="preserve">
+    <value>Live preview</value>
+  </data>
+  <data name="Prefs_PreviewHint" xml:space="preserve">
+    <value>Sample values below reflect your current selections before saving.</value>
+  </data>
+  <data name="Prefs_HowOverridesWork" xml:space="preserve">
+    <value>How overrides work</value>
+  </data>
+  <data name="Prefs_CultureHelp" xml:space="preserve">
+    <value>Culture controls number grouping, calendar, and text direction (RTL).</value>
+  </data>
+  <data name="Prefs_DateFormatHelp" xml:space="preserve">
+    <value>Date format applies to dates shown in grids, reports, and detail views.</value>
+  </data>
+  <data name="Prefs_SystemDefaultHelp" xml:space="preserve">
+    <value>System default uses values set by your administrator under System Settings.</value>
+  </data>
+  <data name="Landing_SignIn" xml:space="preserve">
+    <value>Sign In</value>
+  </data>
+  <data name="Landing_SignInDashboard" xml:space="preserve">
+    <value>Sign in to dashboard</value>
+  </data>
+  <data name="Landing_ExplorePlatform" xml:space="preserve">
+    <value>Explore the platform</value>
+  </data>
+  <data name="Landing_OpenDashboard" xml:space="preserve">
+    <value>Open dashboard</value>
+  </data>
+  <data name="Landing_Capabilities" xml:space="preserve">
+    <value>Capabilities</value>
+  </data>
+  <data name="Landing_Platform" xml:space="preserve">
+    <value>Platform</value>
+  </data>
+  <data name="Landing_Architecture" xml:space="preserve">
+    <value>Architecture</value>
+  </data>
+  <data name="Landing_GetStarted" xml:space="preserve">
+    <value>Get started</value>
+  </data>
+  <data name="Landing_ToggleNavigation" xml:space="preserve">
+    <value>Toggle navigation</value>
+  </data>
+  <data name="Landing_FooterTagline" xml:space="preserve">
+    <value>Metadata-driven admin framework for .NET 10 — forms, grids, security, and localization from a single platform model.</value>
+  </data>
+  <data name="Landing_ScreenTypes" xml:space="preserve">
+    <value>Screen types</value>
+  </data>
+  <data name="Landing_DemoApplication" xml:space="preserve">
+    <value>Demo application</value>
+  </data>
+  <data name="Landing_FooterBuiltWith" xml:space="preserve">
+    <value>Built with ASP.NET Core MVC and Entity Framework Core.</value>
+  </data>
+  <data name="ConfirmDelete_Title" xml:space="preserve">
+    <value>Confirm Delete</value>
+  </data>
+  <data name="ConfirmDelete_Message" xml:space="preserve">
+    <value>Are you sure you want to delete this item?</value>
+  </data>
+  <data name="ConfirmDelete_Detail" xml:space="preserve">
+    <value>This action cannot be undone.</value>
+  </data>
+  <data name="Ui_DeleteThisItem" xml:space="preserve">
+    <value>Delete this item?</value>
+  </data>
+  <data name="Ui_SavedSuccessfully" xml:space="preserve">
+    <value>{0} saved successfully.</value>
+  </data>
+</root>

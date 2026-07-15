@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Common_Close" xml:space="preserve"><value>Schließen</value></data>
+  <data name="Common_Yes" xml:space="preserve"><value>Ja</value></data>
+  <data name="Common_No" xml:space="preserve"><value>Nein</value></data>
+  <data name="Common_SkipToMainContent" xml:space="preserve"><value>Zum Hauptinhalt springen</value></data>
+  <data name="Common_SignedIn" xml:space="preserve"><value>Angemeldet</value></data>
+  <data name="Common_Record" xml:space="preserve"><value>Datensatz</value></data>
+  <data name="Nav_Preferences" xml:space="preserve"><value>Einstellungen</value></data>
+  <data name="Nav_PreferencesHint" xml:space="preserve"><value>Kultur und Datumsformate</value></data>
+  <data name="Nav_Appearance" xml:space="preserve"><value>Erscheinungsbild</value></data>
+  <data name="Nav_AppearanceHint" xml:space="preserve"><value>Farbschema</value></data>
+  <data name="Nav_SignOut" xml:space="preserve"><value>Abmelden</value></data>
+  <data name="Nav_SignOutHint" xml:space="preserve"><value>Sitzung beenden</value></data>
+  <data name="Nav_ChangeTheme" xml:space="preserve"><value>Farbschema ändern, aktuell: {0}</value></data>
+  <data name="Nav_AppearanceTitle" xml:space="preserve"><value>Erscheinungsbild: {0}</value></data>
+  <data name="Nav_AccountMenu" xml:space="preserve"><value>Kontomenü für {0}</value></data>
+  <data name="Nav_CollapseSidebar" xml:space="preserve"><value>Seitenmenü einklappen</value></data>
+  <data name="Nav_OpenNavigation" xml:space="preserve"><value>Navigationsmenü öffnen</value></data>
+  <data name="Nav_PageLoading" xml:space="preserve"><value>Seite wird geladen</value></data>
+  <data name="Footer_Copyright" xml:space="preserve"><value>© 2026 MetaForge — MetaForge Admin-Plattform (.NET 10)</value></data>
+  <data name="Footer_CopyrightShort" xml:space="preserve"><value>© 2026 MetaForge</value></data>
+  <data name="Auth_SignIn" xml:space="preserve"><value>Anmelden</value></data>
+  <data name="Auth_SignInTitle" xml:space="preserve"><value>Anmeldung</value></data>
+  <data name="Auth_SignInSubtitle" xml:space="preserve"><value>Geben Sie Ihre Anmeldedaten ein, um auf das Dashboard zuzugreifen</value></data>
+  <data name="Auth_Username" xml:space="preserve"><value>Benutzername</value></data>
+  <data name="Auth_Password" xml:space="preserve"><value>Passwort</value></data>
+  <data name="Auth_UsernamePlaceholder" xml:space="preserve"><value>z. B. admin</value></data>
+  <data name="Auth_PasswordPlaceholder" xml:space="preserve"><value>Passwort eingeben</value></data>
+  <data name="Auth_RememberMe" xml:space="preserve"><value>Angemeldet bleiben</value></data>
+  <data name="Auth_ForgotPassword" xml:space="preserve"><value>Passwort vergessen?</value></data>
+  <data name="Auth_BackToHome" xml:space="preserve"><value>Zurück zur Startseite</value></data>
+  <data name="Auth_DemoCredentials" xml:space="preserve"><value>Demo-Anmeldedaten</value></data>
+  <data name="Auth_DemoCredentialsDetail" xml:space="preserve"><value>Benutzername {0} · Passwort {1}</value></data>
+  <data name="Auth_SecuredFooter" xml:space="preserve"><value>Gesichert mit Cookie-Authentifizierung und formularbasierter RBAC</value></data>
+  <data name="Auth_BrandHeadline" xml:space="preserve"><value>Metadaten-gesteuerte Verwaltung für .NET</value></data>
+  <data name="Auth_BrandLead" xml:space="preserve"><value>Melden Sie sich an, um Module, Sicherheit und dynamische CRUD-Bildschirme zu verwalten.</value></data>
+  <data name="Auth_RuntimeForms" xml:space="preserve"><value>Laufzeitformulare und -raster</value></data>
+  <data name="Auth_RoleBasedAccess" xml:space="preserve"><value>Rollenbasierte Zugriffskontrolle</value></data>
+  <data name="Auth_CleanArchitecture" xml:space="preserve"><value>Clean-Architecture-Lösung</value></data>
+  <data name="Auth_ShowPassword" xml:space="preserve"><value>Passwort anzeigen</value></data>
+  <data name="Auth_HidePassword" xml:space="preserve"><value>Passwort ausblenden</value></data>
+  <data name="Validation_UsernameRequired" xml:space="preserve"><value>Benutzername ist erforderlich</value></data>
+  <data name="Validation_PasswordRequired" xml:space="preserve"><value>Passwort ist erforderlich</value></data>
+  <data name="Culture_LanguageRegion" xml:space="preserve"><value>Sprache und Region</value></data>
+  <data name="Culture_Subtitle" xml:space="preserve"><value>Daten, Zahlen und Formate folgen der gewählten Kultur und den Formatvorgaben.</value></data>
+  <data name="Culture_Custom" xml:space="preserve"><value>Benutzerdefiniert</value></data>
+  <data name="Culture_SystemDefault" xml:space="preserve"><value>Systemstandard</value></data>
+  <data name="Culture_CultureLabel" xml:space="preserve"><value>Kultur</value></data>
+  <data name="Culture_DateFormat" xml:space="preserve"><value>Datumsformat</value></data>
+  <data name="Culture_DateTimeFormat" xml:space="preserve"><value>Datums- und Zeitformat</value></data>
+  <data name="Culture_SystemDefaultHint" xml:space="preserve"><value>Systemstandard ist {0}. Eine Kulturänderung lädt die Seite neu, damit Daten überall aktualisiert werden.</value></data>
+  <data name="Culture_UseSystemDefault" xml:space="preserve"><value>Systemstandard verwenden ({0})</value></data>
+  <data name="Culture_UseSystemDefaultShort" xml:space="preserve"><value>Systemstandard verwenden</value></data>
+  <data name="Culture_FormatPreview" xml:space="preserve"><value>Formatvorschau</value></data>
+  <data name="Culture_Date" xml:space="preserve"><value>Datum</value></data>
+  <data name="Culture_DateTime" xml:space="preserve"><value>Datum und Uhrzeit</value></data>
+  <data name="Culture_Number" xml:space="preserve"><value>Zahl</value></data>
+  <data name="Culture_Reset" xml:space="preserve"><value>Auf Systemstandard zurücksetzen</value></data>
+  <data name="Culture_ResetHint" xml:space="preserve"><value>Löscht Ihre Kultur- und Datumsformat-Überschreibungen. Das Schema bleibt unverändert.</value></data>
+  <data name="Culture_Saving" xml:space="preserve"><value>Speichern</value></data>
+  <data name="Culture_CustomDateFormat" xml:space="preserve"><value>Benutzerdefiniertes Datumsformat.</value></data>
+  <data name="Culture_CustomDateTimeFormat" xml:space="preserve"><value>Benutzerdefiniertes Datums- und Zeitformat.</value></data>
+  <data name="Prefs_Title" xml:space="preserve"><value>Einstellungen</value></data>
+  <data name="Prefs_Lead" xml:space="preserve"><value>Überschreiben Sie die Systemgebietsschema-Einstellungen für Ihr Konto. Wählen Sie eine Kultur und Datumsformate; lassen Sie Optionen auf Systemstandard, um organisationweite Einstellungen zu verwenden.</value></data>
+  <data name="Prefs_LivePreview" xml:space="preserve"><value>Live-Vorschau</value></data>
+  <data name="Prefs_PreviewHint" xml:space="preserve"><value>Beispielwerte unten spiegeln Ihre aktuellen Auswahlen vor dem Speichern wider.</value></data>
+  <data name="Prefs_HowOverridesWork" xml:space="preserve"><value>So funktionieren Überschreibungen</value></data>
+  <data name="Prefs_CultureHelp" xml:space="preserve"><value>Kultur steuert Zahlengruppierung, Kalender und Textrichtung (RTL).</value></data>
+  <data name="Prefs_DateFormatHelp" xml:space="preserve"><value>Das Datumsformat gilt für Daten in Rastern, Berichten und Detailansichten.</value></data>
+  <data name="Prefs_SystemDefaultHelp" xml:space="preserve"><value>Systemstandard verwendet Werte, die Ihr Administrator unter Systemeinstellungen festlegt.</value></data>
+  <data name="Landing_SignIn" xml:space="preserve"><value>Anmelden</value></data>
+  <data name="Landing_SignInDashboard" xml:space="preserve"><value>Zum Dashboard anmelden</value></data>
+  <data name="Landing_ExplorePlatform" xml:space="preserve"><value>Plattform erkunden</value></data>
+  <data name="Landing_OpenDashboard" xml:space="preserve"><value>Dashboard öffnen</value></data>
+  <data name="Landing_Capabilities" xml:space="preserve"><value>Funktionen</value></data>
+  <data name="Landing_Platform" xml:space="preserve"><value>Plattform</value></data>
+  <data name="Landing_Architecture" xml:space="preserve"><value>Architektur</value></data>
+  <data name="Landing_GetStarted" xml:space="preserve"><value>Loslegen</value></data>
+  <data name="Landing_ToggleNavigation" xml:space="preserve"><value>Navigation umschalten</value></data>
+  <data name="Landing_FooterTagline" xml:space="preserve"><value>Metadaten-gesteuertes Admin-Framework für .NET 10 — Formulare, Raster, Sicherheit und Lokalisierung aus einem Plattformmodell.</value></data>
+  <data name="Landing_ScreenTypes" xml:space="preserve"><value>Bildschirmtypen</value></data>
+  <data name="Landing_DemoApplication" xml:space="preserve"><value>Demo-Anwendung</value></data>
+  <data name="Landing_FooterBuiltWith" xml:space="preserve"><value>Erstellt mit ASP.NET Core MVC und Entity Framework Core.</value></data>
+  <data name="ConfirmDelete_Title" xml:space="preserve"><value>Löschen bestätigen</value></data>
+  <data name="ConfirmDelete_Message" xml:space="preserve"><value>Möchten Sie dieses Element wirklich löschen?</value></data>
+  <data name="ConfirmDelete_Detail" xml:space="preserve"><value>Diese Aktion kann nicht rückgängig gemacht werden.</value></data>
+  <data name="Ui_DeleteThisItem" xml:space="preserve"><value>Dieses Element löschen?</value></data>
+  <data name="Ui_SavedSuccessfully" xml:space="preserve"><value>{0} erfolgreich gespeichert.</value></data>
+</root>

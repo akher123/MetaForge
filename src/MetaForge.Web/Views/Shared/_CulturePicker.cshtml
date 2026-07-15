@@ -12,28 +12,28 @@
         <div class="culture-picker-header-text">
             <h2 class="culture-picker-title">
                 <i class="fa-solid fa-globe" aria-hidden="true"></i>
-                Language &amp; region
+                @Localizer["Culture_LanguageRegion"]
             </h2>
             <p class="culture-picker-subtitle">
-                Dates, numbers, and formats follow your selected culture and format preferences.
+                @Localizer["Culture_Subtitle"]
                 @if (Model.CultureIsUserOverride || Model.DateFormatIsUserOverride || Model.DateTimeFormatIsUserOverride)
                 {
-                    <span class="culture-picker-override-badge">Custom</span>
+                    <span class="culture-picker-override-badge">@Localizer["Culture_Custom"]</span>
                 }
                 else
                 {
-                    <span class="culture-picker-override-badge culture-picker-override-badge--inherit">System default</span>
+                    <span class="culture-picker-override-badge culture-picker-override-badge--inherit">@Localizer["Culture_SystemDefault"]</span>
                 }
             </p>
         </div>
         <span class="culture-picker-status" id="culturePickerStatus" aria-live="polite" hidden>
             <i class="fa-solid fa-circle-notch fa-spin" aria-hidden="true"></i>
-            <span>Saving</span>
+            <span>@Localizer["Culture_Saving"]</span>
         </span>
     </div>
 
     <div class="culture-picker-controls">
-        <label class="form-label" for="culturePickerSelect">Culture</label>
+        <label class="form-label" for="culturePickerSelect">@Localizer["Culture_CultureLabel"]</label>
         <select id="culturePickerSelect"
                 class="form-select culture-picker-select"
                 data-effective-culture="@Model.EffectiveCulture"
@@ -41,7 +41,7 @@
                 data-selected="@selectedCulture"
                 aria-describedby="culturePickerHint">
             <option value="@inheritValue" selected="@(string.IsNullOrEmpty(Model.UserCultureOverride) ? "selected" : null)">
-                Use system default (@Model.SystemDefaultCulture)
+                @Localizer["Culture_UseSystemDefault", Model.SystemDefaultCulture]
             </option>
             @foreach (var culture in Model.Cultures)
             {
@@ -51,58 +51,57 @@
             }
         </select>
         <div id="culturePickerHint" class="form-text">
-            System default is <strong>@Model.SystemDefaultCulture</strong>.
-            Changing culture reloads the page so dates update everywhere.
+            @Localizer["Culture_SystemDefaultHint", Model.SystemDefaultCulture]
         </div>
     </div>
 
     <div class="culture-picker-controls">
-        <label class="form-label" for="dateFormatPickerSelect">Date format</label>
+        <label class="form-label" for="dateFormatPickerSelect">@Localizer["Culture_DateFormat"]</label>
         <select id="dateFormatPickerSelect"
                 class="form-select culture-picker-select"
                 data-effective-format="@Model.EffectiveDateFormat"
                 data-system-default="@Model.SystemDefaultDateFormat"
                 data-selected="@selectedDateFormat">
             <option value="@inheritValue" selected="@(string.IsNullOrEmpty(Model.UserDateFormatOverride) ? "selected" : null)">
-                Use system default
+                @Localizer["Culture_UseSystemDefaultShort"]
             </option>
         </select>
         @if (Model.DateFormatIsUserOverride)
         {
-            <div class="form-text">Custom date format override.</div>
+            <div class="form-text">@Localizer["Culture_CustomDateFormat"]</div>
         }
     </div>
 
     <div class="culture-picker-controls">
-        <label class="form-label" for="dateTimeFormatPickerSelect">Date &amp; time format</label>
+        <label class="form-label" for="dateTimeFormatPickerSelect">@Localizer["Culture_DateTimeFormat"]</label>
         <select id="dateTimeFormatPickerSelect"
                 class="form-select culture-picker-select"
                 data-effective-format="@Model.EffectiveDateTimeFormat"
                 data-system-default="@Model.SystemDefaultDateTimeFormat"
                 data-selected="@selectedDateTimeFormat">
             <option value="@inheritValue" selected="@(string.IsNullOrEmpty(Model.UserDateTimeFormatOverride) ? "selected" : null)">
-                Use system default
+                @Localizer["Culture_UseSystemDefaultShort"]
             </option>
         </select>
         @if (Model.DateTimeFormatIsUserOverride)
         {
-            <div class="form-text">Custom date-time format override.</div>
+            <div class="form-text">@Localizer["Culture_CustomDateTimeFormat"]</div>
         }
     </div>
 
     <div class="culture-preview" id="culturePreviewPanel" aria-live="polite" @(Model.ShowInlinePreview ? null : "hidden")>
-        <h3 class="culture-preview-title">Format preview</h3>
+        <h3 class="culture-preview-title">@Localizer["Culture_FormatPreview"]</h3>
         <dl class="culture-preview-list">
             <div class="culture-preview-item">
-                <dt>Date</dt>
+                <dt>@Localizer["Culture_Date"]</dt>
                 <dd id="culturePreviewDate">@Model.Preview.ShortDate</dd>
             </div>
             <div class="culture-preview-item">
-                <dt>Date &amp; time</dt>
+                <dt>@Localizer["Culture_DateTime"]</dt>
                 <dd id="culturePreviewDateTime">@Model.Preview.ShortDateTime</dd>
             </div>
             <div class="culture-preview-item">
-                <dt>Number</dt>
+                <dt>@Localizer["Culture_Number"]</dt>
                 <dd id="culturePreviewNumber">@Model.Preview.SampleNumber</dd>
             </div>
         </dl>
@@ -114,10 +113,10 @@
                 id="culturePickerResetBtn"
                 @(!hasOverrides ? "disabled" : null)>
             <i class="fa-solid fa-rotate-left" aria-hidden="true"></i>
-            Reset to system defaults
+            @Localizer["Culture_Reset"]
         </button>
         <p class="culture-picker-actions-hint">
-            Clears your culture and date format overrides. Theme is unchanged.
+            @Localizer["Culture_ResetHint"]
         </p>
     </div>
 </div>

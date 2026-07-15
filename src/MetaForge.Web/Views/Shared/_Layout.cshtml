@@ -1,6 +1,7 @@
 @using System.Security.Claims
 @using MetaForge.Shared.Constants
 @using MetaForge.Shared.Culture
+@using MetaForge.Web.Localization
 @using MetaForge.Web.Middleware
 @inject MetaForge.Application.Interfaces.INavigationService NavigationService
 @inject MetaForge.Application.Interfaces.IUserPreferenceService UserPreferenceService
@@ -27,6 +28,7 @@
         string.Equals(t.Key, userThemeKey, StringComparison.OrdinalIgnoreCase))?.DisplayName ?? "Theme";
 
     var effectiveCulture = Context.Items[CultureMiddleware.EffectiveCultureItemKey] as string ?? "en-US";
+    var clientStrings = LocalizationServiceCollectionExtensions.GetClientStrings(Localizer);
     var isRtl = Context.Items[CultureMiddleware.IsRtlItemKey] as bool? ?? false;
     var systemLocalization = await SystemSettingsService.GetLocalizationAsync();
     var systemDefaultCulture = systemLocalization.DefaultCulture;
@@ -65,7 +67,8 @@
             systemDefaultCulture: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(systemDefaultCulture)),
             dateFormat: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(effectiveDateFormat)),
             dateTimeFormat: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(effectiveDateTimeFormat)),
-            authenticated: @(isAuthenticated ? "true" : "false")
+            authenticated: @(isAuthenticated ? "true" : "false"),
+            strings: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(clientStrings))
         };
         try {
             if (!window.__METAFORGE_THEME__.authenticated) {
@@ -90,7 +93,7 @@
     }
 </head>
 <body class="metaforge-app">
-    <a href="#main-content" class="mf-skip-link">Skip to main content</a>
+    <a href="#main-content" class="mf-skip-link">@Localizer["Common_SkipToMainContent"]</a>
     <header>
         <nav class="navbar navbar-expand-lg navbar-dark app-navbar" aria-label="Application">
             <div class="container-fluid app-navbar-inner">
@@ -102,8 +105,8 @@
                                 id="sidebarCollapseToggle"
                                 aria-controls="sidebarNav"
                                 aria-expanded="true"
-                                aria-label="Collapse sidebar menu"
-                                title="Toggle sidebar menu">
+                                aria-label="@Localizer["Nav_CollapseSidebar"]"
+                                title="@Localizer["Nav_CollapseSidebar"]">
                             <span class="sidebar-hamburger" aria-hidden="true">
                                 <span class="sidebar-hamburger-line"></span>
                                 <span class="sidebar-hamburger-line"></span>
@@ -124,7 +127,7 @@
                                 id="sidebarMobileToggle"
                                 aria-controls="sidebarNav"
                                 aria-expanded="false"
-                                aria-label="Open navigation menu">
+                                aria-label="@Localizer["Nav_OpenNavigation"]">
                             <span class="navbar-toggler-icon"></span>
                         </button>
                     }
@@ -140,8 +143,8 @@
                                             data-bs-auto-close="outside"
                                             aria-expanded="false"
                                             aria-haspopup="listbox"
-                                            aria-label="Change color theme, current: @activeThemeName"
-                                            title="Appearance: @activeThemeName">
+                                            aria-label="@Localizer["Nav_ChangeTheme", activeThemeName]"
+                                            title="@Localizer["Nav_AppearanceTitle", activeThemeName]">
                                         <span class="app-theme-trigger-icon" aria-hidden="true">
                                             <i class="fa-solid fa-palette"></i>
                                         </span>
@@ -156,7 +159,7 @@
                                             class="app-user-trigger dropdown-toggle"
                                             data-bs-toggle="dropdown"
                                             aria-expanded="false"
-                                            aria-label="Account menu for @User.Identity!.Name">
+                                            aria-label="@Localizer["Nav_AccountMenu", User.Identity?.Name ?? string.Empty]">
                                         <span class="app-user-avatar" aria-hidden="true">
                                             <i class="fa-solid fa-user"></i>
                                         </span>
@@ -170,7 +173,7 @@
                                             </span>
                                             <div class="app-user-dropdown-meta">
                                                 <span class="app-user-dropdown-name">@User.Identity!.Name</span>
-                                                <span class="app-user-dropdown-status">Signed in</span>
+                                                <span class="app-user-dropdown-status">@Localizer["Common_SignedIn"]</span>
                                             </div>
                                         </div>
                                         <div class="dropdown-divider app-user-dropdown-divider"></div>
@@ -179,8 +182,8 @@
                                                 <i class="fa-solid fa-sliders"></i>
                                             </span>
                                             <span class="app-user-dropdown-link-text">
-                                                <span class="app-user-dropdown-link-label">Preferences</span>
-                                                <span class="app-user-dropdown-link-hint">Culture &amp; date formats</span>
+                                                <span class="app-user-dropdown-link-label">@Localizer["Nav_Preferences"]</span>
+                                                <span class="app-user-dropdown-link-hint">@Localizer["Nav_PreferencesHint"]</span>
                                             </span>
                                             <i class="fa-solid fa-chevron-right app-user-dropdown-link-chevron" aria-hidden="true"></i>
                                         </a>
@@ -189,8 +192,8 @@
                                                 <i class="fa-solid fa-palette"></i>
                                             </span>
                                             <span class="app-user-dropdown-link-text">
-                                                <span class="app-user-dropdown-link-label">Appearance</span>
-                                                <span class="app-user-dropdown-link-hint">Color theme</span>
+                                                <span class="app-user-dropdown-link-label">@Localizer["Nav_Appearance"]</span>
+                                                <span class="app-user-dropdown-link-hint">@Localizer["Nav_AppearanceHint"]</span>
                                             </span>
                                             <i class="fa-solid fa-chevron-right app-user-dropdown-link-chevron" aria-hidden="true"></i>
                                         </a>
@@ -202,8 +205,8 @@
                                                     <i class="fa-solid fa-right-from-bracket"></i>
                                                 </span>
                                                 <span class="app-user-signout-text">
-                                                    <span class="app-user-signout-label">Sign out</span>
-                                                    <span class="app-user-signout-hint">End your session</span>
+                                                    <span class="app-user-signout-label">@Localizer["Nav_SignOut"]</span>
+                                                    <span class="app-user-signout-hint">@Localizer["Nav_SignOutHint"]</span>
                                                 </span>
                                             </button>
                                         </form>
@@ -215,7 +218,7 @@
                 </div>
             </div>
         </nav>
-        <div id="topProgress" class="top-progress" aria-hidden="true" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Page loading">
+        <div id="topProgress" class="top-progress" aria-hidden="true" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="@Localizer["Nav_PageLoading"]">
             <div id="topProgressBar" class="top-progress-bar"></div>
         </div>
     </header>
@@ -235,8 +238,8 @@
             </main>
             <footer class="app-footer py-3">
                 <div class="app-footer-inner text-center">
-                    <span class="app-footer-full">&copy; 2026 MetaForge &mdash; MetaForge Admin Platform (.NET 10)</span>
-                    <span class="app-footer-short">&copy; 2026 MetaForge</span>
+                    <span class="app-footer-full">@Localizer["Footer_Copyright"]</span>
+                    <span class="app-footer-short">@Localizer["Footer_CopyrightShort"]</span>
                 </div>
             </footer>
         </div>

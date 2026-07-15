@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Common_Close" xml:space="preserve"><value>Cerrar</value></data>
+  <data name="Common_Yes" xml:space="preserve"><value>Sí</value></data>
+  <data name="Common_No" xml:space="preserve"><value>No</value></data>
+  <data name="Common_SkipToMainContent" xml:space="preserve"><value>Saltar al contenido principal</value></data>
+  <data name="Common_SignedIn" xml:space="preserve"><value>Sesión iniciada</value></data>
+  <data name="Common_Record" xml:space="preserve"><value>Registro</value></data>
+  <data name="Nav_Preferences" xml:space="preserve"><value>Preferencias</value></data>
+  <data name="Nav_PreferencesHint" xml:space="preserve"><value>Cultura y formatos de fecha</value></data>
+  <data name="Nav_Appearance" xml:space="preserve"><value>Apariencia</value></data>
+  <data name="Nav_AppearanceHint" xml:space="preserve"><value>Tema de color</value></data>
+  <data name="Nav_SignOut" xml:space="preserve"><value>Cerrar sesión</value></data>
+  <data name="Nav_SignOutHint" xml:space="preserve"><value>Finalizar su sesión</value></data>
+  <data name="Nav_ChangeTheme" xml:space="preserve"><value>Cambiar tema de color, actual: {0}</value></data>
+  <data name="Nav_AppearanceTitle" xml:space="preserve"><value>Apariencia: {0}</value></data>
+  <data name="Nav_AccountMenu" xml:space="preserve"><value>Menú de cuenta para {0}</value></data>
+  <data name="Nav_CollapseSidebar" xml:space="preserve"><value>Contraer menú lateral</value></data>
+  <data name="Nav_OpenNavigation" xml:space="preserve"><value>Abrir menú de navegación</value></data>
+  <data name="Nav_PageLoading" xml:space="preserve"><value>Cargando página</value></data>
+  <data name="Footer_Copyright" xml:space="preserve"><value>© 2026 MetaForge — Plataforma de administración MetaForge (.NET 10)</value></data>
+  <data name="Footer_CopyrightShort" xml:space="preserve"><value>© 2026 MetaForge</value></data>
+  <data name="Auth_SignIn" xml:space="preserve"><value>Iniciar sesión</value></data>
+  <data name="Auth_SignInTitle" xml:space="preserve"><value>Iniciar sesión</value></data>
+  <data name="Auth_SignInSubtitle" xml:space="preserve"><value>Introduzca sus credenciales para acceder al panel</value></data>
+  <data name="Auth_Username" xml:space="preserve"><value>Nombre de usuario</value></data>
+  <data name="Auth_Password" xml:space="preserve"><value>Contraseña</value></data>
+  <data name="Auth_UsernamePlaceholder" xml:space="preserve"><value>p. ej. admin</value></data>
+  <data name="Auth_PasswordPlaceholder" xml:space="preserve"><value>Introduzca su contraseña</value></data>
+  <data name="Auth_RememberMe" xml:space="preserve"><value>Mantener sesión iniciada</value></data>
+  <data name="Auth_ForgotPassword" xml:space="preserve"><value>¿Olvidó su contraseña?</value></data>
+  <data name="Auth_BackToHome" xml:space="preserve"><value>Volver al inicio</value></data>
+  <data name="Auth_DemoCredentials" xml:space="preserve"><value>Credenciales de demostración</value></data>
+  <data name="Auth_DemoCredentialsDetail" xml:space="preserve"><value>Usuario {0} · Contraseña {1}</value></data>
+  <data name="Auth_SecuredFooter" xml:space="preserve"><value>Protegido con autenticación por cookies y RBAC a nivel de formulario</value></data>
+  <data name="Auth_BrandHeadline" xml:space="preserve"><value>Administración basada en metadatos para .NET</value></data>
+  <data name="Auth_BrandLead" xml:space="preserve"><value>Inicie sesión para gestionar módulos, seguridad y pantallas CRUD dinámicas impulsadas por su modelo EF Core.</value></data>
+  <data name="Auth_RuntimeForms" xml:space="preserve"><value>Formularios y cuadrículas en tiempo de ejecución</value></data>
+  <data name="Auth_RoleBasedAccess" xml:space="preserve"><value>Control de acceso basado en roles</value></data>
+  <data name="Auth_CleanArchitecture" xml:space="preserve"><value>Solución Clean Architecture</value></data>
+  <data name="Auth_ShowPassword" xml:space="preserve"><value>Mostrar contraseña</value></data>
+  <data name="Auth_HidePassword" xml:space="preserve"><value>Ocultar contraseña</value></data>
+  <data name="Validation_UsernameRequired" xml:space="preserve"><value>El nombre de usuario es obligatorio</value></data>
+  <data name="Validation_PasswordRequired" xml:space="preserve"><value>La contraseña es obligatoria</value></data>
+  <data name="Culture_LanguageRegion" xml:space="preserve"><value>Idioma y región</value></data>
+  <data name="Culture_Subtitle" xml:space="preserve"><value>Las fechas, números y formatos siguen la cultura y las preferencias de formato seleccionadas.</value></data>
+  <data name="Culture_Custom" xml:space="preserve"><value>Personalizado</value></data>
+  <data name="Culture_SystemDefault" xml:space="preserve"><value>Valor predeterminado del sistema</value></data>
+  <data name="Culture_CultureLabel" xml:space="preserve"><value>Cultura</value></data>
+  <data name="Culture_DateFormat" xml:space="preserve"><value>Formato de fecha</value></data>
+  <data name="Culture_DateTimeFormat" xml:space="preserve"><value>Formato de fecha y hora</value></data>
+  <data name="Culture_SystemDefaultHint" xml:space="preserve"><value>El valor predeterminado del sistema es {0}. Cambiar la cultura recarga la página para actualizar las fechas en todas partes.</value></data>
+  <data name="Culture_UseSystemDefault" xml:space="preserve"><value>Usar valor predeterminado del sistema ({0})</value></data>
+  <data name="Culture_UseSystemDefaultShort" xml:space="preserve"><value>Usar valor predeterminado del sistema</value></data>
+  <data name="Culture_FormatPreview" xml:space="preserve"><value>Vista previa del formato</value></data>
+  <data name="Culture_Date" xml:space="preserve"><value>Fecha</value></data>
+  <data name="Culture_DateTime" xml:space="preserve"><value>Fecha y hora</value></data>
+  <data name="Culture_Number" xml:space="preserve"><value>Número</value></data>
+  <data name="Culture_Reset" xml:space="preserve"><value>Restablecer valores del sistema</value></data>
+  <data name="Culture_ResetHint" xml:space="preserve"><value>Borra sus reemplazos de cultura y formato de fecha. El tema no cambia.</value></data>
+  <data name="Culture_Saving" xml:space="preserve"><value>Guardando</value></data>
+  <data name="Culture_CustomDateFormat" xml:space="preserve"><value>Formato de fecha personalizado.</value></data>
+  <data name="Culture_CustomDateTimeFormat" xml:space="preserve"><value>Formato de fecha y hora personalizado.</value></data>
+  <data name="Prefs_Title" xml:space="preserve"><value>Preferencias</value></data>
+  <data name="Prefs_Lead" xml:space="preserve"><value>Reemplace la configuración regional del sistema para su cuenta. Elija una cultura y formatos de fecha; deje cualquier opción en el valor predeterminado del sistema para seguir la configuración de la organización.</value></data>
+  <data name="Prefs_LivePreview" xml:space="preserve"><value>Vista previa en vivo</value></data>
+  <data name="Prefs_PreviewHint" xml:space="preserve"><value>Los valores de ejemplo reflejan sus selecciones actuales antes de guardar.</value></data>
+  <data name="Prefs_HowOverridesWork" xml:space="preserve"><value>Cómo funcionan los reemplazos</value></data>
+  <data name="Prefs_CultureHelp" xml:space="preserve"><value>La cultura controla la agrupación de números, el calendario y la dirección del texto (RTL).</value></data>
+  <data name="Prefs_DateFormatHelp" xml:space="preserve"><value>El formato de fecha se aplica a las fechas mostradas en cuadrículas, informes y vistas de detalle.</value></data>
+  <data name="Prefs_SystemDefaultHelp" xml:space="preserve"><value>El valor predeterminado del sistema usa los valores definidos por su administrador en Configuración del sistema.</value></data>
+  <data name="Landing_SignIn" xml:space="preserve"><value>Iniciar sesión</value></data>
+  <data name="Landing_SignInDashboard" xml:space="preserve"><value>Iniciar sesión en el panel</value></data>
+  <data name="Landing_ExplorePlatform" xml:space="preserve"><value>Explorar la plataforma</value></data>
+  <data name="Landing_OpenDashboard" xml:space="preserve"><value>Abrir panel</value></data>
+  <data name="Landing_Capabilities" xml:space="preserve"><value>Capacidades</value></data>
+  <data name="Landing_Platform" xml:space="preserve"><value>Plataforma</value></data>
+  <data name="Landing_Architecture" xml:space="preserve"><value>Arquitectura</value></data>
+  <data name="Landing_GetStarted" xml:space="preserve"><value>Comenzar</value></data>
+  <data name="Landing_ToggleNavigation" xml:space="preserve"><value>Alternar navegación</value></data>
+  <data name="Landing_FooterTagline" xml:space="preserve"><value>Framework de administración basado en metadatos para .NET 10 — formularios, cuadrículas, seguridad y localización desde un único modelo de plataforma.</value></data>
+  <data name="Landing_ScreenTypes" xml:space="preserve"><value>Tipos de pantalla</value></data>
+  <data name="Landing_DemoApplication" xml:space="preserve"><value>Aplicación de demostración</value></data>
+  <data name="Landing_FooterBuiltWith" xml:space="preserve"><value>Construido con ASP.NET Core MVC y Entity Framework Core.</value></data>
+  <data name="ConfirmDelete_Title" xml:space="preserve"><value>Confirmar eliminación</value></data>
+  <data name="ConfirmDelete_Message" xml:space="preserve"><value>¿Está seguro de que desea eliminar este elemento?</value></data>
+  <data name="ConfirmDelete_Detail" xml:space="preserve"><value>Esta acción no se puede deshacer.</value></data>
+  <data name="Ui_DeleteThisItem" xml:space="preserve"><value>¿Eliminar este elemento?</value></data>
+  <data name="Ui_SavedSuccessfully" xml:space="preserve"><value>{0} guardado correctamente.</value></data>
+</root>

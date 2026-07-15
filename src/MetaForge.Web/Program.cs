@@ -1,6 +1,7 @@
 using MetaForge.Application.Configuration;
 using MetaForge.Infrastructure;
 using MetaForge.Infrastructure.Persistence.Seed;
+using MetaForge.Web.Localization;
 using MetaForge.Web.Logging;
 using MetaForge.Web.Middleware;
 using Serilog;
@@ -34,7 +35,8 @@ try
         .AddJsonOptions(options =>
         {
             options.JsonSerializerOptions.PropertyNamingPolicy = null;
-        });
+        })
+        .AddMetaForgeLocalization();
 
     if (builder.Environment.IsDevelopment())
         mvcBuilder.AddRazorRuntimeCompilation();

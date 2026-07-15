@@ -9,6 +9,15 @@
     let saving = false;
     let cachedFormatOptions = null;
 
+    function getStrings() {
+        return (window.__METAFORGE_LOCALE__ && window.__METAFORGE_LOCALE__.strings) || {};
+    }
+
+    function t(key, fallback) {
+        const strings = getStrings();
+        return strings[key] || fallback;
+    }
+
     function getEffectiveCulture() {
         if (window.__METAFORGE_LOCALE__ && window.__METAFORGE_LOCALE__.culture) {
             return window.__METAFORGE_LOCALE__.culture;
@@ -121,7 +130,7 @@
         const badge = document.querySelector('.culture-picker-override-badge');
         if (!badge) return;
 
-        badge.textContent = hasOverrides ? 'Custom' : 'System default';
+        badge.textContent = hasOverrides ? t('cultureCustom', 'Custom') : t('cultureSystemDefault', 'System default');
         badge.classList.toggle('culture-picker-override-badge--inherit', !hasOverrides);
 
         const resetBtn = document.getElementById('culturePickerResetBtn');
@@ -172,7 +181,7 @@
         } else {
             const inherit = document.createElement('option');
             inherit.value = '';
-            inherit.textContent = 'Use system default';
+            inherit.textContent = t('cultureUseSystemDefault', 'Use system default');
             select.appendChild(inherit);
         }
 
