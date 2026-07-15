@@ -164,23 +164,38 @@ public class AccountController : Controller
 
     [Authorize]
     [HttpGet]
+    public async Task<IActionResult> Preferences(CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(out var userId))
+            return Challenge();
+
+        var effective = await _preferenceResolver.ResolveAsync(userId, cancellationToken);
+
+        return View(new PreferencesViewModel
+        {
+            Culture = BuildCulturePickerViewModel(effective, showInlinePreview: false)
+        });
+    }
+
+    [Authorize]
+    [HttpGet]
     public async Task<IActionResult> Appearance(CancellationToken cancellationToken)
     {
         if (!TryGetUserId(out var userId))
             return Challenge();
 
         var themeKey = await _userPreferences.GetThemeAsync(userId, cancellationToken);
-        var effective = await _preferenceResolver.ResolveAsync(userId, cancellationToken);
 
         return View(new AppearanceViewModel
         {
             ActiveThemeKey = themeKey,
-            Themes = _userPreferences.GetAvailableThemes(),
-            Culture = BuildCulturePickerViewModel(effective)
+            Themes = _userPreferences.GetAvailableThemes()
         });
     }
 
-    private CulturePickerViewModel BuildCulturePickerViewModel(EffectivePreferencesDto effective) =>
+    private CulturePickerViewModel BuildCulturePickerViewModel(
+        EffectivePreferencesDto effective,
+        bool showInlinePreview = true) =>
         new()
         {
             EffectiveCulture = effective.Culture,
@@ -195,6 +210,7 @@ public class AccountController : Controller
             SystemDefaultDateTimeFormat = effective.System.Localization.DefaultDateTimeFormat,
             DateFormatIsUserOverride = effective.DateFormatIsUserOverride,
             DateTimeFormatIsUserOverride = effective.DateTimeFormatIsUserOverride,
+            ShowInlinePreview = showInlinePreview,
             Preview = LocaleFormatting.BuildPreview(
                 effective.Culture,
                 effective.DateFormat,

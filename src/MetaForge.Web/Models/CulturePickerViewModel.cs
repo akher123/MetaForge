@@ -31,6 +31,8 @@ public sealed class CulturePickerViewModel
 
     public bool DateTimeFormatIsUserOverride { get; init; }
 
+    public bool ShowInlinePreview { get; init; } = true;
+
     public required CulturePreviewDto Preview { get; init; }
 
     public IReadOnlyList<CultureOptionDto> Cultures { get; init; } = [];

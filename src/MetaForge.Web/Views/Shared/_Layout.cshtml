@@ -174,13 +174,23 @@
                                             </div>
                                         </div>
                                         <div class="dropdown-divider app-user-dropdown-divider"></div>
+                                        <a class="app-user-dropdown-link" asp-controller="Account" asp-action="Preferences">
+                                            <span class="app-user-dropdown-link-icon" aria-hidden="true">
+                                                <i class="fa-solid fa-sliders"></i>
+                                            </span>
+                                            <span class="app-user-dropdown-link-text">
+                                                <span class="app-user-dropdown-link-label">Preferences</span>
+                                                <span class="app-user-dropdown-link-hint">Culture &amp; date formats</span>
+                                            </span>
+                                            <i class="fa-solid fa-chevron-right app-user-dropdown-link-chevron" aria-hidden="true"></i>
+                                        </a>
                                         <a class="app-user-dropdown-link" asp-controller="Account" asp-action="Appearance">
                                             <span class="app-user-dropdown-link-icon" aria-hidden="true">
                                                 <i class="fa-solid fa-palette"></i>
                                             </span>
                                             <span class="app-user-dropdown-link-text">
                                                 <span class="app-user-dropdown-link-label">Appearance</span>
-                                                <span class="app-user-dropdown-link-hint">@activeThemeName</span>
+                                                <span class="app-user-dropdown-link-hint">Color theme</span>
                                             </span>
                                             <i class="fa-solid fa-chevron-right app-user-dropdown-link-chevron" aria-hidden="true"></i>
                                         </a>

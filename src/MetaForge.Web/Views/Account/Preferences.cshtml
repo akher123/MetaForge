@@ -1,0 +1,59 @@
+@model MetaForge.Web.Models.PreferencesViewModel
+@{
+    ViewData["Title"] = "Preferences";
+}
+
+<div class="page-header page-header--preferences">
+    <div class="page-header-main">
+        @await Component.InvokeAsync("Breadcrumb", new { currentPage = "Preferences" })
+        <h1 class="page-title">
+            <i class="fa-solid fa-sliders page-title-icon" aria-hidden="true"></i>
+            Preferences
+        </h1>
+        <p class="page-lead">
+            Override system locale settings for your account. Choose a culture and date formats;
+            leave any option on system default to follow organization-wide settings.
+        </p>
+    </div>
+</div>
+
+<div class="preferences-page">
+    <div class="preferences-page-primary">
+        @await Html.PartialAsync("_CulturePicker", Model.Culture)
+    </div>
+
+    <aside class="preferences-page-preview" aria-label="Format preview">
+        <h2 class="preferences-preview-title">
+            <i class="fa-solid fa-eye" aria-hidden="true"></i>
+            Live preview
+        </h2>
+        <p class="preferences-preview-hint">
+            Sample values below reflect your current selections before saving.
+        </p>
+        <div class="culture-preview culture-preview--settings">
+            <h3 class="culture-preview-title">Format preview</h3>
+            <dl class="culture-preview-list">
+                <div class="culture-preview-item">
+                    <dt>Date</dt>
+                    <dd id="preferencesPreviewDate">@Model.Culture.Preview.ShortDate</dd>
+                </div>
+                <div class="culture-preview-item">
+                    <dt>Date &amp; time</dt>
+                    <dd id="preferencesPreviewDateTime">@Model.Culture.Preview.ShortDateTime</dd>
+                </div>
+                <div class="culture-preview-item">
+                    <dt>Number</dt>
+                    <dd id="preferencesPreviewNumber">@Model.Culture.Preview.SampleNumber</dd>
+                </div>
+            </dl>
+        </div>
+        <div class="preferences-page-help">
+            <h3 class="preferences-page-help-title">How overrides work</h3>
+            <ul class="preferences-page-help-list">
+                <li><strong>Culture</strong> controls number grouping, calendar, and text direction (RTL).</li>
+                <li><strong>Date format</strong> applies to dates shown in grids, reports, and detail views.</li>
+                <li><strong>System default</strong> uses values set by your administrator under System Settings.</li>
+            </ul>
+        </div>
+    </aside>
+</div>

@@ -10,14 +10,12 @@
             <i class="fa-solid fa-palette page-title-icon" aria-hidden="true"></i>
             Appearance
         </h1>
-        <p class="page-lead">Customize how MetaForge looks and how dates and numbers are formatted for your account.</p>
+        <p class="page-lead">Customize the color theme for your account. For culture and date formats, use <a asp-controller="Account" asp-action="Preferences">Preferences</a>.</p>
     </div>
 </div>
 
 <div class="appearance-page">
     <div class="appearance-page-primary">
-        @await Html.PartialAsync("_CulturePicker", Model.Culture)
-
         @await Html.PartialAsync("_ThemePicker", new ThemePickerViewModel
         {
             ActiveThemeKey = Model.ActiveThemeKey,

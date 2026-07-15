@@ -1042,6 +1042,7 @@ public static class DatabaseSeeder
             var menuSync = scope.ServiceProvider.GetRequiredService<IMenuSyncService>();
             await menuSync.EnsureDefaultMenusAsync();
             await menuSync.EnsureSystemAdminMenusAsync();
+            await menuSync.EnsureAccountMenusAsync();
             logger.LogInformation("Navigation menus ensured.");
         }
         catch (Exception ex)

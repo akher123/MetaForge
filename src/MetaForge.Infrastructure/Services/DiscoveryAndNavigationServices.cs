@@ -316,6 +316,8 @@ public class NavigationService : INavigationService
             return await _authorizationService.HasPermissionCodeAsync(user, Shared.Constants.ConfigPermissions.Manage, cancellationToken);
         if (url.Contains("Security", StringComparison.OrdinalIgnoreCase))
             return await CanViewSecurityAsync(user, cancellationToken);
+        if (url.Contains("/Account/", StringComparison.OrdinalIgnoreCase))
+            return user.Identity?.IsAuthenticated == true;
 
         return true;
     }
@@ -562,6 +564,9 @@ public class NavigationService : INavigationService
             return FinalizeTrail(trail, currentPage, "/Menu");
         }
 
+        if (targetPath.StartsWith("/account/", StringComparison.OrdinalIgnoreCase))
+            return FinalizeTrail(BuildAccountFallback(trail, targetPath, currentPage), currentPage, targetPath);
+
         return FinalizeTrail(trail, currentPage, targetPath);
     }
 
@@ -575,6 +580,37 @@ public class NavigationService : INavigationService
 
         trail.Add(new NavigationBreadcrumbDto { Text = "Security", Url = "/Security" });
         AppendPathSegments(trail, "/Security", targetPath["/security/".Length..], null);
+        return trail;
+    }
+
+    private static List<NavigationBreadcrumbDto> BuildAccountFallback(
+        List<NavigationBreadcrumbDto> trail,
+        string targetPath,
+        string? currentPage)
+    {
+        trail.Add(new NavigationBreadcrumbDto { Text = "Account", Url = "/Account/Preferences" });
+
+        if (targetPath.StartsWith("/account/preferences", StringComparison.OrdinalIgnoreCase))
+        {
+            trail.Add(new NavigationBreadcrumbDto
+            {
+                Text = currentPage ?? "Preferences",
+                IsCurrent = string.IsNullOrWhiteSpace(currentPage)
+            });
+            return trail;
+        }
+
+        if (targetPath.StartsWith("/account/appearance", StringComparison.OrdinalIgnoreCase))
+        {
+            trail.Add(new NavigationBreadcrumbDto
+            {
+                Text = currentPage ?? "Appearance",
+                IsCurrent = string.IsNullOrWhiteSpace(currentPage)
+            });
+            return trail;
+        }
+
+        AppendPathSegments(trail, "/Account", targetPath["/account/".Length..], currentPage);
         return trail;
     }
 

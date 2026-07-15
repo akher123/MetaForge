@@ -4,8 +4,7 @@
 (function () {
     const cultureApiUrl = '/api/metaforge/preferences/culture';
     const dateFormatsApiUrl = '/api/metaforge/preferences/date-formats';
-    const dateFormatApiUrl = '/api/metaforge/preferences/date-formats';
-    const sampleDate = new Date(2026, 6, 15, 14, 30, 0);
+    const dateFormatApiUrl = '/api/metaforge/preferences/date-formats';    const sampleDate = new Date(2026, 6, 15, 14, 30, 0);
     const sampleNumber = 1234567.89;
     let saving = false;
     let cachedFormatOptions = null;
@@ -99,15 +98,41 @@
     }
 
     function updatePreview(culture) {
-        const dateEl = document.getElementById('culturePreviewDate');
-        const dateTimeEl = document.getElementById('culturePreviewDateTime');
-        const numberEl = document.getElementById('culturePreviewNumber');
-        if (!dateEl || !dateTimeEl || !numberEl) return;
-
         const resolved = resolveCultureForFormatting(culture);
-        dateEl.textContent = formatLocaleDate(sampleDate, resolved, getPreviewDateFormat());
-        dateTimeEl.textContent = formatLocaleDateTime(sampleDate, resolved, getPreviewDateTimeFormat());
-        numberEl.textContent = formatLocaleNumber(sampleNumber, resolved);
+        const dateText = formatLocaleDate(sampleDate, resolved, getPreviewDateFormat());
+        const dateTimeText = formatLocaleDateTime(sampleDate, resolved, getPreviewDateTimeFormat());
+        const numberText = formatLocaleNumber(sampleNumber, resolved);
+
+        ['culturePreviewDate', 'preferencesPreviewDate'].forEach(function (id) {
+            const el = document.getElementById(id);
+            if (el) el.textContent = dateText;
+        });
+        ['culturePreviewDateTime', 'preferencesPreviewDateTime'].forEach(function (id) {
+            const el = document.getElementById(id);
+            if (el) el.textContent = dateTimeText;
+        });
+        ['culturePreviewNumber', 'preferencesPreviewNumber'].forEach(function (id) {
+            const el = document.getElementById(id);
+            if (el) el.textContent = numberText;
+        });
+    }
+
+    function updateOverrideBadge(hasOverrides) {
+        const badge = document.querySelector('.culture-picker-override-badge');
+        if (!badge) return;
+
+        badge.textContent = hasOverrides ? 'Custom' : 'System default';
+        badge.classList.toggle('culture-picker-override-badge--inherit', !hasOverrides);
+
+        const resetBtn = document.getElementById('culturePickerResetBtn');
+        if (resetBtn) resetBtn.disabled = !hasOverrides;
+    }
+
+    function hasEffectiveOverrides(effective) {
+        if (!effective) return false;
+        return !!(effective.cultureIsUserOverride
+            || effective.dateFormatIsUserOverride
+            || effective.dateTimeFormatIsUserOverride);
     }
 
     function setSavingState(isSaving) {
@@ -119,6 +144,22 @@
             const el = document.getElementById(id);
             if (el) el.disabled = isSaving;
         });
+
+        const resetBtn = document.getElementById('culturePickerResetBtn');
+        if (resetBtn && !resetBtn.disabled) {
+            resetBtn.disabled = isSaving;
+            resetBtn.dataset.wasEnabled = '1';
+        } else if (resetBtn) {
+            resetBtn.dataset.wasEnabled = '0';
+        }
+    }
+
+    function restoreResetButtonState() {
+        const resetBtn = document.getElementById('culturePickerResetBtn');
+        if (resetBtn && resetBtn.dataset.wasEnabled === '1') {
+            resetBtn.disabled = false;
+            delete resetBtn.dataset.wasEnabled;
+        }
     }
 
     function populateFormatSelect(select, options, preferredKey) {
@@ -200,6 +241,7 @@
             return res.json();
         }).finally(function () {
             setSavingState(false);
+            restoreResetButtonState();
         });
     }
 
@@ -225,6 +267,35 @@
             return res.json();
         }).finally(function () {
             setSavingState(false);
+            restoreResetButtonState();
+        });
+    }
+
+    function resetLocaleOverrides() {
+        if (!window.__METAFORGE_LOCALE__ || !window.__METAFORGE_LOCALE__.authenticated) {
+            return Promise.resolve();
+        }
+
+        setSavingState(true);
+        return fetch(cultureApiUrl, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
+            body: JSON.stringify({ culture: null })
+        }).then(function (res) {
+            if (!res.ok) throw new Error('Failed to reset culture');
+            return fetch(dateFormatApiUrl, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({ dateFormat: null, dateTimeFormat: null })
+            });
+        }).then(function (res) {
+            if (!res.ok) throw new Error('Failed to reset date formats');
+            return res.json();
+        }).finally(function () {
+            setSavingState(false);
+            restoreResetButtonState();
         });
     }
 
@@ -265,11 +336,24 @@
         if (saving) return;
         updatePreview((document.getElementById('culturePickerSelect')?.value || '').trim() || null);
         persistDateFormats()
-            .then(function () {
+            .then(function (effective) {
+                updateOverrideBadge(hasEffectiveOverrides(effective));
                 notifySuccess('Date format updated. Reloading…');
                 reloadSoon();
             })
             .catch(function () { notifyError('Could not save date format preference.'); });
+    }
+
+    function onResetLocale() {
+        if (saving) return;
+        if (!window.confirm('Reset culture and date formats to system defaults?')) return;
+
+        resetLocaleOverrides()
+            .then(function () {
+                notifySuccess('Preferences reset. Reloading…');
+                reloadSoon();
+            })
+            .catch(function () { notifyError('Could not reset preferences.'); });
     }
 
     function bindCulturePicker() {
@@ -296,6 +380,11 @@
         }
         if (dateTimeFormatSelect) {
             dateTimeFormatSelect.addEventListener('change', onDateFormatChange);
+        }
+
+        const resetBtn = document.getElementById('culturePickerResetBtn');
+        if (resetBtn) {
+            resetBtn.addEventListener('click', onResetLocale);
         }
 
         loadDateFormatOptions(resolveCultureForFormatting((select.value || '').trim() || null));

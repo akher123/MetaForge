@@ -12,4 +12,6 @@ public interface IMenuSyncService
     Task EnsureDefaultMenusAsync(CancellationToken cancellationToken = default);
 
     Task EnsureSystemAdminMenusAsync(CancellationToken cancellationToken = default);
+
+    Task EnsureAccountMenusAsync(CancellationToken cancellationToken = default);
 }

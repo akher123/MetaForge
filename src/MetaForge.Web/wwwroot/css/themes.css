@@ -876,10 +876,108 @@ html[data-theme="graphite-light"] {
 
 /* Culture / locale picker */
 .culture-picker {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.culture-picker--standalone {
+  margin-bottom: 0;
+}
+
+.culture-picker-actions {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--dv-border);
+}
+
+.culture-picker-actions-hint {
+  margin: 0.45rem 0 0;
+  font-size: 0.75rem;
+  color: var(--dv-text-muted);
+}
+
+/* Preferences page */
+.page-header--preferences {
+  margin-bottom: 1.25rem;
+}
+
+.preferences-page {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(16rem, 1fr);
+  gap: 1.25rem;
+  align-items: start;
+}
+
+@media (max-width: 991.98px) {
+  .preferences-page {
+    grid-template-columns: 1fr;
+  }
+}
+
+.preferences-page-primary {
+  background: var(--dv-surface);
+  border: 1px solid var(--dv-border);
+  border-radius: var(--bs-border-radius-lg);
+  padding: 1.25rem;
+  box-shadow: var(--dv-shadow-sm);
+}
+
+.preferences-page-preview {
+  background: var(--dv-surface);
+  border: 1px solid var(--dv-border);
+  border-radius: var(--bs-border-radius-lg);
+  padding: 1rem 1.15rem;
+  box-shadow: var(--dv-shadow-sm);
+  position: sticky;
+  top: 4.5rem;
+}
+
+.preferences-preview-title {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  margin: 0 0 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--dv-text);
+}
+
+.preferences-preview-hint {
+  font-size: 0.75rem;
+  color: var(--dv-text-muted);
+  margin: 0 0 0.85rem;
+}
+
+.preferences-page-help {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--dv-border);
+}
+
+.preferences-page-help-title {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem;
+  color: var(--dv-text);
+}
+
+.preferences-page-help-list {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 0.75rem;
+  color: var(--dv-text-muted);
+  display: grid;
+  gap: 0.35rem;
+}
+
+.appearance-page-primary .culture-picker {
   margin-bottom: 1.5rem;
   padding-bottom: 1.5rem;
   border-bottom: 1px solid var(--dv-border);
 }
+
+/* Culture / locale picker (shared) */
 
 .culture-picker-header {
   display: flex;

@@ -285,6 +285,7 @@ public class MenuSyncService : IMenuSyncService
         await EnsureUrlMenuAsync(systemFolder.Id, "System Settings", "/SystemSettings", "fa-sliders", 3, cancellationToken);
         await EnsureUrlMenuAsync(systemFolder.Id, "Menu Management", "/Menu", "fa-sitemap", 4, cancellationToken);
         await EnsureUrlMenuAsync(systemFolder.Id, "Security", "/Security", "fa-shield-halved", 5, cancellationToken);
+        await EnsureAccountMenusInternalAsync(cancellationToken);
     }
 
     public async Task EnsureSystemAdminMenusAsync(CancellationToken cancellationToken = default)
@@ -296,6 +297,35 @@ public class MenuSyncService : IMenuSyncService
         await EnsureUrlMenuAsync(systemFolder.Id, "System Settings", "/SystemSettings", "fa-sliders", 3, cancellationToken);
         await EnsureUrlMenuAsync(systemFolder.Id, "Menu Management", "/Menu", "fa-sitemap", 4, cancellationToken);
         await EnsureUrlMenuAsync(systemFolder.Id, "Security", "/Security", "fa-shield-halved", 5, cancellationToken);
+    }
+
+    public async Task EnsureAccountMenusAsync(CancellationToken cancellationToken = default) =>
+        await EnsureAccountMenusInternalAsync(cancellationToken);
+
+    private async Task EnsureAccountMenusInternalAsync(CancellationToken cancellationToken)
+    {
+        var accountFolder = await EnsureAccountFolderAsync(cancellationToken);
+        await EnsureUrlMenuAsync(accountFolder.Id, "Preferences", "/Account/Preferences", "fa-sliders", 0, cancellationToken);
+        await EnsureUrlMenuAsync(accountFolder.Id, "Appearance", "/Account/Appearance", "fa-palette", 1, cancellationToken);
+    }
+
+    private async Task<ForgeMenu> EnsureAccountFolderAsync(CancellationToken cancellationToken)
+    {
+        var existing = await _unitOfWork.Menus.FindFolderByNameAsync("Account", null, cancellationToken);
+        if (existing != null)
+            return existing;
+
+        var folder = new ForgeMenu
+        {
+            Name = "Account",
+            ItemType = MenuItemType.Folder,
+            Icon = "fa-user-gear",
+            DisplayOrder = 99,
+            IsActive = true
+        };
+        await _unitOfWork.Menus.AddAsync(folder, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        return folder;
     }
 
     private async Task<bool> IsDetailOnlyFormAsync(ForgeForm form, CancellationToken cancellationToken)

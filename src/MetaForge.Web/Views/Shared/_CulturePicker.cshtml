@@ -5,6 +5,7 @@
     var selectedCulture = Model.UserCultureOverride ?? inheritValue;
     var selectedDateFormat = Model.UserDateFormatOverride ?? inheritValue;
     var selectedDateTimeFormat = Model.UserDateTimeFormatOverride ?? inheritValue;
+    var hasOverrides = Model.CultureIsUserOverride || Model.DateFormatIsUserOverride || Model.DateTimeFormatIsUserOverride;
 }
 <div class="culture-picker" data-culture-picker>
     <div class="culture-picker-header">
@@ -89,7 +90,7 @@
         }
     </div>
 
-    <div class="culture-preview" id="culturePreviewPanel" aria-live="polite">
+    <div class="culture-preview" id="culturePreviewPanel" aria-live="polite" @(Model.ShowInlinePreview ? null : "hidden")>
         <h3 class="culture-preview-title">Format preview</h3>
         <dl class="culture-preview-list">
             <div class="culture-preview-item">
@@ -105,5 +106,18 @@
                 <dd id="culturePreviewNumber">@Model.Preview.SampleNumber</dd>
             </div>
         </dl>
+    </div>
+
+    <div class="culture-picker-actions">
+        <button type="button"
+                class="btn btn-outline-secondary btn-sm"
+                id="culturePickerResetBtn"
+                @(!hasOverrides ? "disabled" : null)>
+            <i class="fa-solid fa-rotate-left" aria-hidden="true"></i>
+            Reset to system defaults
+        </button>
+        <p class="culture-picker-actions-hint">
+            Clears your culture and date format overrides. Theme is unchanged.
+        </p>
     </div>
 </div>
