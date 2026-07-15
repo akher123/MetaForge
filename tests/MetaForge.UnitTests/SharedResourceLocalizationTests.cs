@@ -14,6 +14,7 @@ public class SharedResourceLocalizationTests
     [InlineData("ar-SA", "تسجيل الدخول")]
     [InlineData("de-DE", "Anmelden")]
     [InlineData("es-ES", "Iniciar sesión")]
+    [InlineData("bn-BD", "সাইন ইন")]
     public void SharedResource_resolves_ui_strings_for_supported_cultures(string cultureName, string expectedSignIn)
     {
         var resourceManager = new ResourceManager(

@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Common_Close" xml:space="preserve"><value>বন্ধ করুন</value></data>
+  <data name="Common_Yes" xml:space="preserve"><value>হ্যাঁ</value></data>
+  <data name="Common_No" xml:space="preserve"><value>না</value></data>
+  <data name="Common_SkipToMainContent" xml:space="preserve"><value>মূল বিষয়বস্তুতে যান</value></data>
+  <data name="Common_SignedIn" xml:space="preserve"><value>সাইন ইন করা আছে</value></data>
+  <data name="Common_Record" xml:space="preserve"><value>রেকর্ড</value></data>
+  <data name="Nav_Preferences" xml:space="preserve"><value>পছন্দসমূহ</value></data>
+  <data name="Nav_PreferencesHint" xml:space="preserve"><value>সংস্কৃতি ও তারিখের ফরম্যাট</value></data>
+  <data name="Nav_Appearance" xml:space="preserve"><value>চেহারা</value></data>
+  <data name="Nav_AppearanceHint" xml:space="preserve"><value>রঙের থিম</value></data>
+  <data name="Nav_SignOut" xml:space="preserve"><value>সাইন আউট</value></data>
+  <data name="Nav_SignOutHint" xml:space="preserve"><value>আপনার সেশন শেষ করুন</value></data>
+  <data name="Nav_ChangeTheme" xml:space="preserve"><value>রঙের থিম পরিবর্তন করুন, বর্তমান: {0}</value></data>
+  <data name="Nav_AppearanceTitle" xml:space="preserve"><value>চেহারা: {0}</value></data>
+  <data name="Nav_AccountMenu" xml:space="preserve"><value>{0}-এর অ্যাকাউন্ট মেনু</value></data>
+  <data name="Nav_CollapseSidebar" xml:space="preserve"><value>সাইডবার মেনু সংকুচিত করুন</value></data>
+  <data name="Nav_OpenNavigation" xml:space="preserve"><value>নেভিগেশন মেনু খুলুন</value></data>
+  <data name="Nav_PageLoading" xml:space="preserve"><value>পৃষ্ঠা লোড হচ্ছে</value></data>
+  <data name="Footer_Copyright" xml:space="preserve"><value>© ২০২৬ MetaForge — MetaForge অ্যাডমিন প্ল্যাটফর্ম (.NET 10)</value></data>
+  <data name="Footer_CopyrightShort" xml:space="preserve"><value>© ২০২৬ MetaForge</value></data>
+  <data name="Auth_SignIn" xml:space="preserve"><value>সাইন ইন</value></data>
+  <data name="Auth_SignInTitle" xml:space="preserve"><value>সাইন ইন</value></data>
+  <data name="Auth_SignInSubtitle" xml:space="preserve"><value>ড্যাশবোর্ডে প্রবেশ করতে আপনার তথ্য দিন</value></data>
+  <data name="Auth_Username" xml:space="preserve"><value>ব্যবহারকারীর নাম</value></data>
+  <data name="Auth_Password" xml:space="preserve"><value>পাসওয়ার্ড</value></data>
+  <data name="Auth_UsernamePlaceholder" xml:space="preserve"><value>যেমন: admin</value></data>
+  <data name="Auth_PasswordPlaceholder" xml:space="preserve"><value>আপনার পাসওয়ার্ড লিখুন</value></data>
+  <data name="Auth_RememberMe" xml:space="preserve"><value>আমাকে সাইন ইন রাখুন</value></data>
+  <data name="Auth_ForgotPassword" xml:space="preserve"><value>পাসওয়ার্ড ভুলে গেছেন?</value></data>
+  <data name="Auth_BackToHome" xml:space="preserve"><value>হোমে ফিরে যান</value></data>
+  <data name="Auth_DemoCredentials" xml:space="preserve"><value>ডেমো লগইন তথ্য</value></data>
+  <data name="Auth_DemoCredentialsDetail" xml:space="preserve"><value>ব্যবহারকারীর নাম {0} · পাসওয়ার্ড {1}</value></data>
+  <data name="Auth_SecuredFooter" xml:space="preserve"><value>কুকি অথেন্টিকেশন ও ফর্ম-স্তরের RBAC দ্বারা সুরক্ষিত</value></data>
+  <data name="Auth_BrandHeadline" xml:space="preserve"><value>.NET-এর জন্য মেটাডেটা-চালিত অ্যাডমিন</value></data>
+  <data name="Auth_BrandLead" xml:space="preserve"><value>আপনার EF Core ডোমেইন মডেল দ্বারা চালিত মডিউল, নিরাপত্তা ও ডাইনামিক CRUD স্ক্রিন পরিচালনা করতে সাইন ইন করুন।</value></data>
+  <data name="Auth_RuntimeForms" xml:space="preserve"><value>রানটাইম ফর্ম ও গ্রিড</value></data>
+  <data name="Auth_RoleBasedAccess" xml:space="preserve"><value>ভূমিকা-ভিত্তিক অ্যাক্সেস নিয়ন্ত্রণ</value></data>
+  <data name="Auth_CleanArchitecture" xml:space="preserve"><value>ক্লিন আর্কিটেকচার সমাধান</value></data>
+  <data name="Auth_ShowPassword" xml:space="preserve"><value>পাসওয়ার্ড দেখান</value></data>
+  <data name="Auth_HidePassword" xml:space="preserve"><value>পাসওয়ার্ড লুকান</value></data>
+  <data name="Validation_UsernameRequired" xml:space="preserve"><value>ব্যবহারকারীর নাম আবশ্যক</value></data>
+  <data name="Validation_PasswordRequired" xml:space="preserve"><value>পাসওয়ার্ড আবশ্যক</value></data>
+  <data name="Culture_LanguageRegion" xml:space="preserve"><value>ভাষা ও অঞ্চল</value></data>
+  <data name="Culture_Subtitle" xml:space="preserve"><value>তারিখ, সংখ্যা ও ফরম্যাট আপনার নির্বাচিত সংস্কৃতি ও ফরম্যাট পছন্দ অনুসরণ করে।</value></data>
+  <data name="Culture_Custom" xml:space="preserve"><value>কাস্টম</value></data>
+  <data name="Culture_SystemDefault" xml:space="preserve"><value>সিস্টেম ডিফল্ট</value></data>
+  <data name="Culture_CultureLabel" xml:space="preserve"><value>সংস্কৃতি</value></data>
+  <data name="Culture_DateFormat" xml:space="preserve"><value>তারিখের ফরম্যাট</value></data>
+  <data name="Culture_DateTimeFormat" xml:space="preserve"><value>তারিখ ও সময়ের ফরম্যাট</value></data>
+  <data name="Culture_SystemDefaultHint" xml:space="preserve"><value>সিস্টেম ডিফল্ট হলো {0}। সংস্কৃতি পরিবর্তন করলে পৃষ্ঠা পুনরায় লোড হয় যাতে সব জায়গায় তারিখ আপডেট হয়।</value></data>
+  <data name="Culture_UseSystemDefault" xml:space="preserve"><value>সিস্টেম ডিফল্ট ব্যবহার করুন ({0})</value></data>
+  <data name="Culture_UseSystemDefaultShort" xml:space="preserve"><value>সিস্টেম ডিফল্ট ব্যবহার করুন</value></data>
+  <data name="Culture_FormatPreview" xml:space="preserve"><value>ফরম্যাট প্রিভিউ</value></data>
+  <data name="Culture_Date" xml:space="preserve"><value>তারিখ</value></data>
+  <data name="Culture_DateTime" xml:space="preserve"><value>তারিখ ও সময়</value></data>
+  <data name="Culture_Number" xml:space="preserve"><value>সংখ্যা</value></data>
+  <data name="Culture_Reset" xml:space="preserve"><value>সিস্টেম ডিফল্টে রিসেট করুন</value></data>
+  <data name="Culture_ResetHint" xml:space="preserve"><value>আপনার সংস্কৃতি ও তারিখ ফরম্যাট ওভাররাইড মুছে দেয়। থিম অপরিবর্তিত থাকে।</value></data>
+  <data name="Culture_Saving" xml:space="preserve"><value>সংরক্ষণ হচ্ছে</value></data>
+  <data name="Culture_CustomDateFormat" xml:space="preserve"><value>কাস্টম তারিখ ফরম্যাট ওভাররাইড।</value></data>
+  <data name="Culture_CustomDateTimeFormat" xml:space="preserve"><value>কাস্টম তারিখ-সময় ফরম্যাট ওভাররাইড।</value></data>
+  <data name="Prefs_Title" xml:space="preserve"><value>পছন্দসমূহ</value></data>
+  <data name="Prefs_Lead" xml:space="preserve"><value>আপনার অ্যাকাউন্টের জন্য সিস্টেম লোকেল সেটিংস ওভাররাইড করুন। সংস্কৃতি ও তারিখ ফরম্যাট বেছে নিন; সংস্থার সেটিংস অনুসরণ করতে যেকোনো বিকল্প সিস্টেম ডিফল্টে রাখুন।</value></data>
+  <data name="Prefs_LivePreview" xml:space="preserve"><value>লাইভ প্রিভিউ</value></data>
+  <data name="Prefs_PreviewHint" xml:space="preserve"><value>নিচের নমুনা মানগুলো সংরক্ষণের আগে আপনার বর্তমান নির্বাচন প্রতিফলিত করে।</value></data>
+  <data name="Prefs_HowOverridesWork" xml:space="preserve"><value>ওভাররাইড কীভাবে কাজ করে</value></data>
+  <data name="Prefs_CultureHelp" xml:space="preserve"><value>সংস্কৃতি সংখ্যার গ্রুপিং, ক্যালেন্ডার ও টেক্সট দিক (RTL) নিয়ন্ত্রণ করে।</value></data>
+  <data name="Prefs_DateFormatHelp" xml:space="preserve"><value>তারিখ ফরম্যাট গ্রিড, রিপোর্ট ও বিস্তারিত ভিউতে দেখানো তারিখে প্রযোজ্য হয়।</value></data>
+  <data name="Prefs_SystemDefaultHelp" xml:space="preserve"><value>সিস্টেম ডিফল্ট সিস্টেম সেটিংসে আপনার প্রশাসক যে মান নির্ধারণ করেছেন তা ব্যবহার করে।</value></data>
+  <data name="Landing_SignIn" xml:space="preserve"><value>সাইন ইন</value></data>
+  <data name="Landing_SignInDashboard" xml:space="preserve"><value>ড্যাশবোর্ডে সাইন ইন করুন</value></data>
+  <data name="Landing_ExplorePlatform" xml:space="preserve"><value>প্ল্যাটফর্ম অন্বেষণ করুন</value></data>
+  <data name="Landing_OpenDashboard" xml:space="preserve"><value>ড্যাশবোর্ড খুলুন</value></data>
+  <data name="Landing_Capabilities" xml:space="preserve"><value>সক্ষমতা</value></data>
+  <data name="Landing_Platform" xml:space="preserve"><value>প্ল্যাটফর্ম</value></data>
+  <data name="Landing_Architecture" xml:space="preserve"><value>আর্কিটেকচার</value></data>
+  <data name="Landing_GetStarted" xml:space="preserve"><value>শুরু করুন</value></data>
+  <data name="Landing_ToggleNavigation" xml:space="preserve"><value>নেভিগেশন টগল করুন</value></data>
+  <data name="Landing_FooterTagline" xml:space="preserve"><value>.NET 10-এর জন্য মেটাডেটা-চালিত অ্যাডমিন ফ্রেমওয়ার্ক — একটি প্ল্যাটফর্ম মডেল থেকে ফর্ম, গ্রিড, নিরাপত্তা ও লোকালাইজেশন।</value></data>
+  <data name="Landing_ScreenTypes" xml:space="preserve"><value>স্ক্রিনের ধরন</value></data>
+  <data name="Landing_DemoApplication" xml:space="preserve"><value>ডেমো অ্যাপ্লিকেশন</value></data>
+  <data name="Landing_FooterBuiltWith" xml:space="preserve"><value>ASP.NET Core MVC ও Entity Framework Core দিয়ে তৈরি।</value></data>
+  <data name="ConfirmDelete_Title" xml:space="preserve"><value>মুছে ফেলা নিশ্চিত করুন</value></data>
+  <data name="ConfirmDelete_Message" xml:space="preserve"><value>আপনি কি নিশ্চিত যে এই আইটেমটি মুছে ফেলতে চান?</value></data>
+  <data name="ConfirmDelete_Detail" xml:space="preserve"><value>এই কাজটি পূর্বাবস্থায় ফেরানো যাবে না।</value></data>
+  <data name="Ui_DeleteThisItem" xml:space="preserve"><value>এই আইটেমটি মুছে ফেলবেন?</value></data>
+  <data name="Ui_SavedSuccessfully" xml:space="preserve"><value>{0} সফলভাবে সংরক্ষিত হয়েছে।</value></data>
+</root>
