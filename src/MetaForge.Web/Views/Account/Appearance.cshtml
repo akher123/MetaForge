@@ -10,12 +10,14 @@
             <i class="fa-solid fa-palette page-title-icon" aria-hidden="true"></i>
             Appearance
         </h1>
-        <p class="page-lead">Customize the look and feel of your MetaForge workspace.</p>
+        <p class="page-lead">Customize how MetaForge looks and how dates and numbers are formatted for your account.</p>
     </div>
 </div>
 
 <div class="appearance-page">
     <div class="appearance-page-primary">
+        @await Html.PartialAsync("_CulturePicker", Model.Culture)
+
         @await Html.PartialAsync("_ThemePicker", new ThemePickerViewModel
         {
             ActiveThemeKey = Model.ActiveThemeKey,

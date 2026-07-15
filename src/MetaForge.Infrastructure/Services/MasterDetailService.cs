@@ -338,7 +338,7 @@ public class MasterDetailService : IMasterDetailService
             LookupEntity = f.LookupEntity,
             LookupParentField = f.LookupParentField,
             LookupFilterField = f.LookupFilterField,
-            DisplayFormat = GridDisplayFormats.GetDefaultForControlType(f.ControlType)
+            DisplayFormat = GridDisplayFormats.ResolveGridColumnDisplayFormat(f.ControlType)
         }).ToList();
 
         return detailGrid;

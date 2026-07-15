@@ -3,28 +3,36 @@
     var variant = Model.Variant ?? "panel";
     var isPage = variant == "page";
     var isCompact = variant == "compact";
+    var isSystem = string.Equals(Model.Mode, "system", StringComparison.OrdinalIgnoreCase);
 }
 <div class="theme-picker theme-picker--@variant" data-theme-picker-variant="@variant">
-    @if (!isCompact)
+    @if (Model.ShowHeader && !isCompact)
     {
         <div class="theme-picker-header">
             <div class="theme-picker-header-text">
                 <h2 class="theme-picker-title">
                     <i class="fa-solid fa-palette" aria-hidden="true"></i>
-                    Color theme
+                    @(isSystem ? "Default theme" : "Color theme")
                 </h2>
                 @if (isPage)
                 {
                     <p class="theme-picker-subtitle">
-                        Choose how MetaForge looks for your account. Your selection is saved automatically.
+                        @if (isSystem)
+                        {
+                            <text>System-wide default for users who have not chosen a personal theme. Save with the button below.</text>
+                        }
+                        else
+                        {
+                            <text>Choose how MetaForge looks for your account. Your selection is saved automatically.</text>
+                        }
                     </p>
                 }
                 else
                 {
-                    <p class="theme-picker-subtitle">Saved to your profile</p>
+                    <p class="theme-picker-subtitle">@(isSystem ? "Applies when users inherit system appearance" : "Saved to your profile")</p>
                 }
             </div>
-            <span class="theme-picker-status" id="themePickerStatus" aria-live="polite" hidden>
+            <span class="theme-picker-status" id="themePickerStatus@(isSystem ? "System" : "")" aria-live="polite" hidden>
                 <i class="fa-solid fa-circle-notch fa-spin" aria-hidden="true"></i>
                 <span>Saving</span>
             </span>
@@ -34,7 +42,8 @@
     <div class="theme-picker-grid@(isCompact ? " theme-picker-grid--compact" : "")"
          id="@Model.GridId"
          role="listbox"
-         aria-label="Available color themes">
+         aria-label="@(isSystem ? "System default color themes" : "Available color themes")"
+         data-theme-mode="@(isSystem ? "system" : "user")">
         @foreach (var theme in Model.Themes)
         {
             var isActive = string.Equals(theme.Key, Model.ActiveThemeKey, StringComparison.OrdinalIgnoreCase);
@@ -45,7 +54,8 @@
                     data-theme-key="@theme.Key"
                     data-theme-dark="@(theme.IsDark ? "true" : "false")"
                     data-theme-name="@theme.DisplayName"
-                    title="@theme.Description">
+                    title="@theme.Description"
+                    @(Model.Disabled ? "disabled" : null)>
                 @if (!isCompact)
                 {
                     <span class="theme-card-preview" aria-hidden="true"

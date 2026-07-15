@@ -607,15 +607,20 @@ public class FormConfigurationService : IFormConfigurationService
             module.Fields.Add(field);
         }
 
-        foreach (var column in config.GridColumns.Select((c, i) => new ForgeGridColumn
+        foreach (var column in config.GridColumns.Select((c, i) =>
         {
-            PropertyName = c.PropertyName.Trim(),
-            Label = c.Label.Trim(),
-            DisplayOrder = c.DisplayOrder >= 0 ? c.DisplayOrder : i,
-            IsSortable = c.IsSortable,
-            IsSearchable = c.IsSearchable,
-            IsVisible = c.IsVisible,
-            DisplayFormat = string.IsNullOrWhiteSpace(c.DisplayFormat) ? null : c.DisplayFormat.Trim()
+            var field = config.Fields.FirstOrDefault(f =>
+                string.Equals(f.PropertyName, c.PropertyName, StringComparison.OrdinalIgnoreCase));
+            return new ForgeGridColumn
+            {
+                PropertyName = c.PropertyName.Trim(),
+                Label = c.Label.Trim(),
+                DisplayOrder = c.DisplayOrder >= 0 ? c.DisplayOrder : i,
+                IsSortable = c.IsSortable,
+                IsSearchable = c.IsSearchable,
+                IsVisible = c.IsVisible,
+                DisplayFormat = null
+            };
         }))
         {
             module.GridColumns.Add(column);
@@ -947,8 +952,7 @@ public class FormConfigurationService : IFormConfigurationService
                 DisplayOrder = i,
                 IsSortable = false,
                 IsSearchable = false,
-                IsVisible = true,
-                DisplayFormat = GridDisplayFormats.GetDefaultForControlType(f.ControlType)
+                IsVisible = true
             })
             .ToList();
     }
@@ -984,16 +988,21 @@ public class FormConfigurationService : IFormConfigurationService
             MappingRelatedKey = f.MappingRelatedKey,
             SectionName = f.SectionName
         }).ToList(),
-        GridColumns = module.GridColumns.OrderBy(c => c.DisplayOrder).Select(c => new FormGridColumnConfigDto
+        GridColumns = module.GridColumns.OrderBy(c => c.DisplayOrder).Select(c =>
         {
-            Id = c.Id,
-            PropertyName = c.PropertyName,
-            Label = c.Label,
-            DisplayOrder = c.DisplayOrder,
-            IsSortable = c.IsSortable,
-            IsSearchable = c.IsSearchable,
-            IsVisible = c.IsVisible,
-            DisplayFormat = c.DisplayFormat
+            var field = module.Fields.FirstOrDefault(f =>
+                string.Equals(f.PropertyName, c.PropertyName, StringComparison.OrdinalIgnoreCase));
+            return new FormGridColumnConfigDto
+            {
+                Id = c.Id,
+                PropertyName = c.PropertyName,
+                Label = c.Label,
+                DisplayOrder = c.DisplayOrder,
+                IsSortable = c.IsSortable,
+                IsSearchable = c.IsSearchable,
+                IsVisible = c.IsVisible,
+                DisplayFormat = null
+            };
         }).ToList(),
         GridActions = module.GridActions.OrderBy(a => a.DisplayOrder).Select(a => new FormGridActionConfigDto
         {

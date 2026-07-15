@@ -152,7 +152,7 @@ public class TreeGridService : ITreeGridService
             .ToListAsync(cancellationToken);
 
         var rows = items.Select(i => DynamicEntityMapper.ToDictionary(i, propertyColumns)).ToList();
-        await GridDisplayEnricher.EnrichAsync(rows, gridColumns, _lookupService, cancellationToken);
+        await GridDisplayEnricher.EnrichAsync(rows, gridColumns, _lookupService, formatTemporalColumns: false, cancellationToken);
 
         var nextLevel = levels.FirstOrDefault(l => l.LevelIndex == level.LevelIndex + 1);
         var nodes = new List<TreeNodeDto>();

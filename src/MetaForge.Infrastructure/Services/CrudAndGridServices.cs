@@ -89,7 +89,7 @@ public class GenericCrudService : IGenericCrudService
             .ToListAsync(cancellationToken);
 
         var rows = items.Select(i => DynamicEntityMapper.ToDictionary(i, propertyColumns)).ToList();
-        await GridDisplayEnricher.EnrichAsync(rows, gridColumns, _lookupService, cancellationToken);
+        await GridDisplayEnricher.EnrichAsync(rows, gridColumns, _lookupService, formatTemporalColumns: false, cancellationToken);
 
         return new PagedResult<Dictionary<string, object?>>
         {
@@ -291,7 +291,7 @@ public class GridService : IGridService
             LookupEntity = lookupEntity,
             LookupParentField = field?.LookupParentField,
             LookupFilterField = field?.LookupFilterField,
-            DisplayFormat = column.DisplayFormat
+            DisplayFormat = GridDisplayFormats.ResolveGridColumnDisplayFormat(field?.ControlType)
         };
     }
 

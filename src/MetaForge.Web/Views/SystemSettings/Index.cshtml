@@ -1,0 +1,316 @@
+@using MetaForge.Shared.Constants
+@{
+    ViewData["Title"] = "System Settings";
+    var preferences = ViewBag.Preferences as MetaForge.Application.DTOs.SystemPreferencesDto;
+    var themes = ViewBag.Themes as IReadOnlyList<MetaForge.Application.Interfaces.ThemeOptionDto> ?? [];
+    var canManage = ViewBag.CanManage is true;
+    var localization = preferences?.Localization;
+    var appearance = preferences?.Appearance;
+    var defaultThemeKey = AppThemes.Normalize(appearance?.DefaultThemeKey);
+}
+
+<div class="app-page-fill admin-hub-page form-builder-page">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-4">
+        <div>
+            <h1 class="h4 mb-1 fw-bold">System Settings</h1>
+            <p class="text-muted small mb-0">Global defaults for localization and appearance. Users can override these in their personal preferences.</p>
+        </div>
+    </div>
+
+    <div id="systemSettingsAlert" class="alert d-none" role="alert"></div>
+
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <div class="card admin-card h-100">
+                <div class="card-header fw-semibold">Localization</div>
+                <div class="card-body">
+                    <form id="localizationForm">
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="localizationEnabled" @(localization?.Enabled == true ? "checked" : null) @(canManage ? null : "disabled") />
+                            <label class="form-check-label" for="localizationEnabled">Enable localization</label>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="defaultCulture">Default culture</label>
+                            <select class="form-select culture-select" id="defaultCulture" data-selected="@localization?.DefaultCulture" @(canManage ? null : "disabled")></select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="fallbackCulture">Fallback culture</label>
+                            <select class="form-select culture-select" id="fallbackCulture" data-selected="@localization?.FallbackCulture" @(canManage ? null : "disabled")></select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="defaultDateFormat">Default date format</label>
+                            <select class="form-select" id="defaultDateFormat" data-selected="@localization?.DefaultDateFormat" @(canManage ? null : "disabled")></select>
+                            <div class="form-text">Options update when the default culture changes. Multiple formats are available per culture.</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="defaultDateTimeFormat">Default date &amp; time format</label>
+                            <select class="form-select" id="defaultDateTimeFormat" data-selected="@localization?.DefaultDateTimeFormat" @(canManage ? null : "disabled")></select>
+                        </div>
+                        <div class="form-text mb-3">
+                            Culture options are loaded from the .NET runtime (<code>CultureInfo.GetCultures</code>).
+                            Date and number formats follow the selected culture and format preference.
+                        </div>
+                        <div class="culture-preview culture-preview--settings mb-3" id="systemCulturePreview" aria-live="polite">
+                            <h3 class="culture-preview-title h6 mb-2">Format preview (default culture)</h3>
+                            <dl class="culture-preview-list">
+                                <div class="culture-preview-item">
+                                    <dt>Short date</dt>
+                                    <dd id="systemPreviewDate">—</dd>
+                                </div>
+                                <div class="culture-preview-item">
+                                    <dt>Date &amp; time</dt>
+                                    <dd id="systemPreviewDateTime">—</dd>
+                                </div>
+                                <div class="culture-preview-item">
+                                    <dt>Number</dt>
+                                    <dd id="systemPreviewNumber">—</dd>
+                                </div>
+                            </dl>
+                        </div>
+                        @if (canManage)
+                        {
+                            <button type="submit" class="btn btn-primary">Save localization</button>
+                        }
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card admin-card h-100">
+                <div class="card-header fw-semibold">Appearance</div>
+                <div class="card-body">
+                    <form id="appearanceForm">
+                        <input type="hidden" id="defaultThemeKey" value="@defaultThemeKey" />
+                        <div class="system-default-theme-picker mb-3">
+                            @await Html.PartialAsync("_ThemePicker", new ThemePickerViewModel
+                            {
+                                ActiveThemeKey = defaultThemeKey,
+                                Themes = themes,
+                                Variant = "page",
+                                GridId = "systemDefaultThemeGrid",
+                                Mode = "system",
+                                ShowHeader = true,
+                                Disabled = !canManage
+                            })
+                        </div>
+                        @if (canManage)
+                        {
+                            <button type="submit" class="btn btn-primary">Save appearance</button>
+                        }
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            const alertBox = document.getElementById('systemSettingsAlert');
+
+            function showAlert(message, type) {
+                alertBox.textContent = message;
+                alertBox.className = 'alert alert-' + type;
+                alertBox.classList.remove('d-none');
+            }
+
+            function populateCultureSelect(select, cultures) {
+                const selected = select.dataset.selected || '';
+                select.innerHTML = '';
+
+                for (const culture of cultures) {
+                    const option = document.createElement('option');
+                    option.value = culture.Name;
+                    option.textContent = `${culture.DisplayName} (${culture.Name})`;
+                    if (culture.Name === selected) {
+                        option.selected = true;
+                    }
+                    select.appendChild(option);
+                }
+
+                if (window.jQuery && window.jQuery.fn.select2) {
+                    window.jQuery(select).select2({
+                        theme: 'bootstrap-5',
+                        width: '100%'
+                    });
+                }
+
+                if (select.id === 'defaultCulture') {
+                    const onCultureChanged = function () {
+                        updateSystemCulturePreview(select.value);
+                        loadDateFormatOptions(select.value);
+                    };
+                    onCultureChanged();
+                    if (window.jQuery && window.jQuery.fn.select2) {
+                        window.jQuery(select).on('change', onCultureChanged);
+                    } else {
+                        select.addEventListener('change', onCultureChanged);
+                    }
+                }
+            }
+
+            function populateFormatSelect(select, options, preferredKey) {
+                if (!select) return;
+                const selected = preferredKey || select.dataset.selected || '';
+                select.innerHTML = '';
+
+                for (const option of options) {
+                    const el = document.createElement('option');
+                    el.value = option.Key;
+                    el.textContent = `${option.Label} — ${option.Sample}`;
+                    if (option.Key === selected) {
+                        el.selected = true;
+                    }
+                    select.appendChild(el);
+                }
+
+                if (!select.value && options.length > 0) {
+                    select.value = options[0].Key;
+                }
+            }
+
+            async function loadDateFormatOptions(culture) {
+                if (!culture) return;
+
+                const dateSelect = document.getElementById('defaultDateFormat');
+                const dateTimeSelect = document.getElementById('defaultDateTimeFormat');
+                const previousDate = dateSelect?.value || dateSelect?.dataset.selected || '';
+                const previousDateTime = dateTimeSelect?.value || dateTimeSelect?.dataset.selected || '';
+
+                const response = await fetch('/api/metaforge/system/settings/date-formats?culture=' + encodeURIComponent(culture));
+                if (!response.ok) {
+                    showAlert('Failed to load date format options for the selected culture.', 'warning');
+                    return;
+                }
+
+                const payload = await response.json();
+                const dateKeys = new Set((payload.dateFormats || []).map(o => o.Key));
+                const dateTimeKeys = new Set((payload.dateTimeFormats || []).map(o => o.Key));
+
+                populateFormatSelect(
+                    dateSelect,
+                    payload.dateFormats || [],
+                    dateKeys.has(previousDate) ? previousDate : 'locale-date');
+                populateFormatSelect(
+                    dateTimeSelect,
+                    payload.dateTimeFormats || [],
+                    dateTimeKeys.has(previousDateTime) ? previousDateTime : 'locale-datetime');
+
+                updateSystemCulturePreview(culture);
+            }
+
+            const sampleDate = new Date(2026, 6, 15, 14, 30, 0);
+            const sampleNumber = 1234567.89;
+
+            function updateSystemCulturePreview(culture) {
+                const dateEl = document.getElementById('systemPreviewDate');
+                const dateTimeEl = document.getElementById('systemPreviewDateTime');
+                const numberEl = document.getElementById('systemPreviewNumber');
+                if (!dateEl || !dateTimeEl || !numberEl || !culture) return;
+
+                const dateFormat = document.getElementById('defaultDateFormat')?.value || 'locale-date';
+                const dateTimeFormat = document.getElementById('defaultDateTimeFormat')?.value || 'locale-datetime';
+
+                if (window.MetaForgeGridDisplayFormat) {
+                    dateEl.textContent = window.MetaForgeGridDisplayFormat.formatWithKey(sampleDate, dateFormat, culture);
+                    dateTimeEl.textContent = window.MetaForgeGridDisplayFormat.formatWithKey(sampleDate, dateTimeFormat, culture);
+                } else if (window.MetaForgeLocale) {
+                    dateEl.textContent = window.MetaForgeLocale.formatLocaleDate(sampleDate, culture);
+                    dateTimeEl.textContent = window.MetaForgeLocale.formatLocaleDateTime(sampleDate, culture);
+                } else {
+                    try {
+                        dateEl.textContent = new Intl.DateTimeFormat(culture, { dateStyle: 'short' }).format(sampleDate);
+                        dateTimeEl.textContent = new Intl.DateTimeFormat(culture, { dateStyle: 'short', timeStyle: 'short' }).format(sampleDate);
+                    } catch (_) {
+                        dateEl.textContent = '—';
+                        dateTimeEl.textContent = '—';
+                    }
+                }
+
+                if (window.MetaForgeLocale) {
+                    numberEl.textContent = window.MetaForgeLocale.formatLocaleNumber(sampleNumber, culture);
+                } else {
+                    try {
+                        numberEl.textContent = new Intl.NumberFormat(culture, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(sampleNumber);
+                    } catch (_) {
+                        numberEl.textContent = '—';
+                    }
+                }
+            }
+
+            document.getElementById('defaultDateFormat')?.addEventListener('change', function () {
+                updateSystemCulturePreview(document.getElementById('defaultCulture')?.value);
+            });
+            document.getElementById('defaultDateTimeFormat')?.addEventListener('change', function () {
+                updateSystemCulturePreview(document.getElementById('defaultCulture')?.value);
+            });
+
+            async function loadCultureOptions() {
+                const response = await fetch('/api/metaforge/system/settings/cultures');
+                if (!response.ok) {
+                    showAlert('Failed to load .NET culture list.', 'warning');
+                    return;
+                }
+
+                const cultures = await response.json();
+                document.querySelectorAll('.culture-select').forEach(select => populateCultureSelect(select, cultures));
+            }
+
+            loadCultureOptions();
+
+            const localizationForm = document.getElementById('localizationForm');
+            if (localizationForm) {
+                localizationForm.addEventListener('submit', async function (e) {
+                    e.preventDefault();
+                    const payload = {
+                        enabled: document.getElementById('localizationEnabled').checked,
+                        defaultCulture: document.getElementById('defaultCulture').value,
+                        fallbackCulture: document.getElementById('fallbackCulture').value,
+                        defaultDateFormat: document.getElementById('defaultDateFormat').value,
+                        defaultDateTimeFormat: document.getElementById('defaultDateTimeFormat').value
+                    };
+
+                    const response = await fetch('/api/metaforge/system/settings/localization', {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        const err = await response.json().catch(() => ({}));
+                        showAlert(err.error || 'Failed to save localization settings.', 'danger');
+                        return;
+                    }
+
+                    showAlert('Localization settings saved.', 'success');
+                });
+            }
+
+            const appearanceForm = document.getElementById('appearanceForm');
+            if (appearanceForm) {
+                appearanceForm.addEventListener('submit', async function (e) {
+                    e.preventDefault();
+                    const payload = {
+                        defaultThemeKey: document.getElementById('defaultThemeKey').value
+                    };
+
+                    const response = await fetch('/api/metaforge/system/settings/appearance', {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        const err = await response.json().catch(() => ({}));
+                        showAlert(err.error || 'Failed to save appearance settings.', 'danger');
+                        return;
+                    }
+
+                    showAlert('Appearance settings saved.', 'success');
+                });
+            }
+        })();
+    </script>
+}

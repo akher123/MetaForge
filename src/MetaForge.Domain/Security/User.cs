@@ -17,8 +17,17 @@ public class User
 
     public string? SecurityStamp { get; set; }
 
-    /// <summary>UI theme key (e.g. indigo-light, indigo-dark).</summary>
-    public string ThemeKey { get; set; } = "indigo-light";
+    /// <summary>UI theme override; null inherits system default.</summary>
+    public string? ThemeKey { get; set; }
+
+    /// <summary>Culture override (e.g. en-US, ar-SA); null inherits system default.</summary>
+    public string? CultureOverride { get; set; }
+
+    /// <summary>Date display format override; null inherits system default.</summary>
+    public string? DateFormatOverride { get; set; }
+
+    /// <summary>Date-time display format override; null inherits system default.</summary>
+    public string? DateTimeFormatOverride { get; set; }
 
     public ICollection<UserRole> UserRoles { get; set; } = [];
 }

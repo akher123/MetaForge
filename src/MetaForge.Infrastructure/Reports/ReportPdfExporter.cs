@@ -1,4 +1,5 @@
 using System.Globalization;
+using MetaForge.Shared.Constants;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
@@ -202,9 +203,9 @@ internal static class ReportPdfExporter
         }
 
         if (value is DateTime dt)
-            return string.IsNullOrWhiteSpace(displayFormat)
-                ? dt.ToString("d", CultureInfo.CurrentCulture)
-                : dt.ToString(displayFormat, CultureInfo.CurrentCulture);
+            return GridDisplayFormats.FormatWithKey(
+                dt,
+                string.IsNullOrWhiteSpace(displayFormat) ? GridDisplayFormats.LocaleDate : displayFormat);
 
         return value.ToString() ?? string.Empty;
     }

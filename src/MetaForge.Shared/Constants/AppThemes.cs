@@ -1,7 +1,7 @@
 namespace MetaForge.Shared.Constants;
 
 /// <summary>
-/// Built-in UI themes. Keys are persisted on <see cref="MetaForge.Domain.Security.User.ThemeKey"/>.
+/// Built-in UI themes. User <see cref="MetaForge.Domain.Security.User.ThemeKey"/> overrides the system default when set.
 /// </summary>
 public static class AppThemes
 {

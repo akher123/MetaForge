@@ -12,13 +12,16 @@ public static class GridDisplayEnricher
         IList<Dictionary<string, object?>> rows,
         IReadOnlyList<GridColumnDefinition> columns,
         ILookupService lookupService,
+        bool formatTemporalColumns = true,
         CancellationToken cancellationToken = default)
     {
         if (rows.Count == 0)
             return;
 
         await EnrichLookupsAsync(rows, columns, lookupService, cancellationToken);
-        FormatTemporalColumns(rows, columns);
+
+        if (formatTemporalColumns)
+            FormatTemporalColumns(rows, columns);
     }
 
     private static async Task EnrichLookupsAsync(

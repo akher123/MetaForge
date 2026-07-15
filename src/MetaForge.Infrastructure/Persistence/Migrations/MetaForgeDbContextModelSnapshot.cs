@@ -101,6 +101,34 @@ namespace MetaForge.Infrastructure.Persistence.Migrations
                     b.ToTable("Addresses", (string)null);
                 });
 
+            modelBuilder.Entity("MetaForge.Domain.Business.City", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("RegionId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RegionId");
+
+                    b.ToTable("Cities", (string)null);
+                });
+
             modelBuilder.Entity("MetaForge.Domain.Business.Country", b =>
                 {
                     b.Property<int>("Id")
@@ -302,34 +330,6 @@ namespace MetaForge.Infrastructure.Persistence.Migrations
                     b.HasIndex("CountryId");
 
                     b.ToTable("Regions", (string)null);
-                });
-
-            modelBuilder.Entity("MetaForge.Domain.Business.City", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Code")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<int>("RegionId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("RegionId");
-
-                    b.ToTable("Cities", (string)null);
                 });
 
             modelBuilder.Entity("MetaForge.Domain.Business.SalesOrder", b =>
@@ -1521,49 +1521,6 @@ namespace MetaForge.Infrastructure.Persistence.Migrations
                     b.ToTable("ForgeRelations", (string)null);
                 });
 
-            modelBuilder.Entity("MetaForge.Domain.Metadata.ForgeTreeLevel", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("DisplayColumn")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<int>("DisplayOrder")
-                        .HasColumnType("int");
-
-                    b.Property<string>("EntityName")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("ForeignKey")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<int>("FormId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("LevelIndex")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ParentEntity")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("FormId", "LevelIndex")
-                        .IsUnique();
-
-                    b.ToTable("ForgeTreeLevels", (string)null);
-                });
-
             modelBuilder.Entity("MetaForge.Domain.Metadata.ForgeReport", b =>
                 {
                     b.Property<int>("Id")
@@ -1872,6 +1829,49 @@ namespace MetaForge.Infrastructure.Persistence.Migrations
                     b.HasIndex("ReportId");
 
                     b.ToTable("ForgeReportSummaries", (string)null);
+                });
+
+            modelBuilder.Entity("MetaForge.Domain.Metadata.ForgeTreeLevel", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("DisplayColumn")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("int");
+
+                    b.Property<string>("EntityName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("ForeignKey")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("FormId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("LevelIndex")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ParentEntity")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FormId", "LevelIndex")
+                        .IsUnique();
+
+                    b.ToTable("ForgeTreeLevels", (string)null);
                 });
 
             modelBuilder.Entity("MetaForge.Domain.Metadata.LookupConfiguration", b =>
@@ -2235,6 +2235,55 @@ namespace MetaForge.Infrastructure.Persistence.Migrations
                     b.ToTable("EmailTemplateBindings", (string)null);
                 });
 
+            modelBuilder.Entity("MetaForge.Domain.Platform.SystemSetting", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("IsEditable")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("UpdatedByUserId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Value")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<string>("ValueType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Key")
+                        .IsUnique();
+
+                    b.ToTable("SystemSettings", (string)null);
+                });
+
             modelBuilder.Entity("MetaForge.Domain.Security.PasswordResetToken", b =>
                 {
                     b.Property<int>("Id")
@@ -2350,6 +2399,18 @@ namespace MetaForge.Infrastructure.Persistence.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("CultureOverride")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("DateFormatOverride")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("DateTimeFormatOverride")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -2366,11 +2427,8 @@ namespace MetaForge.Infrastructure.Persistence.Migrations
                         .HasColumnType("nvarchar(64)");
 
                     b.Property<string>("ThemeKey")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
                         .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
-                        .HasDefaultValue("indigo-light");
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("UserName")
                         .IsRequired()
@@ -2417,6 +2475,17 @@ namespace MetaForge.Infrastructure.Persistence.Migrations
                     b.Navigation("Customer");
                 });
 
+            modelBuilder.Entity("MetaForge.Domain.Business.City", b =>
+                {
+                    b.HasOne("MetaForge.Domain.Business.Region", "Region")
+                        .WithMany()
+                        .HasForeignKey("RegionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Region");
+                });
+
             modelBuilder.Entity("MetaForge.Domain.Business.Customer", b =>
                 {
                     b.HasOne("MetaForge.Domain.Business.Country", "Country")
@@ -2460,17 +2529,6 @@ namespace MetaForge.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("Country");
-                });
-
-            modelBuilder.Entity("MetaForge.Domain.Business.City", b =>
-                {
-                    b.HasOne("MetaForge.Domain.Business.Region", "Region")
-                        .WithMany()
-                        .HasForeignKey("RegionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Region");
                 });
 
             modelBuilder.Entity("MetaForge.Domain.Business.SalesOrder", b =>
@@ -2749,17 +2807,6 @@ namespace MetaForge.Infrastructure.Persistence.Migrations
                     b.Navigation("Form");
                 });
 
-            modelBuilder.Entity("MetaForge.Domain.Metadata.ForgeTreeLevel", b =>
-                {
-                    b.HasOne("MetaForge.Domain.Metadata.ForgeForm", "Form")
-                        .WithMany("TreeLevels")
-                        .HasForeignKey("FormId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Form");
-                });
-
             modelBuilder.Entity("MetaForge.Domain.Metadata.ForgeReportColumn", b =>
                 {
                     b.HasOne("MetaForge.Domain.Metadata.ForgeReport", "Report")
@@ -2813,6 +2860,17 @@ namespace MetaForge.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("Report");
+                });
+
+            modelBuilder.Entity("MetaForge.Domain.Metadata.ForgeTreeLevel", b =>
+                {
+                    b.HasOne("MetaForge.Domain.Metadata.ForgeForm", "Form")
+                        .WithMany("TreeLevels")
+                        .HasForeignKey("FormId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Form");
                 });
 
             modelBuilder.Entity("MetaForge.Domain.Notifications.EmailMessage", b =>

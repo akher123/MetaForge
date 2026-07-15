@@ -1,4 +1,5 @@
 using MetaForge.Application.Configuration;
+using MetaForge.Shared.Constants;
 using MetaForge.Application.Validation;
 using MetaForge.Domain.Business;
 using MetaForge.Domain.Notifications;
@@ -101,6 +102,8 @@ public static class DatabaseSeeder
         await EnsurePasswordResetEmailTemplateAsync(context, logger);
         await EnsureEmailPermissionsAsync(context, logger);
         await EnsureReportPermissionsAsync(context, logger);
+        await SystemSettingsSeed.EnsureDefaultsAsync(context, logger);
+        await SystemSettingsSeed.EnsurePermissionsAsync(context, logger);
         await EnsureMenusAsync(scope, logger);
         await EnsureLocationTreeUpgradeAsync(context, logger);
     }
@@ -444,7 +447,7 @@ public static class DatabaseSeeder
         foreach (var column in new[]
         {
             new ForgeReportColumn { PropertyName = "OrderNo", Label = "Order No", DisplayOrder = 0, ColumnRole = ReportColumnRole.Detail, AggregateFunction = ReportAggregateFunction.None },
-            new ForgeReportColumn { PropertyName = "OrderDate", Label = "Order Date", DisplayOrder = 1, ColumnRole = ReportColumnRole.Detail, AggregateFunction = ReportAggregateFunction.None, DisplayFormat = "d" },
+            new ForgeReportColumn { PropertyName = "OrderDate", Label = "Order Date", DisplayOrder = 1, ColumnRole = ReportColumnRole.Detail, AggregateFunction = ReportAggregateFunction.None, DisplayFormat = GridDisplayFormats.LocaleDate },
             new ForgeReportColumn { PropertyName = "CustomerId", Label = "Customer", DisplayOrder = 2, ColumnRole = ReportColumnRole.Detail, AggregateFunction = ReportAggregateFunction.None },
             new ForgeReportColumn { PropertyName = "Status", Label = "Status", DisplayOrder = 3, ColumnRole = ReportColumnRole.Detail, AggregateFunction = ReportAggregateFunction.None },
             new ForgeReportColumn { PropertyName = "Address", Label = "Ship To", DisplayOrder = 4, ColumnRole = ReportColumnRole.Detail, AggregateFunction = ReportAggregateFunction.None }
@@ -493,7 +496,7 @@ public static class DatabaseSeeder
         foreach (var column in new[]
         {
             new ForgeReportColumn { PropertyName = "OrderNo", Label = "Order No", DisplayOrder = 0, ColumnRole = ReportColumnRole.Detail, AggregateFunction = ReportAggregateFunction.None },
-            new ForgeReportColumn { PropertyName = "OrderDate", Label = "Order Date", DisplayOrder = 1, ColumnRole = ReportColumnRole.Detail, AggregateFunction = ReportAggregateFunction.None, DisplayFormat = "d" },
+            new ForgeReportColumn { PropertyName = "OrderDate", Label = "Order Date", DisplayOrder = 1, ColumnRole = ReportColumnRole.Detail, AggregateFunction = ReportAggregateFunction.None, DisplayFormat = GridDisplayFormats.LocaleDate },
             new ForgeReportColumn { PropertyName = "CustomerId", Label = "Customer", DisplayOrder = 2, ColumnRole = ReportColumnRole.Detail, AggregateFunction = ReportAggregateFunction.None },
             new ForgeReportColumn { PropertyName = "Id", Label = "Order Count", DisplayOrder = 3, ColumnRole = ReportColumnRole.Aggregate, AggregateFunction = ReportAggregateFunction.Count }
         })
@@ -598,7 +601,7 @@ public static class DatabaseSeeder
         foreach (var column in new[]
         {
             new ForgeReportColumn { PropertyName = "SalesOrder.OrderNo", Label = "Order No", DisplayOrder = 0, ColumnRole = ReportColumnRole.Detail, AggregateFunction = ReportAggregateFunction.None },
-            new ForgeReportColumn { PropertyName = "SalesOrder.OrderDate", Label = "Order Date", DisplayOrder = 1, ColumnRole = ReportColumnRole.Detail, AggregateFunction = ReportAggregateFunction.None, DisplayFormat = "d" },
+            new ForgeReportColumn { PropertyName = "SalesOrder.OrderDate", Label = "Order Date", DisplayOrder = 1, ColumnRole = ReportColumnRole.Detail, AggregateFunction = ReportAggregateFunction.None, DisplayFormat = GridDisplayFormats.LocaleDate },
             new ForgeReportColumn { PropertyName = "SalesOrder.Customer.Name", Label = "Customer", DisplayOrder = 2, ColumnRole = ReportColumnRole.Detail, AggregateFunction = ReportAggregateFunction.None },
             new ForgeReportColumn { PropertyName = "Product.Name", Label = "Product", DisplayOrder = 3, ColumnRole = ReportColumnRole.Detail, AggregateFunction = ReportAggregateFunction.None },
             new ForgeReportColumn { PropertyName = "Quantity", Label = "Quantity", DisplayOrder = 4, ColumnRole = ReportColumnRole.Detail, AggregateFunction = ReportAggregateFunction.None },
@@ -638,7 +641,7 @@ public static class DatabaseSeeder
         foreach (var column in new[]
         {
             new ForgeReportColumn { PropertyName = "OrderNo", Label = "Order No", DisplayOrder = 0, ColumnRole = ReportColumnRole.Detail, AggregateFunction = ReportAggregateFunction.None },
-            new ForgeReportColumn { PropertyName = "OrderDate", Label = "Order Date", DisplayOrder = 1, ColumnRole = ReportColumnRole.Detail, AggregateFunction = ReportAggregateFunction.None, DisplayFormat = "d" },
+            new ForgeReportColumn { PropertyName = "OrderDate", Label = "Order Date", DisplayOrder = 1, ColumnRole = ReportColumnRole.Detail, AggregateFunction = ReportAggregateFunction.None, DisplayFormat = GridDisplayFormats.LocaleDate },
             new ForgeReportColumn { PropertyName = "Customer.Name", Label = "Customer", DisplayOrder = 2, ColumnRole = ReportColumnRole.Detail, AggregateFunction = ReportAggregateFunction.None },
             new ForgeReportColumn { PropertyName = "Customer.Email", Label = "Email", DisplayOrder = 3, ColumnRole = ReportColumnRole.Detail, AggregateFunction = ReportAggregateFunction.None },
             new ForgeReportColumn { PropertyName = "Customer.Country.Name", Label = "Country", DisplayOrder = 4, ColumnRole = ReportColumnRole.Detail, AggregateFunction = ReportAggregateFunction.None },

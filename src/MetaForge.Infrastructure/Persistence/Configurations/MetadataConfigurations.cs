@@ -244,7 +244,10 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.HasKey(x => x.Id);
         builder.Property(x => x.UserName).HasMaxLength(100).IsRequired();
         builder.Property(x => x.SecurityStamp).HasMaxLength(64);
-        builder.Property(x => x.ThemeKey).HasMaxLength(50).IsRequired().HasDefaultValue("indigo-light");
+        builder.Property(x => x.ThemeKey).HasMaxLength(50);
+        builder.Property(x => x.CultureOverride).HasMaxLength(20);
+        builder.Property(x => x.DateFormatOverride).HasMaxLength(100);
+        builder.Property(x => x.DateTimeFormatOverride).HasMaxLength(100);
         builder.HasIndex(x => x.UserName).IsUnique();
     }
 }

@@ -1,3 +1,7 @@
+using System.Globalization;
+using MetaForge.Shared.Constants;
+using MetaForge.Shared.Culture;
+
 namespace MetaForge.Infrastructure.Reports;
 
 /// <summary>
@@ -12,12 +16,15 @@ internal static class ReportExportTokenFormatter
             return string.Empty;
 
         var now = DateTime.Now;
+        var dateFormat = DisplayFormatContext.Preferences?.DateFormat ?? GridDisplayFormats.LocaleDate;
+        var dateTimeFormat = DisplayFormatContext.Preferences?.DateTimeFormat ?? GridDisplayFormats.LocaleDateTime;
+
         return template
             .Replace("{Title}", layout.Title, StringComparison.OrdinalIgnoreCase)
-            .Replace("{Date}", now.ToString("yyyy-MM-dd"), StringComparison.OrdinalIgnoreCase)
-            .Replace("{DateTime}", now.ToString("yyyy-MM-dd HH:mm"), StringComparison.OrdinalIgnoreCase)
-            .Replace("{Page}", page?.ToString() ?? string.Empty, StringComparison.OrdinalIgnoreCase)
-            .Replace("{Pages}", totalPages?.ToString() ?? string.Empty, StringComparison.OrdinalIgnoreCase);
+            .Replace("{Date}", GridDisplayFormats.FormatWithKey(now, dateFormat), StringComparison.OrdinalIgnoreCase)
+            .Replace("{DateTime}", GridDisplayFormats.FormatWithKey(now, dateTimeFormat), StringComparison.OrdinalIgnoreCase)
+            .Replace("{Page}", page?.ToString(CultureInfo.CurrentCulture) ?? string.Empty, StringComparison.OrdinalIgnoreCase)
+            .Replace("{Pages}", totalPages?.ToString(CultureInfo.CurrentCulture) ?? string.Empty, StringComparison.OrdinalIgnoreCase);
     }
 
     public static bool HasHeader(ReportExportLayoutDto layout) =>

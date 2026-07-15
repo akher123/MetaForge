@@ -873,3 +873,120 @@ html[data-theme="graphite-light"] {
   color: var(--dv-grid-header-text);
   border-bottom: none;
 }
+
+/* Culture / locale picker */
+.culture-picker {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--dv-border);
+}
+
+.culture-picker-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.culture-picker-title {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--dv-text);
+}
+
+.culture-picker-subtitle {
+  margin: 0.35rem 0 0;
+  font-size: 0.8125rem;
+  color: var(--dv-text-muted);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.culture-picker-override-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  background: color-mix(in srgb, var(--dv-primary) 14%, transparent);
+  color: var(--dv-primary);
+}
+
+.culture-picker-override-badge--inherit {
+  background: var(--dv-surface-alt, rgba(0, 0, 0, 0.05));
+  color: var(--dv-text-muted);
+}
+
+.culture-picker-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  color: var(--dv-text-muted);
+  white-space: nowrap;
+}
+
+.culture-picker-controls {
+  margin-bottom: 1rem;
+}
+
+.culture-preview {
+  background: var(--dv-bg);
+  border: 1px solid var(--dv-border);
+  border-radius: 0.65rem;
+  padding: 0.85rem 1rem;
+}
+
+.culture-preview--settings {
+  background: var(--dv-surface);
+}
+
+.culture-preview-title {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  margin: 0 0 0.65rem;
+  color: var(--dv-text);
+}
+
+.culture-preview-list {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.culture-preview-item {
+  display: grid;
+  grid-template-columns: 7rem 1fr;
+  gap: 0.5rem;
+  align-items: baseline;
+}
+
+.culture-preview-item dt {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--dv-text-muted);
+  font-weight: 500;
+}
+
+.culture-preview-item dd {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--dv-text);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 575.98px) {
+  .culture-preview-item {
+    grid-template-columns: 1fr;
+    gap: 0.15rem;
+  }
+}

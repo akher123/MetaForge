@@ -57,6 +57,8 @@ public static class DependencyInjection
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IPasswordResetService, PasswordResetService>();
         services.AddScoped<IUserPreferenceService, UserPreferenceService>();
+        services.AddScoped<ISystemSettingsService, SystemSettingsService>();
+        services.AddScoped<IPreferenceResolver, PreferenceResolverService>();
         services.AddScoped<IFormConfigurationService, FormConfigurationService>();
         services.AddScoped<IFormHealthCheckService, FormHealthCheckService>();
         services.AddScoped<IReportConfigurationService, ReportConfigurationService>();

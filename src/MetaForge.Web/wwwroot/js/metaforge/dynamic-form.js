@@ -56,6 +56,9 @@ const DynamicForm = (function () {
         bindFileUpload($form);
         bindRichTextEditors($form);
         applyAllConditionalStates($form);
+        if (typeof MetaForgeDateInput !== 'undefined') {
+            MetaForgeDateInput.initScope($form);
+        }
         if (opts.initLookups !== false && typeof MetaForgeLookups !== 'undefined') {
             return initLookupsForScope($form, getFields(), null).then(function () {
                 applyAllConditionalStates($form);
@@ -103,6 +106,9 @@ const DynamicForm = (function () {
         destroyLookups($form);
         $form.empty();
         appendFields($form, getFields());
+        if (typeof MetaForgeDateInput !== 'undefined') {
+            MetaForgeDateInput.initScope($form);
+        }
     }
 
     function escapeHtml(value) {
@@ -345,10 +351,14 @@ const DynamicForm = (function () {
                 controlHtml = `<input type="number" step="any" class="form-control admin-form-control" name="${name}" ${readonly} ${required} />`;
                 break;
             case 'Date':
-                controlHtml = `<input type="date" class="form-control admin-form-control" name="${name}" ${readonly} ${required} />`;
+                controlHtml = typeof MetaForgeDateInput !== 'undefined'
+                    ? MetaForgeDateInput.buildDateFieldHtml({ name, readonly, required })
+                    : `<input type="date" class="form-control admin-form-control mf-date-input" name="${name}" ${readonly} ${required} />`;
                 break;
             case 'DateTime':
-                controlHtml = `<input type="datetime-local" class="form-control admin-form-control" name="${name}" ${readonly} ${required} />`;
+                controlHtml = typeof MetaForgeDateInput !== 'undefined'
+                    ? MetaForgeDateInput.buildDateTimeFieldHtml({ name, readonly, required })
+                    : `<input type="datetime-local" class="form-control admin-form-control mf-datetime-input" name="${name}" ${readonly} ${required} />`;
                 break;
             case 'Checkbox':
                 controlHtml = `<div class="form-check mt-1"><input type="checkbox" class="form-check-input" name="${name}" ${readonly} ${disabled} /></div>`;
@@ -1030,6 +1040,9 @@ const DynamicForm = (function () {
     }
 
     function formatDateTimeLocal(value) {
+        if (typeof MetaForgeDateInput !== 'undefined') {
+            return MetaForgeDateInput.toDateTimeLocalValue(value);
+        }
         const dt = new Date(value);
         if (isNaN(dt.getTime())) return value;
 
@@ -1076,9 +1089,21 @@ const DynamicForm = (function () {
             if ($el.attr('type') === 'checkbox') {
                 $el.prop('checked', !!value);
             } else if (controlType === 'DateTime' && value) {
-                $el.val(formatDateTimeLocal(value));
+                const $wrap = $el.closest('.mf-date-field');
+                if ($wrap.length && typeof MetaForgeDateInput !== 'undefined') {
+                    MetaForgeDateInput.setFieldValue($wrap, value, 'DateTime');
+                } else {
+                    $el.val(formatDateTimeLocal(value));
+                }
             } else if (controlType === 'Date' && value) {
-                $el.val(MetaForgeGridDisplayFormat.formatDateInputValue(value));
+                const $wrap = $el.closest('.mf-date-field');
+                if ($wrap.length && typeof MetaForgeDateInput !== 'undefined') {
+                    MetaForgeDateInput.setFieldValue($wrap, value, 'Date');
+                } else {
+                    $el.val(typeof MetaForgeDateInput !== 'undefined'
+                        ? MetaForgeDateInput.toDateInputValue(value)
+                        : MetaForgeGridDisplayFormat.formatDateInputValue(value));
+                }
             } else if (controlType === 'FileUpload') {
                 $el.val(value);
                 setFileUploadValue($el.closest('.mf-file-upload'), { url: value });
@@ -1110,10 +1135,17 @@ const DynamicForm = (function () {
     function setData(data) {
         applyScalarFieldValues(data);
         applySelectValues(data);
+        if (typeof MetaForgeDateInput !== 'undefined') {
+            MetaForgeDateInput.initScope($form);
+        }
     }
 
     function setDataWhenReady(data) {
         applyScalarFieldValues(data);
+
+        if (typeof MetaForgeDateInput !== 'undefined') {
+            MetaForgeDateInput.initScope($form);
+        }
 
         if (typeof MetaForgeLookups === 'undefined') {
             applySelectValues(data);

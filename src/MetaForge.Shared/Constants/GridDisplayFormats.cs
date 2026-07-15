@@ -1,3 +1,6 @@
+using System.Globalization;
+using MetaForge.Shared.Culture;
+
 namespace MetaForge.Shared.Constants;
 
 /// <summary>
@@ -17,7 +20,11 @@ public static class GridDisplayFormats
     public const string DateTimeIso = "datetime-iso";
 
     public const string LocaleDate = "locale-date";
+    public const string LocaleLongDate = "locale-long";
     public const string LocaleDateTime = "locale-datetime";
+    public const string LocaleLongDateTime = "locale-long-datetime";
+    public const string DateUs = "date-us";
+    public const string PatternPrefix = "pattern:";
 
     public static readonly IReadOnlyList<(string Key, string Label, string Group)> Presets =
     [
@@ -38,17 +45,84 @@ public static class GridDisplayFormats
     public static string? GetDefaultForControlType(string? controlType)
     {
         if (string.Equals(controlType, ControlTypeDate, StringComparison.OrdinalIgnoreCase))
-            return DateShort;
+            return LocaleDate;
 
         if (string.Equals(controlType, ControlTypeDateTime, StringComparison.OrdinalIgnoreCase))
-            return DateTimeShort;
+            return LocaleDateTime;
 
         return null;
     }
 
+    /// <summary>
+    /// Maps legacy .NET patterns and empty values to preset keys.
+    /// Empty/null resolves to locale-date/datetime which follows system preference.
+    /// </summary>
+    public static string? NormalizeFormatKey(string? displayFormat, string? controlType)
+    {
+        if (string.IsNullOrWhiteSpace(displayFormat))
+            return GetDefaultForControlType(controlType);
+
+        return displayFormat.Trim() switch
+        {
+            "d" => LocaleDate,
+            "D" => LocaleLongDate,
+            "g" => LocaleDateTime,
+            "G" => LocaleLongDateTime,
+            _ => displayFormat.Trim()
+        };
+    }
+
+    public static bool UsesSystemDatePreference(string? displayFormat, string? controlType)
+    {
+        var key = NormalizeFormatKey(displayFormat, controlType);
+        return string.Equals(key, LocaleDate, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(key, LocaleDateTime, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// List grid columns always follow global user/system date preferences.
+    /// Per-column date format overrides from form builder are ignored.
+    /// </summary>
+    public static string? ResolveGridColumnDisplayFormat(string? controlType) =>
+        GetDefaultForControlType(controlType);
+
     public static bool IsTemporalControlType(string? controlType) =>
         string.Equals(controlType, ControlTypeDate, StringComparison.OrdinalIgnoreCase)
         || string.Equals(controlType, ControlTypeDateTime, StringComparison.OrdinalIgnoreCase);
+
+    public static bool IsTemporalDisplayFormat(string? displayFormat) =>
+        !string.IsNullOrWhiteSpace(displayFormat)
+        && (displayFormat.StartsWith("date", StringComparison.OrdinalIgnoreCase)
+            || displayFormat.StartsWith("datetime", StringComparison.OrdinalIgnoreCase)
+            || displayFormat.StartsWith("locale", StringComparison.OrdinalIgnoreCase)
+            || displayFormat.StartsWith(PatternPrefix, StringComparison.OrdinalIgnoreCase)
+            || displayFormat is "d" or "D" or "g" or "G");
+
+    public static IReadOnlyList<DateFormatOptionDto> GetSelectOptions(string culture, string? controlType)
+    {
+        var options = new List<DateFormatOptionDto>
+        {
+            new()
+            {
+                Key = Auto,
+                Label = "Default (from field type)",
+                Sample = string.Empty,
+                Group = "General"
+            }
+        };
+
+        if (string.Equals(controlType, ControlTypeDateTime, StringComparison.OrdinalIgnoreCase))
+            options.AddRange(DateFormatCatalog.GetDateTimeOptions(culture));
+        else if (string.Equals(controlType, ControlTypeDate, StringComparison.OrdinalIgnoreCase))
+            options.AddRange(DateFormatCatalog.GetDateOptions(culture));
+        else
+        {
+            options.AddRange(DateFormatCatalog.GetDateOptions(culture));
+            options.AddRange(DateFormatCatalog.GetDateTimeOptions(culture));
+        }
+
+        return options;
+    }
 
     public static string FormatValue(object? value, string? displayFormat, string? controlType)
     {
@@ -65,13 +139,32 @@ public static class GridDisplayFormats
         return ApplyPreset(dt, formatKey);
     }
 
-    public static string ResolveFormatKey(string? displayFormat, string? controlType)
+    public static string FormatWithKey(DateTime dt, string formatKey, CultureInfo? culture = null)
     {
-        if (!string.IsNullOrWhiteSpace(displayFormat))
-            return displayFormat.Trim();
-
-        return GetDefaultForControlType(controlType) ?? string.Empty;
+        culture ??= CultureInfo.CurrentCulture;
+        return ApplyPreset(dt, formatKey, culture);
     }
+
+    public static string ResolveEffectiveDateFormat(string? formatKey)
+    {
+        var normalized = NormalizeFormatKey(formatKey, ControlTypeDate) ?? LocaleDate;
+        if (string.Equals(normalized, LocaleDate, StringComparison.OrdinalIgnoreCase))
+            return DisplayFormatContext.Preferences?.DateFormat ?? LocaleDate;
+
+        return normalized;
+    }
+
+    public static string ResolveEffectiveDateTimeFormat(string? formatKey)
+    {
+        var normalized = NormalizeFormatKey(formatKey, ControlTypeDateTime) ?? LocaleDateTime;
+        if (string.Equals(normalized, LocaleDateTime, StringComparison.OrdinalIgnoreCase))
+            return DisplayFormatContext.Preferences?.DateTimeFormat ?? LocaleDateTime;
+
+        return normalized;
+    }
+
+    public static string ResolveFormatKey(string? displayFormat, string? controlType) =>
+        NormalizeFormatKey(displayFormat, controlType) ?? string.Empty;
 
     private static bool TryParseDateTime(object value, out DateTime dt)
     {
@@ -106,20 +199,40 @@ public static class GridDisplayFormats
         return false;
     }
 
-    private static string ApplyPreset(DateTime dt, string formatKey)
+    private static string ApplyPreset(DateTime dt, string formatKey, CultureInfo? culture = null)
     {
-        var culture = System.Globalization.CultureInfo.CurrentCulture;
+        culture ??= System.Globalization.CultureInfo.CurrentCulture;
+
+        if (string.Equals(formatKey, LocaleDate, StringComparison.OrdinalIgnoreCase))
+        {
+            var resolved = ResolveEffectiveDateFormat(formatKey);
+            if (string.Equals(resolved, LocaleDate, StringComparison.OrdinalIgnoreCase))
+                return dt.ToString("d", culture);
+            return ApplyPreset(dt, resolved, culture);
+        }
+
+        if (string.Equals(formatKey, LocaleDateTime, StringComparison.OrdinalIgnoreCase))
+        {
+            var resolved = ResolveEffectiveDateTimeFormat(formatKey);
+            if (string.Equals(resolved, LocaleDateTime, StringComparison.OrdinalIgnoreCase))
+                return dt.ToString("g", culture);
+            return ApplyPreset(dt, resolved, culture);
+        }
+
+        if (formatKey.StartsWith(PatternPrefix, StringComparison.OrdinalIgnoreCase))
+            return dt.ToString(formatKey[PatternPrefix.Length..], culture);
 
         return formatKey switch
         {
             DateShort => dt.ToString("dd/MM/yyyy", culture),
             DateIso => dt.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture),
             DateLong => dt.ToString("dd MMM yyyy", culture),
+            DateUs => dt.ToString("MM/dd/yyyy", culture),
             DateTimeShort => dt.ToString("dd/MM/yyyy HH:mm", culture),
             DateTimeFull => dt.ToString("dd/MM/yyyy HH:mm:ss", culture),
             DateTimeIso => dt.ToString("yyyy-MM-dd HH:mm", System.Globalization.CultureInfo.InvariantCulture),
-            LocaleDate => dt.ToString("d", culture),
-            LocaleDateTime => dt.ToString("g", culture),
+            LocaleLongDate => dt.ToString("D", culture),
+            LocaleLongDateTime => dt.ToString("G", culture),
             _ when formatKey.Contains('y', StringComparison.Ordinal)
                 || formatKey.Contains('d', StringComparison.Ordinal)
                 || formatKey.Contains('H', StringComparison.Ordinal)

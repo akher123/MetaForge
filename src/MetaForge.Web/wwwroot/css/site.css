@@ -6878,3 +6878,37 @@ html[data-theme$="-dark"] .report-preview__masthead {
     margin-left: auto;
   }
 }
+
+/* System settings — default theme picker (narrow column) */
+.system-default-theme-picker .theme-picker--page .theme-picker-grid {
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 576px) {
+  .system-default-theme-picker .theme-picker--page .theme-picker-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Preference-aware date fields — text display + hidden native picker */
+.mf-date-field {
+  position: relative;
+  width: 100%;
+}
+
+.mf-date-field .mf-date-native {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+
+.mf-date-field .mf-date-open {
+  flex: 0 0 auto;
+}

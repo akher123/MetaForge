@@ -1,5 +1,7 @@
 using System.Security.Claims;
+using MetaForge.Application.DTOs;
 using MetaForge.Shared.Constants;
+using MetaForge.Shared.Culture;
 using MetaForge.Shared.Exceptions;
 using MetaForge.Web.Theme;
 using MetaForge.Web.Models;
@@ -12,17 +14,23 @@ public class AccountController : Controller
     private readonly IAuthService _authService;
     private readonly IUserClaimsFactory _claimsFactory;
     private readonly IUserPreferenceService _userPreferences;
+    private readonly IPreferenceResolver _preferenceResolver;
+    private readonly ISystemSettingsService _systemSettings;
     private readonly IPasswordResetService _passwordResetService;
 
     public AccountController(
         IAuthService authService,
         IUserClaimsFactory claimsFactory,
         IUserPreferenceService userPreferences,
+        IPreferenceResolver preferenceResolver,
+        ISystemSettingsService systemSettings,
         IPasswordResetService passwordResetService)
     {
         _authService = authService;
         _claimsFactory = claimsFactory;
         _userPreferences = userPreferences;
+        _preferenceResolver = preferenceResolver;
+        _systemSettings = systemSettings;
         _passwordResetService = passwordResetService;
     }
 
@@ -70,6 +78,9 @@ public class AccountController : Controller
 
         var themeKey = await _userPreferences.GetThemeAsync(result.UserId, cancellationToken);
         Response.Cookies.Append(ThemeCookie.Name, themeKey, ThemeCookie.Options(HttpContext));
+
+        var effective = await _preferenceResolver.ResolveAsync(result.UserId, cancellationToken);
+        Response.Cookies.Append(CultureCookie.Name, effective.Culture, CultureCookie.Options(HttpContext));
 
         return RedirectToLocal(model.ReturnUrl);
     }
@@ -159,12 +170,37 @@ public class AccountController : Controller
             return Challenge();
 
         var themeKey = await _userPreferences.GetThemeAsync(userId, cancellationToken);
+        var effective = await _preferenceResolver.ResolveAsync(userId, cancellationToken);
+
         return View(new AppearanceViewModel
         {
             ActiveThemeKey = themeKey,
-            Themes = _userPreferences.GetAvailableThemes()
+            Themes = _userPreferences.GetAvailableThemes(),
+            Culture = BuildCulturePickerViewModel(effective)
         });
     }
+
+    private CulturePickerViewModel BuildCulturePickerViewModel(EffectivePreferencesDto effective) =>
+        new()
+        {
+            EffectiveCulture = effective.Culture,
+            UserCultureOverride = effective.User.Culture,
+            SystemDefaultCulture = effective.System.Localization.DefaultCulture,
+            CultureIsUserOverride = effective.CultureIsUserOverride,
+            EffectiveDateFormat = effective.DateFormat,
+            EffectiveDateTimeFormat = effective.DateTimeFormat,
+            UserDateFormatOverride = effective.User.DateFormat,
+            UserDateTimeFormatOverride = effective.User.DateTimeFormat,
+            SystemDefaultDateFormat = effective.System.Localization.DefaultDateFormat,
+            SystemDefaultDateTimeFormat = effective.System.Localization.DefaultDateTimeFormat,
+            DateFormatIsUserOverride = effective.DateFormatIsUserOverride,
+            DateTimeFormatIsUserOverride = effective.DateTimeFormatIsUserOverride,
+            Preview = LocaleFormatting.BuildPreview(
+                effective.Culture,
+                effective.DateFormat,
+                effective.DateTimeFormat),
+            Cultures = _systemSettings.GetAvailableCultures()
+        };
 
     [Authorize]
     [HttpGet]

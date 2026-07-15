@@ -83,6 +83,11 @@ const MetaForgeDetailRows = (function () {
         if (controlType === 'Date' || controlType === 'DateTime') {
             const dt = new Date(val);
             if (!isNaN(dt.getTime())) {
+                if (typeof MetaForgeLocale !== 'undefined') {
+                    return controlType === 'Date'
+                        ? MetaForgeLocale.formatDate(val)
+                        : MetaForgeLocale.formatDateTime(val);
+                }
                 return controlType === 'Date'
                     ? dt.toLocaleDateString()
                     : dt.toLocaleString();
@@ -91,7 +96,11 @@ const MetaForgeDetailRows = (function () {
 
         if (controlType === 'Number') {
             const num = parseFloat(val);
-            return Number.isNaN(num) ? String(val) : num.toLocaleString(undefined, { maximumFractionDigits: 4 });
+            if (Number.isNaN(num)) return String(val);
+            if (typeof MetaForgeLocale !== 'undefined') {
+                return MetaForgeLocale.formatNumber(num, { maximumFractionDigits: 4 });
+            }
+            return num.toLocaleString(undefined, { maximumFractionDigits: 4 });
         }
 
         if (MetaForgeControlTypes.isRichText(controlType) && typeof MetaForgeGridDisplayFormat !== 'undefined') {
@@ -136,10 +145,28 @@ const MetaForgeDetailRows = (function () {
                 controlHtml = `<input type="number" step="any" class="form-control form-control-sm detail-input admin-form-control detail-number" ${dataAttrs} value="${escapeAttr(val)}" ${readonly} ${required} />`;
                 break;
             case 'Date':
-                controlHtml = `<input type="date" class="form-control form-control-sm detail-input admin-form-control" ${dataAttrs} value="${escapeAttr(formatDateValue(val))}" ${readonly} ${required} />`;
+                controlHtml = typeof MetaForgeDateInput !== 'undefined'
+                    ? MetaForgeDateInput.buildDateFieldHtml({
+                        value: val,
+                        readonly,
+                        required,
+                        small: true,
+                        detailInput: true,
+                        extraAttrs: dataAttrs
+                    })
+                    : `<input type="date" class="form-control form-control-sm detail-input admin-form-control mf-date-input" ${dataAttrs} value="${escapeAttr(formatDateValue(val))}" ${readonly} ${required} />`;
                 break;
             case 'DateTime':
-                controlHtml = `<input type="datetime-local" class="form-control form-control-sm detail-input admin-form-control" ${dataAttrs} value="${escapeAttr(formatDateTimeValue(val))}" ${readonly} ${required} />`;
+                controlHtml = typeof MetaForgeDateInput !== 'undefined'
+                    ? MetaForgeDateInput.buildDateTimeFieldHtml({
+                        value: val,
+                        readonly,
+                        required,
+                        small: true,
+                        detailInput: true,
+                        extraAttrs: dataAttrs
+                    })
+                    : `<input type="datetime-local" class="form-control form-control-sm detail-input admin-form-control mf-datetime-input" ${dataAttrs} value="${escapeAttr(formatDateTimeValue(val))}" ${readonly} ${required} />`;
                 break;
             case 'Checkbox':
                 controlHtml = `<div class="form-check"><input type="checkbox" class="form-check-input detail-input" ${dataAttrs} ${val ? 'checked' : ''} ${disabled} /></div>`;
@@ -178,7 +205,7 @@ const MetaForgeDetailRows = (function () {
     function showRowFieldError($container, index, fieldName, message) {
         const $root = $($container);
         const $wrap = $root.find(`.detail-field-wrap[data-field-wrap="${fieldName}"][data-index="${index}"]`).first();
-        const $input = $wrap.find('.detail-input').first();
+        const $input = $wrap.find('.detail-input, .mf-date-text').first();
 
         if ($input.length) {
             $input.addClass('is-invalid');
@@ -248,6 +275,19 @@ const MetaForgeDetailRows = (function () {
                     });
                 }
             }
+            return;
+        }
+
+        if (controlType === 'Date' || controlType === 'DateTime') {
+            row.__display = row.__display || {};
+            const raw = $input.val();
+            if (raw) {
+                row.__display[name] = typeof MetaForgeDateInput !== 'undefined'
+                    ? MetaForgeDateInput.formatDisplayValue(controlType, raw)
+                    : (typeof MetaForgeLocale !== 'undefined'
+                        ? (controlType === 'Date' ? MetaForgeLocale.formatDate(raw) : MetaForgeLocale.formatDateTime(raw))
+                        : raw);
+            }
         }
     }
 
@@ -312,15 +352,27 @@ const MetaForgeDetailRows = (function () {
     }
 
     function formatDateValue(value) {
-        return MetaForgeGridDisplayFormat.formatDateInputValue(value);
+        return typeof MetaForgeDateInput !== 'undefined'
+            ? MetaForgeDateInput.toDateInputValue(value)
+            : MetaForgeGridDisplayFormat.formatDateInputValue(value);
     }
 
     function formatDateTimeValue(value) {
-        if (!value) return '';
-        const dt = new Date(value);
-        if (isNaN(dt.getTime())) return value;
-        const pad = n => String(n).padStart(2, '0');
-        return `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}T${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
+        return typeof MetaForgeDateInput !== 'undefined'
+            ? MetaForgeDateInput.toDateTimeLocalValue(value)
+            : (function () {
+                if (!value) return '';
+                const dt = new Date(value);
+                if (isNaN(dt.getTime())) return value;
+                const pad = n => String(n).padStart(2, '0');
+                return `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}T${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
+            })();
+    }
+
+    function initDateInputsInRow($row) {
+        if (typeof MetaForgeDateInput !== 'undefined') {
+            MetaForgeDateInput.initScope($row);
+        }
     }
 
     return {
@@ -343,6 +395,7 @@ const MetaForgeDetailRows = (function () {
         escapeHtml,
         escapeAttr,
         formatDateValue,
-        formatDateTimeValue
+        formatDateTimeValue,
+        initDateInputsInRow
     };
 })();

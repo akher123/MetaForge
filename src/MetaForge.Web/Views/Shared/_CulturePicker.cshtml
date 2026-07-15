@@ -1,0 +1,109 @@
+@model MetaForge.Web.Models.CulturePickerViewModel
+@using MetaForge.Shared.Culture
+@{
+    var inheritValue = "";
+    var selectedCulture = Model.UserCultureOverride ?? inheritValue;
+    var selectedDateFormat = Model.UserDateFormatOverride ?? inheritValue;
+    var selectedDateTimeFormat = Model.UserDateTimeFormatOverride ?? inheritValue;
+}
+<div class="culture-picker" data-culture-picker>
+    <div class="culture-picker-header">
+        <div class="culture-picker-header-text">
+            <h2 class="culture-picker-title">
+                <i class="fa-solid fa-globe" aria-hidden="true"></i>
+                Language &amp; region
+            </h2>
+            <p class="culture-picker-subtitle">
+                Dates, numbers, and formats follow your selected culture and format preferences.
+                @if (Model.CultureIsUserOverride || Model.DateFormatIsUserOverride || Model.DateTimeFormatIsUserOverride)
+                {
+                    <span class="culture-picker-override-badge">Custom</span>
+                }
+                else
+                {
+                    <span class="culture-picker-override-badge culture-picker-override-badge--inherit">System default</span>
+                }
+            </p>
+        </div>
+        <span class="culture-picker-status" id="culturePickerStatus" aria-live="polite" hidden>
+            <i class="fa-solid fa-circle-notch fa-spin" aria-hidden="true"></i>
+            <span>Saving</span>
+        </span>
+    </div>
+
+    <div class="culture-picker-controls">
+        <label class="form-label" for="culturePickerSelect">Culture</label>
+        <select id="culturePickerSelect"
+                class="form-select culture-picker-select"
+                data-effective-culture="@Model.EffectiveCulture"
+                data-system-default="@Model.SystemDefaultCulture"
+                data-selected="@selectedCulture"
+                aria-describedby="culturePickerHint">
+            <option value="@inheritValue" selected="@(string.IsNullOrEmpty(Model.UserCultureOverride) ? "selected" : null)">
+                Use system default (@Model.SystemDefaultCulture)
+            </option>
+            @foreach (var culture in Model.Cultures)
+            {
+                <option value="@culture.Name" selected="@(string.Equals(culture.Name, Model.UserCultureOverride, StringComparison.OrdinalIgnoreCase) ? "selected" : null)">
+                    @culture.DisplayName (@culture.Name)
+                </option>
+            }
+        </select>
+        <div id="culturePickerHint" class="form-text">
+            System default is <strong>@Model.SystemDefaultCulture</strong>.
+            Changing culture reloads the page so dates update everywhere.
+        </div>
+    </div>
+
+    <div class="culture-picker-controls">
+        <label class="form-label" for="dateFormatPickerSelect">Date format</label>
+        <select id="dateFormatPickerSelect"
+                class="form-select culture-picker-select"
+                data-effective-format="@Model.EffectiveDateFormat"
+                data-system-default="@Model.SystemDefaultDateFormat"
+                data-selected="@selectedDateFormat">
+            <option value="@inheritValue" selected="@(string.IsNullOrEmpty(Model.UserDateFormatOverride) ? "selected" : null)">
+                Use system default
+            </option>
+        </select>
+        @if (Model.DateFormatIsUserOverride)
+        {
+            <div class="form-text">Custom date format override.</div>
+        }
+    </div>
+
+    <div class="culture-picker-controls">
+        <label class="form-label" for="dateTimeFormatPickerSelect">Date &amp; time format</label>
+        <select id="dateTimeFormatPickerSelect"
+                class="form-select culture-picker-select"
+                data-effective-format="@Model.EffectiveDateTimeFormat"
+                data-system-default="@Model.SystemDefaultDateTimeFormat"
+                data-selected="@selectedDateTimeFormat">
+            <option value="@inheritValue" selected="@(string.IsNullOrEmpty(Model.UserDateTimeFormatOverride) ? "selected" : null)">
+                Use system default
+            </option>
+        </select>
+        @if (Model.DateTimeFormatIsUserOverride)
+        {
+            <div class="form-text">Custom date-time format override.</div>
+        }
+    </div>
+
+    <div class="culture-preview" id="culturePreviewPanel" aria-live="polite">
+        <h3 class="culture-preview-title">Format preview</h3>
+        <dl class="culture-preview-list">
+            <div class="culture-preview-item">
+                <dt>Date</dt>
+                <dd id="culturePreviewDate">@Model.Preview.ShortDate</dd>
+            </div>
+            <div class="culture-preview-item">
+                <dt>Date &amp; time</dt>
+                <dd id="culturePreviewDateTime">@Model.Preview.ShortDateTime</dd>
+            </div>
+            <div class="culture-preview-item">
+                <dt>Number</dt>
+                <dd id="culturePreviewNumber">@Model.Preview.SampleNumber</dd>
+            </div>
+        </dl>
+    </div>
+</div>

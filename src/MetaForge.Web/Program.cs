@@ -79,6 +79,7 @@ try
     app.UseRouting();
     app.UseAuthentication();
     app.UseMiddleware<SecurityStampValidationMiddleware>();
+    app.UseMiddleware<CultureMiddleware>();
     app.UseAuthorization();
 
     app.MapControllerRoute(

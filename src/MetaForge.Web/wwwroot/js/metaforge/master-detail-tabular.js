@@ -233,6 +233,9 @@ const MasterDetailTabular = (function () {
             if (typeof MetaForgeRichText !== 'undefined') {
                 MetaForgeRichText.initScope($body);
             }
+            if (typeof MetaForgeDetailRows.initDateInputsInRow === 'function') {
+                MetaForgeDetailRows.initDateInputsInRow($body);
+            }
         }
 
         updateSectionCount(key);
@@ -540,15 +543,21 @@ const MasterDetailTabular = (function () {
     }
 
     function formatDateValue(value) {
-        return MetaForgeGridDisplayFormat.formatDateInputValue(value);
+        return typeof MetaForgeDateInput !== 'undefined'
+            ? MetaForgeDateInput.toDateInputValue(value)
+            : MetaForgeGridDisplayFormat.formatDateInputValue(value);
     }
 
     function formatDateTimeValue(value) {
-        if (!value) return '';
-        const dt = new Date(value);
-        if (isNaN(dt.getTime())) return value;
-        const pad = n => String(n).padStart(2, '0');
-        return `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}T${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
+        return typeof MetaForgeDateInput !== 'undefined'
+            ? MetaForgeDateInput.toDateTimeLocalValue(value)
+            : (function () {
+                if (!value) return '';
+                const dt = new Date(value);
+                if (isNaN(dt.getTime())) return value;
+                const pad = n => String(n).padStart(2, '0');
+                return `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}T${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
+            })();
     }
 
     return { init, loadAndOpen };

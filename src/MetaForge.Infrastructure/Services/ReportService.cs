@@ -263,7 +263,7 @@ public class ReportService : IReportService
             .ToList();
 
         var rows = items.Select(i => ReportNavigationMapper.ToDictionary(i, sourceProperties)).ToList();
-        await GridDisplayEnricher.EnrichAsync(rows, enrichColumns, _lookupService, cancellationToken);
+        await GridDisplayEnricher.EnrichAsync(rows, enrichColumns, _lookupService, formatTemporalColumns: true, cancellationToken);
         ReportFormulaEvaluator.ApplyCalculations(rows, calculatedColumns);
         return rows;
     }

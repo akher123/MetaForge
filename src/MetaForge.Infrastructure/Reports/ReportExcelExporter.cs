@@ -1,5 +1,6 @@
 using System.Globalization;
 using ClosedXML.Excel;
+using MetaForge.Shared.Constants;
 
 namespace MetaForge.Infrastructure.Reports;
 
@@ -251,8 +252,16 @@ internal static class ReportExcelExporter
 
         if (value is DateTime dt)
         {
+            if (string.IsNullOrWhiteSpace(displayFormat) || GridDisplayFormats.IsTemporalDisplayFormat(displayFormat))
+            {
+                cell.Value = GridDisplayFormats.FormatWithKey(
+                    dt,
+                    string.IsNullOrWhiteSpace(displayFormat) ? GridDisplayFormats.LocaleDate : displayFormat);
+                return;
+            }
+
             cell.Value = dt;
-            cell.Style.NumberFormat.Format = string.IsNullOrWhiteSpace(displayFormat) ? "yyyy-MM-dd" : displayFormat;
+            cell.Style.NumberFormat.Format = displayFormat;
             return;
         }
 

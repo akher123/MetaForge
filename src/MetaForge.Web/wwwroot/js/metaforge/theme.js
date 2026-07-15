@@ -26,7 +26,17 @@
     }
 
     function syncPickerState(activeKey) {
-        document.querySelectorAll('.theme-card').forEach(function (btn) {
+        document.querySelectorAll('.theme-picker-grid[data-theme-mode="user"] .theme-card').forEach(function (btn) {
+            const key = btn.getAttribute('data-theme-key');
+            const active = key === activeKey;
+            btn.classList.toggle('is-active', active);
+            btn.setAttribute('aria-selected', active ? 'true' : 'false');
+        });
+    }
+
+    function syncPickerStateForGrid(grid, activeKey) {
+        if (!grid) return;
+        grid.querySelectorAll('.theme-card').forEach(function (btn) {
             const key = btn.getAttribute('data-theme-key');
             const active = key === activeKey;
             btn.classList.toggle('is-active', active);
@@ -52,7 +62,7 @@
         const status = document.getElementById('themePickerStatus');
         if (status) status.hidden = !isSaving;
 
-        document.querySelectorAll('.theme-card').forEach(function (btn) {
+        document.querySelectorAll('.theme-picker-grid[data-theme-mode="user"] .theme-card').forEach(function (btn) {
             btn.disabled = isSaving;
             btn.classList.toggle('is-saving', isSaving);
         });
@@ -148,10 +158,25 @@
         const btn = ev.target.closest('.theme-card');
         if (!btn || btn.disabled || saving) return;
 
+        const grid = btn.closest('.theme-picker-grid');
+        if (!grid) return;
+
+        const mode = grid.getAttribute('data-theme-mode') || 'user';
         const themeKey = btn.getAttribute('data-theme-key');
         if (!themeKey) return;
 
         if (btn.classList.contains('is-active')) return;
+
+        if (mode === 'system') {
+            syncPickerStateForGrid(grid, themeKey);
+            const hidden = document.getElementById('defaultThemeKey');
+            if (hidden) hidden.value = themeKey;
+            grid.dispatchEvent(new CustomEvent('metaforge-system-theme-selected', {
+                bubbles: true,
+                detail: { themeKey: themeKey, themeName: btn.getAttribute('data-theme-name') || '' }
+            }));
+            return;
+        }
 
         const isDark = btn.getAttribute('data-theme-dark') === 'true';
         const themeName = btn.getAttribute('data-theme-name') || '';
@@ -195,6 +220,7 @@
         apply: applyTheme,
         persist: persistTheme,
         bindPickers: bindPickers,
-        refreshChrome: refreshThemedChrome
+        refreshChrome: refreshThemedChrome,
+        syncPickerStateForGrid: syncPickerStateForGrid
     };
 })();

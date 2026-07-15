@@ -173,6 +173,9 @@ const MasterDetail = (function () {
         if (typeof MetaForgeRichText !== 'undefined') {
             MetaForgeRichText.initScope($body);
         }
+        if (typeof MetaForgeDetailRows.initDateInputsInRow === 'function') {
+            MetaForgeDetailRows.initDateInputsInRow($body);
+        }
         updateSummary();
     }
 
@@ -335,8 +338,12 @@ const MasterDetail = (function () {
                 let val = data[name];
                 if (val == null || val === '') return null;
 
-                const controlType = f.ControlType ?? f.controlType ?? 'TextBox';
-                if (controlType === 'Dropdown' || controlType === 'Autocomplete') {
+                const controlType = MetaForgeControlTypes.normalize(f.ControlType ?? f.controlType);
+                if (controlType === 'Date' && typeof MetaForgeLocale !== 'undefined') {
+                    val = MetaForgeLocale.formatDate(val);
+                } else if (controlType === 'DateTime' && typeof MetaForgeLocale !== 'undefined') {
+                    val = MetaForgeLocale.formatDateTime(val);
+                } else if (controlType === 'Dropdown' || controlType === 'Autocomplete') {
                     const $sel = $(`#masterForm [name="${name}"], #masterForm select[data-field="${name}"]`).first();
                     if ($sel.length) {
                         const selectedText = $sel.find('option:selected').text()?.trim();
@@ -516,15 +523,21 @@ const MasterDetail = (function () {
     }
 
     function formatDateValue(value) {
-        return MetaForgeGridDisplayFormat.formatDateInputValue(value);
+        return typeof MetaForgeDateInput !== 'undefined'
+            ? MetaForgeDateInput.toDateInputValue(value)
+            : MetaForgeGridDisplayFormat.formatDateInputValue(value);
     }
 
     function formatDateTimeValue(value) {
-        if (!value) return '';
-        const dt = new Date(value);
-        if (isNaN(dt.getTime())) return value;
-        const pad = n => String(n).padStart(2, '0');
-        return `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}T${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
+        return typeof MetaForgeDateInput !== 'undefined'
+            ? MetaForgeDateInput.toDateTimeLocalValue(value)
+            : (function () {
+                if (!value) return '';
+                const dt = new Date(value);
+                if (isNaN(dt.getTime())) return value;
+                const pad = n => String(n).padStart(2, '0');
+                return `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}T${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
+            })();
     }
 
     return { init, loadAndOpen };

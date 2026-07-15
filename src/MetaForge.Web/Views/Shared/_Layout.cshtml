@@ -1,7 +1,10 @@
 @using System.Security.Claims
 @using MetaForge.Shared.Constants
+@using MetaForge.Shared.Culture
+@using MetaForge.Web.Middleware
 @inject MetaForge.Application.Interfaces.INavigationService NavigationService
 @inject MetaForge.Application.Interfaces.IUserPreferenceService UserPreferenceService
+@inject MetaForge.Application.Interfaces.ISystemSettingsService SystemSettingsService
 @{
     var sidebarMenu = await NavigationService.GetSidebarMenuAsync();
     var isAuthenticated = User.Identity?.IsAuthenticated == true;
@@ -22,9 +25,16 @@
     };
     var activeThemeName = availableThemes.FirstOrDefault(t =>
         string.Equals(t.Key, userThemeKey, StringComparison.OrdinalIgnoreCase))?.DisplayName ?? "Theme";
+
+    var effectiveCulture = Context.Items[CultureMiddleware.EffectiveCultureItemKey] as string ?? "en-US";
+    var isRtl = Context.Items[CultureMiddleware.IsRtlItemKey] as bool? ?? false;
+    var systemLocalization = await SystemSettingsService.GetLocalizationAsync();
+    var systemDefaultCulture = systemLocalization.DefaultCulture;
+    var effectiveDateFormat = DisplayFormatContext.Preferences?.DateFormat ?? systemLocalization.DefaultDateFormat;
+    var effectiveDateTimeFormat = DisplayFormatContext.Preferences?.DateTimeFormat ?? systemLocalization.DefaultDateTimeFormat;
 }
 <!DOCTYPE html>
-<html lang="en" data-theme="@userThemeKey" data-bs-theme="@(themeIsDark ? "dark" : "light")">
+<html lang="@effectiveCulture" dir="@(isRtl ? "rtl" : "ltr")" data-theme="@userThemeKey" data-bs-theme="@(themeIsDark ? "dark" : "light")">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -47,6 +57,14 @@
         window.__METAFORGE_THEME__ = {
             key: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(userThemeKey)),
             isDark: @(themeIsDark ? "true" : "false"),
+            authenticated: @(isAuthenticated ? "true" : "false")
+        };
+        window.__METAFORGE_LOCALE__ = {
+            culture: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(effectiveCulture)),
+            isRtl: @(isRtl ? "true" : "false"),
+            systemDefaultCulture: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(systemDefaultCulture)),
+            dateFormat: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(effectiveDateFormat)),
+            dateTimeFormat: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(effectiveDateTimeFormat)),
             authenticated: @(isAuthenticated ? "true" : "false")
         };
         try {
@@ -229,11 +247,13 @@
     <script src="~/js/metaforge/rich-text-editor.js" asp-append-version="true"></script>
     <script src="~/js/metaforge/dynamic-form.js" asp-append-version="true"></script>
     <script src="~/js/metaforge/grid-display-format.js" asp-append-version="true"></script>
+    <script src="~/js/metaforge/date-input.js" asp-append-version="true"></script>
     <script src="~/js/metaforge/dynamic-grid.js" asp-append-version="true"></script>
     <script src="~/js/metaforge/detail-grid-rows.js" asp-append-version="true"></script>
     <script src="~/js/metaforge/master-detail.js" asp-append-version="true"></script>
     <script src="~/js/metaforge/master-detail-tabular.js" asp-append-version="true"></script>
     <script src="~/js/metaforge/theme.js" asp-append-version="true"></script>
+    <script src="~/js/metaforge/locale.js" asp-append-version="true"></script>
     <script src="~/js/metaforge/sidebar-menu.js" asp-append-version="true"></script>
     <script src="~/js/metaforge/top-progress.js" asp-append-version="true"></script>
     <script src="~/js/metaforge/ui-feedback.js" asp-append-version="true"></script>

@@ -1,6 +1,7 @@
 using MetaForge.Domain.Audit;
 using MetaForge.Domain.Features;
 using MetaForge.Domain.Notifications;
+using MetaForge.Domain.Platform;
 using MetaForge.Domain.Security;
 
 namespace MetaForge.Infrastructure.Persistence;
@@ -65,6 +66,8 @@ public class MetaForgeDbContext : DbContext
     public DbSet<EmailTemplate> EmailTemplates => Set<EmailTemplate>();
     public DbSet<EmailTemplateBinding> EmailTemplateBindings => Set<EmailTemplateBinding>();
     public DbSet<EmailMessage> EmailMessages => Set<EmailMessage>();
+
+    public DbSet<SystemSetting> SystemSettings => Set<SystemSetting>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
