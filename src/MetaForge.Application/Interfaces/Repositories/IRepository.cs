@@ -1,11 +1,11 @@
 namespace MetaForge.Application.Interfaces.Repositories;
 
 /// <summary>
-/// Generic repository contract.
+/// Generic repository contract with a typed key.
 /// </summary>
-public interface IRepository<T> where T : class
+public interface IRepository<T, TKey> where T : class
 {
-    Task<T?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
+    Task<T?> GetByIdAsync(TKey id, CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<T>> GetAllAsync(CancellationToken cancellationToken = default);
 
@@ -14,6 +14,13 @@ public interface IRepository<T> where T : class
     void Update(T entity);
 
     void Remove(T entity);
+}
+
+/// <summary>
+/// Generic repository contract with integer key (default).
+/// </summary>
+public interface IRepository<T> : IRepository<T, int> where T : class
+{
 }
 
 /// <summary>

@@ -109,7 +109,7 @@ public class MasterDetailService : IMasterDetailService
         string formCode,
         Dictionary<string, object?> masterData,
         List<Dictionary<string, object?>>? detailData,
-        IReadOnlyList<int>? deletedDetailIds = null,
+        IReadOnlyList<object>? deletedDetailIds = null,
         IReadOnlyList<DetailSectionSaveDto>? detailSections = null,
         CancellationToken cancellationToken = default)
     {
@@ -124,9 +124,14 @@ public class MasterDetailService : IMasterDetailService
             : null;
 
         object masterId;
-        if (masterData.TryGetValue("Id", out var idVal) && idVal != null && DynamicEntityMapper.ToInt32(idVal) > 0)
+        var masterEntityType = _typeResolver.Resolve(form.EntityName);
+        var masterKeyType = masterEntityType.GetProperty("Id")?.PropertyType
+            ?? throw new BusinessException($"Entity '{form.EntityName}' does not expose an Id property.");
+
+        if (masterData.TryGetValue("Id", out var idVal)
+            && DynamicEntityMapper.HasAssignedKey(idVal, masterKeyType))
         {
-            masterId = DynamicEntityMapper.ToInt32(idVal);
+            masterId = DynamicEntityMapper.ConvertKey(idVal, masterKeyType);
             await _crudService.UpdateAsync(form.EntityName, masterId, masterData, cancellationToken);
         }
         else
@@ -145,18 +150,26 @@ public class MasterDetailService : IMasterDetailService
 
                 if (relation == null) continue;
 
+                var childEntityType = _typeResolver.Resolve(relation.ChildEntity);
+                var childKeyType = childEntityType.GetProperty("Id")?.PropertyType
+                    ?? throw new BusinessException($"Entity '{relation.ChildEntity}' does not expose an Id property.");
+
                 if (section.DeletedIds.Count > 0)
                 {
-                    foreach (var detailId in section.DeletedIds.Distinct().Where(id => id > 0))
+                    foreach (var detailId in section.DeletedIds
+                                 .Where(id => DynamicEntityMapper.HasAssignedKey(id, childKeyType))
+                                 .Select(id => DynamicEntityMapper.ConvertKey(id, childKeyType))
+                                 .Distinct())
                         await _crudService.DeleteAsync(relation.ChildEntity, detailId, cancellationToken);
                 }
 
                 foreach (var detail in section.Rows.Select(DynamicEntityMapper.NormalizeDictionary))
                 {
                     detail[relation.ForeignKey] = masterId;
-                    if (detail.TryGetValue("Id", out var detailId) && detailId != null && DynamicEntityMapper.ToInt32(detailId) > 0)
+                    if (detail.TryGetValue("Id", out var detailId)
+                        && DynamicEntityMapper.HasAssignedKey(detailId, childKeyType))
                     {
-                        var parsedDetailId = DynamicEntityMapper.ToInt32(detailId);
+                        var parsedDetailId = DynamicEntityMapper.ConvertKey(detailId, childKeyType);
                         await _validationService.ValidateAsync(relation.ChildEntity, detail, cancellationToken);
                         await _crudService.UpdateAsync(relation.ChildEntity, parsedDetailId, detail, cancellationToken);
                     }
@@ -175,19 +188,31 @@ public class MasterDetailService : IMasterDetailService
 
             if (relation != null && deletedDetailIds != null)
             {
-                foreach (var detailId in deletedDetailIds.Distinct().Where(id => id > 0))
+                var childEntityType = _typeResolver.Resolve(relation.ChildEntity);
+                var childKeyType = childEntityType.GetProperty("Id")?.PropertyType
+                    ?? throw new BusinessException($"Entity '{relation.ChildEntity}' does not expose an Id property.");
+
+                foreach (var detailId in deletedDetailIds
+                             .Where(id => DynamicEntityMapper.HasAssignedKey(id, childKeyType))
+                             .Select(id => DynamicEntityMapper.ConvertKey(id, childKeyType))
+                             .Distinct())
                     await _crudService.DeleteAsync(relation.ChildEntity, detailId, cancellationToken);
             }
 
             if (detailData != null && relation != null)
             {
+                var childEntityType = _typeResolver.Resolve(relation.ChildEntity);
+                var childKeyType = childEntityType.GetProperty("Id")?.PropertyType
+                    ?? throw new BusinessException($"Entity '{relation.ChildEntity}' does not expose an Id property.");
+
                 foreach (var detail in detailData)
                 {
                     detail[relation.ForeignKey] = masterId;
 
-                    if (detail.TryGetValue("Id", out var detailId) && detailId != null && DynamicEntityMapper.ToInt32(detailId) > 0)
+                    if (detail.TryGetValue("Id", out var detailId)
+                        && DynamicEntityMapper.HasAssignedKey(detailId, childKeyType))
                     {
-                        var parsedDetailId = DynamicEntityMapper.ToInt32(detailId);
+                        var parsedDetailId = DynamicEntityMapper.ConvertKey(detailId, childKeyType);
                         await _validationService.ValidateAsync(relation.ChildEntity, detail, cancellationToken);
                         await _crudService.UpdateAsync(relation.ChildEntity, parsedDetailId, detail, cancellationToken);
                     }
@@ -296,7 +321,9 @@ public class MasterDetailService : IMasterDetailService
         CancellationToken cancellationToken)
     {
         var childType = _typeResolver.Resolve(childEntity);
-        var masterIdValue = DynamicEntityMapper.ToInt32(masterId);
+        var fkProperty = childType.GetProperty(foreignKey)
+            ?? throw new BusinessException($"Entity '{childEntity}' does not expose foreign key '{foreignKey}'.");
+        var masterIdValue = DynamicEntityMapper.ConvertKey(masterId, fkProperty.PropertyType);
         var items = await QueryDetailsByForeignKeyAsync(childType, foreignKey, masterIdValue, cancellationToken);
         return items.Select(i => DynamicEntityMapper.ToDictionary(i)).ToList();
     }
@@ -354,7 +381,7 @@ public class MasterDetailService : IMasterDetailService
     private async Task<List<object>> QueryDetailsByForeignKeyAsync(
         Type childType,
         string foreignKey,
-        int masterIdValue,
+        object masterIdValue,
         CancellationToken cancellationToken)
     {
         var setMethod = typeof(DbContext).GetMethod(nameof(DbContext.Set), Type.EmptyTypes)!.MakeGenericMethod(childType);
@@ -362,8 +389,8 @@ public class MasterDetailService : IMasterDetailService
 
         var parameter = Expression.Parameter(childType, "e");
         var fkProperty = Expression.Property(parameter, foreignKey);
-        var constant = Expression.Constant(masterIdValue);
-        var equality = Expression.Equal(fkProperty, Expression.Convert(constant, fkProperty.Type));
+        var constant = Expression.Constant(masterIdValue, fkProperty.Type);
+        var equality = Expression.Equal(fkProperty, constant);
         var lambda = Expression.Lambda(equality, parameter);
 
         var whereMethod = typeof(Queryable).GetMethods()

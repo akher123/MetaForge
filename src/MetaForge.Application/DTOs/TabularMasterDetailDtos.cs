@@ -31,5 +31,5 @@ public class DetailSectionSaveDto
 
     public List<Dictionary<string, object?>> Rows { get; set; } = [];
 
-    public List<int> DeletedIds { get; set; } = [];
+    public List<object> DeletedIds { get; set; } = [];
 }

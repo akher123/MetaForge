@@ -2,9 +2,9 @@
     ViewData["Title"] = ViewBag.Form?.FormName ?? "Form";
     var form = ViewBag.Form as MetaForge.Application.DTOs.FormDefinition;
     var formCode = ViewBag.FormCode as string;
-    var recordId = ViewBag.RecordId as int?;
+    var recordId = ViewBag.RecordId as string;
     var perms = ViewBag.Permissions as MetaForge.Application.DTOs.FormPermissionsDto;
-    var isEdit = recordId.HasValue;
+    var isEdit = !string.IsNullOrWhiteSpace(recordId);
     var canSave = isEdit ? perms?.CanEdit == true : perms?.CanCreate == true;
     var isReadOnly = isEdit ? perms?.CanEdit != true : perms?.CanCreate != true;
 }
@@ -47,7 +47,7 @@
     <script>
         $(function () {
             const formDef = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(form));
-            const recordId = @(recordId.HasValue ? recordId.Value.ToString() : "null");
+            const recordId = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(recordId));
             const isReadOnly = @(isReadOnly ? "true" : "false");
             DynamicForm.init('#dynamicForm', formDef, { layoutClass: 'master-detail-form' });
             if (recordId) {

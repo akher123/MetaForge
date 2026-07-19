@@ -10,7 +10,7 @@ namespace MetaForge.Infrastructure.Services;
 public class GridActionService : IGridActionService
 {
     private static readonly Regex CrudPathPattern = new(
-        @"^/api/metaforge/crud/(?<entity>[^/]+)(?:/(?<id>\d+))?$",
+        @"^/api/metaforge/crud/(?<entity>[^/]+)(?:/(?<id>[^/?#]+))?$",
         RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
     private static readonly Regex EmailSendPathPattern = new(
@@ -37,7 +37,7 @@ public class GridActionService : IGridActionService
     public async Task ExecuteAsync(
         string formCode,
         string actionCode,
-        int? recordId,
+        string? recordId,
         ClaimsPrincipal user,
         CancellationToken cancellationToken = default)
     {
@@ -80,7 +80,7 @@ public class GridActionService : IGridActionService
             if (!idGroup.Success)
                 throw new BusinessException("GET grid actions require a record id in the target URL.");
 
-            await _crudService.GetByIdAsync(entity, int.Parse(idGroup.Value), cancellationToken);
+            await _crudService.GetByIdAsync(entity, idGroup.Value, cancellationToken);
             return;
         }
 
@@ -89,7 +89,7 @@ public class GridActionService : IGridActionService
             if (!idGroup.Success)
                 throw new BusinessException("DELETE grid actions require a record id in the target URL.");
 
-            await _crudService.DeleteAsync(entity, int.Parse(idGroup.Value), cancellationToken);
+            await _crudService.DeleteAsync(entity, idGroup.Value, cancellationToken);
             return;
         }
 
@@ -106,7 +106,7 @@ public class GridActionService : IGridActionService
             if (!idGroup.Success)
                 throw new BusinessException("Update grid actions require a record id in the target URL.");
 
-            var targetRecordId = int.Parse(idGroup.Value);
+            var targetRecordId = idGroup.Value;
             var existing = await _crudService.GetByIdAsync(entity, targetRecordId, cancellationToken);
             foreach (var (key, value) in existing)
             {
@@ -124,11 +124,11 @@ public class GridActionService : IGridActionService
     private async Task ExecuteEmailSendAsync(
         ForgeFormAction action,
         ForgeForm form,
-        int? recordId,
+        string? recordId,
         Dictionary<string, string?> context,
         CancellationToken cancellationToken)
     {
-        if (!recordId.HasValue)
+        if (string.IsNullOrWhiteSpace(recordId))
             throw new BusinessException("Email grid actions require a record id.");
 
         var payload = ParseRequestBody(action.RequestBody, context);
@@ -137,7 +137,9 @@ public class GridActionService : IGridActionService
             throw new BusinessException("Email grid action request body must include templateCode.");
 
         var entityName = GetPayloadString(payload, "entity") ?? form.EntityName;
-        var recordIdValue = int.Parse(GetPayloadString(payload, "recordId") ?? recordId.Value.ToString());
+        var recordIdRaw = GetPayloadString(payload, "recordId") ?? recordId;
+        if (!int.TryParse(recordIdRaw, out var recordIdValue))
+            throw new BusinessException("Email grid actions currently require an integer record id.");
 
         await _emailDispatchService.EnqueueFromTemplateAsync(new EmailSendRequest
         {
@@ -164,20 +166,20 @@ public class GridActionService : IGridActionService
 
     private async Task<Dictionary<string, string?>> BuildContextAsync(
         ForgeForm form,
-        int? recordId,
+        string? recordId,
         CancellationToken cancellationToken)
     {
         var context = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase)
         {
             ["formCode"] = form.Code,
             ["entity"] = form.EntityName,
-            ["id"] = recordId?.ToString()
+            ["id"] = recordId
         };
 
-        if (!recordId.HasValue)
+        if (string.IsNullOrWhiteSpace(recordId))
             return context;
 
-        var record = await _crudService.GetByIdAsync(form.EntityName, recordId.Value, cancellationToken);
+        var record = await _crudService.GetByIdAsync(form.EntityName, recordId, cancellationToken);
         foreach (var (key, value) in record)
         {
             context[key] = value?.ToString();

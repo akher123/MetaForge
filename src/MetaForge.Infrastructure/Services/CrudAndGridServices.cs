@@ -211,7 +211,10 @@ public class GenericCrudService : IGenericCrudService
     private async Task<object?> FindEntityAsync(string entityName, object id, CancellationToken cancellationToken)
     {
         var entityType = _typeResolver.Resolve(entityName);
-        return await _dbContext.FindAsync(entityType, [DynamicEntityMapper.ToInt32(id)], cancellationToken);
+        var idProperty = entityType.GetProperty("Id")
+            ?? throw new BusinessException($"Entity '{entityName}' does not expose an Id property.");
+        var key = DynamicEntityMapper.ConvertKey(id, idProperty.PropertyType);
+        return await _dbContext.FindAsync(entityType, [key], cancellationToken);
     }
 
     private async Task<IDbContextTransaction?> BeginTransactionIfNeededAsync(CancellationToken cancellationToken)

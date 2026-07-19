@@ -219,6 +219,38 @@ public static class DynamicEntityMapper
     }
 
     /// <summary>
+    /// Converts a dynamic id value to the entity's primary-key CLR type.
+    /// </summary>
+    public static object ConvertKey(object? value, Type keyType)
+    {
+        var converted = ConvertValue(value, keyType);
+        if (converted == null)
+            throw new BusinessException($"Unable to convert key value '{value}' to {keyType.Name}.");
+
+        return converted;
+    }
+
+    /// <summary>
+    /// Returns true when <paramref name="value"/> represents a non-default primary key for <paramref name="keyType"/>.
+    /// </summary>
+    public static bool HasAssignedKey(object? value, Type keyType)
+    {
+        if (value == null)
+            return false;
+
+        var converted = ConvertValue(value, keyType);
+        if (converted == null)
+            return false;
+
+        var underlying = Nullable.GetUnderlyingType(keyType) ?? keyType;
+        if (underlying == typeof(string))
+            return !string.IsNullOrWhiteSpace(converted as string);
+
+        var defaultValue = underlying.IsValueType ? Activator.CreateInstance(underlying) : null;
+        return !Equals(converted, defaultValue);
+    }
+
+    /// <summary>
     /// Converts dynamic request values to a distinct list of positive integers (MultiSelect payloads).
     /// </summary>
     public static List<int> ToInt32List(object? value)

@@ -14,7 +14,7 @@ public static class EntityCodeGenerator
         sb.AppendLine("/// <summary>");
         sb.AppendLine($"/// {table.EntityName} business entity (scaffolded from {table.TableName}).");
         sb.AppendLine("/// </summary>");
-        sb.AppendLine($"public class {table.EntityName} : BaseEntity");
+        sb.AppendLine($"public class {table.EntityName} : {ResolveBaseEntityType(table)}");
         sb.AppendLine("{");
 
         foreach (var column in table.Columns.Where(c => !c.IsPrimaryKey))
@@ -44,6 +44,15 @@ public static class EntityCodeGenerator
 
     private static string SingularizeTable(string tableName) =>
         tableName.Singularize(inputIsKnownToBePlural: true);
+
+    private static string ResolveBaseEntityType(TableModel table)
+    {
+        var pk = table.Columns.FirstOrDefault(c => c.IsPrimaryKey);
+        var keyClr = (pk?.ClrTypeName ?? "int").TrimEnd('?');
+        return string.Equals(keyClr, "int", StringComparison.OrdinalIgnoreCase)
+            ? "BaseEntity"
+            : $"BaseEntity<{keyClr}>";
+    }
 
     private static string ToPropertyClrType(ColumnModel column)
     {

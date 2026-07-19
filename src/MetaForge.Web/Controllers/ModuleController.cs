@@ -24,7 +24,7 @@ public class ModuleController : Controller
     }
 
     [HttpGet("/Modules/{formCode}")]
-    public async Task<IActionResult> Index(string formCode, int? edit, string? @new, CancellationToken cancellationToken)
+    public async Task<IActionResult> Index(string formCode, string? edit, string? @new, CancellationToken cancellationToken)
     {
         var denied = await PermissionGuard.EnsureFormPermissionAsync(HttpContext, formCode, PermissionAction.View, cancellationToken);
         if (denied != null) return denied;
@@ -86,9 +86,9 @@ public class ModuleController : Controller
     }
 
     [HttpGet("/Modules/{formCode}/Form/{id?}")]
-    public async Task<IActionResult> Form(string formCode, int? id, CancellationToken cancellationToken)
+    public async Task<IActionResult> Form(string formCode, string? id, CancellationToken cancellationToken)
     {
-        var action = id.HasValue ? PermissionAction.Edit : PermissionAction.Create;
+        var action = !string.IsNullOrWhiteSpace(id) ? PermissionAction.Edit : PermissionAction.Create;
         var denied = await PermissionGuard.EnsureFormPermissionAsync(HttpContext, formCode, action, cancellationToken);
         if (denied != null) return denied;
 
@@ -105,8 +105,8 @@ public class ModuleController : Controller
     }
 
     [HttpGet("/Modules/{formCode}/MasterDetail/{id?}")]
-    public IActionResult MasterDetail(string formCode, int? id) =>
-        id.HasValue
-            ? Redirect($"/Modules/{formCode}?edit={id.Value}")
+    public IActionResult MasterDetail(string formCode, string? id) =>
+        !string.IsNullOrWhiteSpace(id)
+            ? Redirect($"/Modules/{formCode}?edit={Uri.EscapeDataString(id)}")
             : Redirect($"/Modules/{formCode}?new=1");
 }

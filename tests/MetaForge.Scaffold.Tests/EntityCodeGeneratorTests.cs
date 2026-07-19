@@ -28,4 +28,43 @@ public class EntityCodeGeneratorTests
         Assert.Contains("public string Code { get; set; } = string.Empty;", code);
         Assert.Contains("public string? Notes { get; set; }", code);
     }
+
+    [Fact]
+    public void Generate_UsesGenericBaseEntity_ForGuidKey()
+    {
+        var table = new TableModel
+        {
+            TableName = "ExternalOrders",
+            EntityName = "ExternalOrder",
+            Columns =
+            [
+                new ColumnModel { Name = "Id", ClrTypeName = "Guid", IsPrimaryKey = true, IsNullable = false },
+                new ColumnModel { Name = "Code", ClrTypeName = "string", IsNullable = false, MaxLength = 50 }
+            ]
+        };
+
+        var code = EntityCodeGenerator.Generate(table, includeNavigations: false);
+
+        Assert.Contains("public class ExternalOrder : BaseEntity<Guid>", code);
+        Assert.DoesNotContain("public Guid Id", code);
+    }
+
+    [Fact]
+    public void Generate_UsesGenericBaseEntity_ForLongKey()
+    {
+        var table = new TableModel
+        {
+            TableName = "BigRows",
+            EntityName = "BigRow",
+            Columns =
+            [
+                new ColumnModel { Name = "Id", ClrTypeName = "long", IsPrimaryKey = true, IsNullable = false },
+                new ColumnModel { Name = "Name", ClrTypeName = "string", IsNullable = false, MaxLength = 100 }
+            ]
+        };
+
+        var code = EntityCodeGenerator.Generate(table, includeNavigations: false);
+
+        Assert.Contains("public class BigRow : BaseEntity<long>", code);
+    }
 }

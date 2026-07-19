@@ -7,7 +7,7 @@
     var hasMasterDetail = ViewBag.HasMasterDetail == true;
     var isTabularMasterDetail = ViewBag.IsTabularMasterDetail == true;
     var isTabbedForm = ViewBag.IsTabbedForm == true;
-    var openMasterDetailId = ViewBag.OpenMasterDetailId as int?;
+    var openMasterDetailId = ViewBag.OpenMasterDetailId as string;
     var openMasterDetailNew = ViewBag.OpenMasterDetailNew == true;
     var rowCustomActions = grid?.Actions?.Where(a => string.Equals(a.Placement, "Row", StringComparison.OrdinalIgnoreCase)).ToList() ?? [];
     var showActionsColumn = perms?.CanView == true || perms?.CanEdit == true || perms?.CanDelete == true || rowCustomActions.Count > 0;
@@ -18,7 +18,7 @@
         : isTabbedForm
             ? "module-page--tabbed"
             : "module-page--master";
-    var breadcrumbPage = openMasterDetailNew ? "New Entry" : openMasterDetailId.HasValue ? "Edit Entry" : null;
+    var breadcrumbPage = openMasterDetailNew ? "New Entry" : !string.IsNullOrWhiteSpace(openMasterDetailId) ? "Edit Entry" : null;
 }
 
 <div class="app-page-fill module-page @pageModeClass">
@@ -204,10 +204,10 @@
             openEntry(null);
                 </text>
             }
-            else if (openMasterDetailId.HasValue)
+            else if (!string.IsNullOrWhiteSpace(openMasterDetailId))
             {
                 <text>
-            openEntry(@openMasterDetailId.Value);
+            openEntry(@Html.Raw(System.Text.Json.JsonSerializer.Serialize(openMasterDetailId)));
                 </text>
             }
                 </text>

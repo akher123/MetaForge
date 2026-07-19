@@ -23,6 +23,25 @@ public class DynamicEntityMapperTests
     }
 
     [Fact]
+    public void ConvertKey_ConvertsGuidFromString()
+    {
+        var guid = Guid.Parse("11111111-1111-1111-1111-111111111111");
+
+        Assert.Equal(guid, DynamicEntityMapper.ConvertKey(guid.ToString(), typeof(Guid)));
+    }
+
+    [Fact]
+    public void HasAssignedKey_DetectsDefaultAndAssignedValues()
+    {
+        Assert.False(DynamicEntityMapper.HasAssignedKey(0, typeof(int)));
+        Assert.True(DynamicEntityMapper.HasAssignedKey(5, typeof(int)));
+        Assert.False(DynamicEntityMapper.HasAssignedKey(Guid.Empty, typeof(Guid)));
+        Assert.True(DynamicEntityMapper.HasAssignedKey(Guid.NewGuid(), typeof(Guid)));
+        Assert.False(DynamicEntityMapper.HasAssignedKey("", typeof(string)));
+        Assert.True(DynamicEntityMapper.HasAssignedKey("abc", typeof(string)));
+    }
+
+    [Fact]
     public void UpdateEntity_ConvertsJsonElementStringsToTypedProperties()
     {
         var customer = new Customer

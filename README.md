@@ -453,11 +453,11 @@ dotnet tool install --local MetaForge.Scaffold --add-source .artifacts/tools
 dotnet metaforge scaffold entity --help
 ```
 
-**Requirements:** Primary key must be `int Id`. System tables (`Forge*`, `Users`, etc.) cannot be scaffolded.
+**Requirements:** Primary key must be named `Id` and use a supported type (`int`, `long`, `Guid`, or `string`). Prefer `int` unless you need another key. System tables (`Forge*`, `Users`, etc.) cannot be scaffolded.
 
 #### Option B — Manual
 
-1. Create a class in `src/MetaForge.Domain/Features/{Area}/` with namespace `MetaForge.Domain.Features.{Area}`, inheriting from `BaseEntity`.
+1. Create a class in `src/MetaForge.Domain/Features/{Area}/` with namespace `MetaForge.Domain.Features.{Area}`, inheriting from `BaseEntity` (int) or `BaseEntity<TKey>` (e.g. `BaseEntity<Guid>`).
 2. Add a `DbSet<T>` and configure relationships in `MetaForgeDbContext` (or `Persistence/Configurations/Generated/`).
 3. Restart the app — the entity appears in Form Builder's entity list.
 4. Use **Auto-Build** or POST `/api/metaforge/form-catalog/discover/{entityName}` to generate metadata.

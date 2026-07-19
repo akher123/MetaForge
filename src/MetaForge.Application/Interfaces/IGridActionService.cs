@@ -8,7 +8,7 @@ public interface IGridActionService
     Task ExecuteAsync(
         string formCode,
         string actionCode,
-        int? recordId,
+        string? recordId,
         System.Security.Claims.ClaimsPrincipal user,
         CancellationToken cancellationToken = default);
 }

@@ -156,10 +156,19 @@ public sealed class SqlServerSchemaReader
         if (!string.Equals(pk.Name, "Id", StringComparison.OrdinalIgnoreCase))
             throw new InvalidOperationException($"Table '{tableName}' primary key must be named 'Id' (found '{pk.Name}').");
 
-        if (!string.Equals(pk.ClrTypeName, "int", StringComparison.OrdinalIgnoreCase)
-            && !string.Equals(pk.ClrTypeName, "int?", StringComparison.OrdinalIgnoreCase))
-            throw new InvalidOperationException($"Table '{tableName}' primary key must be int (found '{pk.ClrTypeName}').");
+        var keyClr = pk.ClrTypeName.TrimEnd('?');
+        if (!AllowedPrimaryKeyClrTypes.Contains(keyClr))
+            throw new InvalidOperationException(
+                $"Table '{tableName}' primary key type '{pk.ClrTypeName}' is not supported. Allowed: {string.Join(", ", AllowedPrimaryKeyClrTypes)}.");
     }
+
+    private static readonly HashSet<string> AllowedPrimaryKeyClrTypes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "int",
+        "long",
+        "Guid",
+        "string"
+    };
 
     private static string MapSqlTypeToClr(string sqlType, int? maxLength, int? precision, int? scale, bool isNullable)
     {

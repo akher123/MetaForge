@@ -44,7 +44,7 @@ Today all layers live in the five projects above; folders mirror the future spli
 | `Metadata/` | `MetaForge.Domain.Metadata` | `ForgeForm`, `ForgeField`, `ForgeGridColumn`, `ForgeRelation`, `ForgeMenu`, lookups |
 | `Security/` | `MetaForge.Domain.Security` | Users, roles, permissions |
 | `Audit/` | `MetaForge.Domain.Audit` | `AuditLog` |
-| `Common/` | `MetaForge.Domain.Common` | `BaseEntity` |
+| `Common/` | `MetaForge.Domain.Common` | `BaseEntity` / `BaseEntity<TKey>` |
 | `Enums/` | `MetaForge.Domain.Enums` | Form types, control types, menu enums |
 
 ### Application
@@ -70,7 +70,7 @@ Interfaces and DTOs for dynamic forms, grids, lookups, master-detail, auth, menu
 
 ### Domain (`MetaForge.Domain/Features/`)
 
-- POCO entities inheriting `BaseEntity`
+- POCO entities inheriting `BaseEntity` (int) or `BaseEntity<TKey>`
 - Namespace: prefer `MetaForge.Domain.Features.{Area}` (e.g. `.Sales`, `.Education`)
 - Legacy: `MetaForge.Domain.Business` — still discovered; migrate when convenient
 

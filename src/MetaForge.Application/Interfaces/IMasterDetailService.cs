@@ -15,7 +15,7 @@ public interface IMasterDetailService
         string formCode,
         Dictionary<string, object?> masterData,
         List<Dictionary<string, object?>>? detailData,
-        IReadOnlyList<int>? deletedDetailIds = null,
+        IReadOnlyList<object>? deletedDetailIds = null,
         IReadOnlyList<DetailSectionSaveDto>? detailSections = null,
         CancellationToken cancellationToken = default);
 

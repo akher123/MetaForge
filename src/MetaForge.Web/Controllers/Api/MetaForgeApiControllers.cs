@@ -1,5 +1,4 @@
 using MetaForge.Application.Common;
-using MetaForge.Infrastructure.Dynamic;
 using MetaForge.Shared.Constants;
 
 namespace MetaForge.Web.Controllers.Api;
@@ -104,7 +103,7 @@ public class GridApiController : ControllerBase
     public async Task<IActionResult> ExecuteAction(
         string formCode,
         string actionCode,
-        int? id,
+        string? id,
         CancellationToken cancellationToken)
     {
         await _gridActionService.ExecuteAsync(formCode, actionCode, id, User, cancellationToken);
@@ -154,7 +153,7 @@ public class CrudApiController : ControllerBase
     public CrudApiController(IGenericCrudService crudService) => _crudService = crudService;
 
     [HttpGet("{entity}/{id}")]
-    public async Task<IActionResult> GetById(string entity, int id, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetById(string entity, string id, CancellationToken cancellationToken)
     {
         var denied = await PermissionGuard.EnsureEntityPermissionAsync(HttpContext, entity, PermissionAction.View, cancellationToken);
         if (denied != null) return denied;
@@ -173,7 +172,7 @@ public class CrudApiController : ControllerBase
     }
 
     [HttpPut("{entity}/{id}")]
-    public async Task<IActionResult> Update(string entity, int id, [FromBody] Dictionary<string, object?> data, CancellationToken cancellationToken)
+    public async Task<IActionResult> Update(string entity, string id, [FromBody] Dictionary<string, object?> data, CancellationToken cancellationToken)
     {
         var denied = await PermissionGuard.EnsureEntityPermissionAsync(HttpContext, entity, PermissionAction.Edit, cancellationToken);
         if (denied != null) return denied;
@@ -183,7 +182,7 @@ public class CrudApiController : ControllerBase
     }
 
     [HttpDelete("{entity}/{id}")]
-    public async Task<IActionResult> Delete(string entity, int id, CancellationToken cancellationToken)
+    public async Task<IActionResult> Delete(string entity, string id, CancellationToken cancellationToken)
     {
         var denied = await PermissionGuard.EnsureEntityPermissionAsync(HttpContext, entity, PermissionAction.Delete, cancellationToken);
         if (denied != null) return denied;
@@ -204,15 +203,17 @@ public class MasterDetailApiController : ControllerBase
 
     [HttpGet("{formCode}/{id?}")]
     [RequireFormPermission(PermissionAction.View)]
-    public async Task<IActionResult> LoadScreen(string formCode, int? id, CancellationToken cancellationToken) =>
+    public async Task<IActionResult> LoadScreen(string formCode, string? id, CancellationToken cancellationToken) =>
         Ok(await _masterDetailService.LoadScreenAsync(formCode, id, cancellationToken));
 
     [HttpPost("{formCode}")]
     public async Task<IActionResult> Save(string formCode, [FromBody] MasterDetailSaveRequest request, CancellationToken cancellationToken)
     {
-        var isUpdate = request.Master?.ContainsKey("Id") == true &&
-                       request.Master["Id"] != null &&
-                       DynamicEntityMapper.ToInt32(request.Master["Id"]) > 0;
+        var idVal = request.Master?.GetValueOrDefault("Id");
+        var isUpdate = idVal != null
+            && !string.IsNullOrWhiteSpace(idVal.ToString())
+            && !string.Equals(idVal.ToString(), "0", StringComparison.Ordinal)
+            && !string.Equals(idVal.ToString(), Guid.Empty.ToString(), StringComparison.OrdinalIgnoreCase);
 
         var action = isUpdate ? PermissionAction.Edit : PermissionAction.Create;
         var denied = await PermissionGuard.EnsureFormPermissionAsync(HttpContext, formCode, action, cancellationToken);
@@ -387,7 +388,7 @@ public class MasterDetailSaveRequest
 
     public List<Dictionary<string, object?>>? Details { get; set; }
 
-    public List<int>? DeletedDetailIds { get; set; }
+    public List<object>? DeletedDetailIds { get; set; }
 
     public List<DetailSectionSaveDto>? DetailSections { get; set; }
 }
