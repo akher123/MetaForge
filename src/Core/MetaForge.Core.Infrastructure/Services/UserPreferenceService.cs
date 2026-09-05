@@ -3,6 +3,7 @@ using MetaForge.Domain.Security;
 using MetaForge.Shared.Constants;
 using MetaForge.Shared.Culture;
 using MetaForge.Shared.Exceptions;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace MetaForge.Infrastructure.Services;
 
@@ -13,11 +14,16 @@ public class UserPreferenceService : IUserPreferenceService
 {
     private readonly MetaForgeDbContext _dbContext;
     private readonly IPreferenceResolver _preferenceResolver;
+    private readonly IMemoryCache _cache;
 
-    public UserPreferenceService(MetaForgeDbContext dbContext, IPreferenceResolver preferenceResolver)
+    public UserPreferenceService(
+        MetaForgeDbContext dbContext,
+        IPreferenceResolver preferenceResolver,
+        IMemoryCache cache)
     {
         _dbContext = dbContext;
         _preferenceResolver = preferenceResolver;
+        _cache = cache;
     }
 
     public async Task<string> GetThemeAsync(int userId, CancellationToken cancellationToken = default)
@@ -44,6 +50,7 @@ public class UserPreferenceService : IUserPreferenceService
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
+        InvalidatePreferenceCache(userId);
     }
 
     public async Task<string?> GetCultureOverrideAsync(int userId, CancellationToken cancellationToken = default)
@@ -82,6 +89,7 @@ public class UserPreferenceService : IUserPreferenceService
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
+        InvalidatePreferenceCache(userId);
     }
 
     public async Task SetDateFormatsAsync(
@@ -123,6 +131,7 @@ public class UserPreferenceService : IUserPreferenceService
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
+        InvalidatePreferenceCache(userId);
     }
 
     public async Task ResetToSystemDefaultsAsync(int userId, CancellationToken cancellationToken = default)
@@ -135,6 +144,7 @@ public class UserPreferenceService : IUserPreferenceService
         user.DateFormatOverride = null;
         user.DateTimeFormatOverride = null;
         await _dbContext.SaveChangesAsync(cancellationToken);
+        InvalidatePreferenceCache(userId);
     }
 
     public IReadOnlyList<ThemeOptionDto> GetAvailableThemes() =>
@@ -149,4 +159,7 @@ public class UserPreferenceService : IUserPreferenceService
             SurfaceSwatch = t.SurfaceSwatch,
             Description = t.Description
         }).ToList();
+
+    private void InvalidatePreferenceCache(int userId) =>
+        _cache.Remove(PreferenceResolverService.GetCacheKey(userId));
 }

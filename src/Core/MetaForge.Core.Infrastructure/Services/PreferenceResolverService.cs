@@ -1,5 +1,7 @@
 using System.Globalization;
+using MetaForge.Shared.Constants;
 using MetaForge.Shared.Culture;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace MetaForge.Infrastructure.Services;
 
@@ -10,14 +12,37 @@ public class PreferenceResolverService : IPreferenceResolver
 {
     private readonly MetaForgeDbContext _dbContext;
     private readonly ISystemSettingsService _systemSettings;
+    private readonly IMemoryCache _cache;
 
-    public PreferenceResolverService(MetaForgeDbContext dbContext, ISystemSettingsService systemSettings)
+    public PreferenceResolverService(
+        MetaForgeDbContext dbContext,
+        ISystemSettingsService systemSettings,
+        IMemoryCache cache)
     {
         _dbContext = dbContext;
         _systemSettings = systemSettings;
+        _cache = cache;
     }
 
     public async Task<EffectivePreferencesDto> ResolveAsync(int? userId, CancellationToken cancellationToken = default)
+    {
+        if (userId is int id)
+        {
+            var cacheKey = $"{AppConstants.PreferenceCacheKeyPrefix}{id}";
+            return await _cache.GetOrCreateAsync(cacheKey, async entry =>
+            {
+                entry.SlidingExpiration = TimeSpan.FromMinutes(10);
+                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(30);
+                return await ResolveFromDatabaseAsync(id, cancellationToken);
+            }) ?? await ResolveFromDatabaseAsync(id, cancellationToken);
+        }
+
+        return await ResolveFromDatabaseAsync(null, cancellationToken);
+    }
+
+    public static string GetCacheKey(int userId) => $"{AppConstants.PreferenceCacheKeyPrefix}{userId}";
+
+    private async Task<EffectivePreferencesDto> ResolveFromDatabaseAsync(int? userId, CancellationToken cancellationToken)
     {
         var system = await _systemSettings.GetPreferencesAsync(cancellationToken);
 
@@ -26,11 +51,11 @@ public class PreferenceResolverService : IPreferenceResolver
         string? userDateFormat = null;
         string? userDateTimeFormat = null;
 
-        if (userId is int id)
+        if (userId is int resolvedUserId)
         {
             var user = await _dbContext.Users
                 .AsNoTracking()
-                .Where(u => u.Id == id)
+                .Where(u => u.Id == resolvedUserId)
                 .Select(u => new
                 {
                     u.CultureOverride,

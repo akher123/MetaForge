@@ -229,7 +229,7 @@ public class PreferenceResolverServiceTests
     {
         var cache = new MemoryCache(new MemoryCacheOptions());
         var systemSettings = new SystemSettingsService(context, cache);
-        return new PreferenceResolverService(context, systemSettings);
+        return new PreferenceResolverService(context, systemSettings, cache);
     }
 
     private static async Task<MetaForgeDbContext> CreateSeededContextAsync()

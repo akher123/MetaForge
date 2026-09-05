@@ -4,6 +4,7 @@ using MetaForge.Web.Localization;
 using MetaForge.Web.Logging;
 using MetaForge.Web.Middleware;
 using MetaForge.Web.Modules;
+using Microsoft.AspNetCore.ResponseCompression;
 using Serilog;
 
 Log.Logger = new LoggerConfiguration()
@@ -45,6 +46,11 @@ try
 
     builder.Services.AddAuthorization();
 
+    builder.Services.AddResponseCompression(options =>
+    {
+        options.EnableForHttps = true;
+    });
+
     var app = builder.Build();
 
     if (args.Contains("--reset-db", StringComparer.OrdinalIgnoreCase))
@@ -72,7 +78,23 @@ try
         app.UseHsts();
 
     app.UseHttpsRedirection();
-    app.UseStaticFiles();
+    app.UseResponseCompression();
+
+    if (!app.Environment.IsDevelopment())
+    {
+        app.UseStaticFiles(new StaticFileOptions
+        {
+            OnPrepareResponse = ctx =>
+            {
+                ctx.Context.Response.Headers.CacheControl = "public,max-age=604800";
+            }
+        });
+    }
+    else
+    {
+        app.UseStaticFiles();
+    }
+
     app.UseRouting();
     app.UseAuthentication();
     app.UseMiddleware<SecurityStampValidationMiddleware>();

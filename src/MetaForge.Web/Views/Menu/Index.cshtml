@@ -1,4 +1,5 @@
 @{
+    ViewData["ScriptBundles"] = new[] { "DataTables" };
     ViewData["Title"] = "Menu Management";
     var menus = ViewBag.Menus as IReadOnlyList<MetaForge.Application.DTOs.MenuListItemDto>;
     var menuList = menus?.ToList() ?? new List<MetaForge.Application.DTOs.MenuListItemDto>();

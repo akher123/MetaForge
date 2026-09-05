@@ -19,6 +19,15 @@ public static class AppConstants
 
     public const string AuthorizationSnapshotCacheKeyPrefix = "auth:snapshot:";
 
+    public const string PreferenceCacheKeyPrefix = "user:prefs:";
+
+    public const string SecurityStampCacheKeyPrefix = "auth:stamp:";
+
+    public const string SidebarMenuCacheKeyPrefix = "nav:sidebar:";
+
+    /// <summary>Bumped when menu structure changes to invalidate cached sidebar trees.</summary>
+    public const string SidebarMenuVersionKey = "nav:sidebar:version";
+
     /// <summary>Root folder (relative to wwwroot) where uploaded files are stored.</summary>
     public const string UploadsFolderName = "uploads";
 

@@ -1,5 +1,6 @@
 @using MetaForge.Shared.Constants
 @{
+    ViewData["ScriptBundles"] = new[] { "Forms" };
     ViewData["Title"] = "System Settings";
     var preferences = ViewBag.Preferences as MetaForge.Application.DTOs.SystemPreferencesDto;
     var themes = ViewBag.Themes as IReadOnlyList<MetaForge.Application.Interfaces.ThemeOptionDto> ?? [];

@@ -1,4 +1,5 @@
 @{
+    ViewData["ScriptBundles"] = new[] { "DataTables" };
     ViewData["Title"] = "Form Builder";
     var modules = ViewBag.Forms as IReadOnlyList<MetaForge.Application.DTOs.FormConfigListItemDto>;
     var formList = modules?.ToList() ?? new List<MetaForge.Application.DTOs.FormConfigListItemDto>();

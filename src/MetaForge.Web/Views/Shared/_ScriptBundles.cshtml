@@ -1,0 +1,37 @@
+@{
+    var bundles = ViewData["ScriptBundles"] as IEnumerable<string> ?? Array.Empty<string>();
+    var bundleSet = new HashSet<string>(bundles, StringComparer.OrdinalIgnoreCase);
+    bool HasBundle(string name) => bundleSet.Contains(name);
+}
+
+@if (HasBundle("DataTables"))
+{
+    <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
+    <script src="~/js/metaforge/datatables-defaults.js" asp-append-version="true"></script>
+}
+
+@if (HasBundle("Forms"))
+{
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="~/js/metaforge/lookup-cascade.js" asp-append-version="true"></script>
+    <script src="~/js/metaforge/field-conditional-engine.js" asp-append-version="true"></script>
+    <script src="~/js/metaforge/control-types.js" asp-append-version="true"></script>
+    <script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
+    <script src="~/js/metaforge/rich-text-editor.js" asp-append-version="true"></script>
+    <script src="~/js/metaforge/dynamic-form.js" asp-append-version="true"></script>
+    <script src="~/js/metaforge/date-input.js" asp-append-version="true"></script>
+}
+
+@if (HasBundle("Grids"))
+{
+    <script src="~/js/metaforge/grid-display-format.js" asp-append-version="true"></script>
+    <script src="~/js/metaforge/dynamic-grid.js" asp-append-version="true"></script>
+    <script src="~/js/metaforge/detail-grid-rows.js" asp-append-version="true"></script>
+}
+
+@if (HasBundle("MasterDetail"))
+{
+    <script src="~/js/metaforge/master-detail.js" asp-append-version="true"></script>
+    <script src="~/js/metaforge/master-detail-tabular.js" asp-append-version="true"></script>
+}

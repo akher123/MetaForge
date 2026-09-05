@@ -1,4 +1,5 @@
 @{
+    ViewData["ScriptBundles"] = new[] { "DataTables" };
     ViewData["Title"] = "Roles";
     ViewBag.SecurityNav = "roles";
     var roles = ViewBag.Roles as IReadOnlyList<MetaForge.Application.DTOs.RoleManagementDto>;

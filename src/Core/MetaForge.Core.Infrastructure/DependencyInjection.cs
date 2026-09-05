@@ -64,6 +64,7 @@ public static class DependencyInjection
         services.AddScoped<IReportService, ReportService>();
         services.AddScoped<IMenuManagementService, MenuManagementService>();
         services.AddScoped<IMenuSyncService, MenuSyncService>();
+        services.AddSingleton<INavigationCacheInvalidator, NavigationCacheInvalidator>();
 
         services.AddScoped<IEmailConfigurationService, EmailConfigurationService>();
         services.AddScoped<IEmailDispatchService, EmailDispatchService>();

@@ -13,6 +13,7 @@ public sealed class CultureMiddleware
 {
     public const string EffectiveCultureItemKey = "MetaForge.EffectiveCulture";
     public const string IsRtlItemKey = "MetaForge.IsRtl";
+    public const string EffectivePreferencesItemKey = "MetaForge.EffectivePreferences";
 
     private readonly RequestDelegate _next;
 
@@ -51,6 +52,7 @@ public sealed class CultureMiddleware
             && int.TryParse(context.User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
         {
             var effective = await preferenceResolver.ResolveAsync(userId, context.RequestAborted);
+            context.Items[EffectivePreferencesItemKey] = effective;
             return (effective.Culture, effective.IsRtl, effective.DateFormat, effective.DateTimeFormat);
         }
 

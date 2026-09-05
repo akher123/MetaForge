@@ -1,4 +1,5 @@
 @{
+    ViewData["ScriptBundles"] = new[] { "DataTables" };
     ViewData["Title"] = ViewBag.Definition?.Name ?? "Report";
     var reportCode = ViewBag.ReportCode as string ?? "";
     var definition = ViewBag.Definition as MetaForge.Application.DTOs.ReportDefinitionDto;

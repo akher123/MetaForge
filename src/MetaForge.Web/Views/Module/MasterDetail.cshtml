@@ -1,4 +1,5 @@
 @{
+    ViewData["ScriptBundles"] = new[] { "Forms", "Grids", "MasterDetail" };
     ViewData["Title"] = ViewBag.Screen?.MasterForm?.FormName ?? "Master Detail";
     var screen = ViewBag.Screen as MetaForge.Application.DTOs.MasterDetailScreenDto;
     var formCode = ViewBag.FormCode as string;

@@ -1,4 +1,5 @@
 @{
+    ViewData["ScriptBundles"] = new[] { "Forms" };
     ViewData["Title"] = ViewBag.Form?.FormName ?? "Form";
     var form = ViewBag.Form as MetaForge.Application.DTOs.FormDefinition;
     var formCode = ViewBag.FormCode as string;

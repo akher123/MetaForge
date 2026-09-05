@@ -63,8 +63,8 @@ public class UserPreferenceServiceTests
     {
         var cache = new MemoryCache(new MemoryCacheOptions());
         var systemSettings = new SystemSettingsService(context, cache);
-        var resolver = new PreferenceResolverService(context, systemSettings);
-        return new UserPreferenceService(context, resolver);
+        var resolver = new PreferenceResolverService(context, systemSettings, cache);
+        return new UserPreferenceService(context, resolver, cache);
     }
 
     private static async Task<MetaForgeDbContext> CreateSeededContextAsync()

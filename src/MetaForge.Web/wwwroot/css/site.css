@@ -4,8 +4,6 @@
    Aligned with landing brand · Bootstrap 5 token overrides
    ========================================================================== */
 
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
-
 :root {
   /* Brand */
   --dv-indigo-950: #1e1b4b;

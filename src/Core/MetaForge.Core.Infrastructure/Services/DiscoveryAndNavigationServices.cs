@@ -1,7 +1,9 @@
 using System.Security.Claims;
 using MetaForge.Modules.Abstractions;
+using MetaForge.Shared.Constants;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace MetaForge.Infrastructure.Services;
 
@@ -193,15 +195,18 @@ public class NavigationService : INavigationService
     private readonly IUnitOfWork _unitOfWork;
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IFormAuthorizationService _authorizationService;
+    private readonly IMemoryCache _cache;
 
     public NavigationService(
         IUnitOfWork unitOfWork,
         IHttpContextAccessor httpContextAccessor,
-        IFormAuthorizationService authorizationService)
+        IFormAuthorizationService authorizationService,
+        IMemoryCache cache)
     {
         _unitOfWork = unitOfWork;
         _httpContextAccessor = httpContextAccessor;
         _authorizationService = authorizationService;
+        _cache = cache;
     }
 
     public async Task<IReadOnlyList<MenuGroupDto>> GetMenuAsync(CancellationToken cancellationToken = default)
@@ -265,6 +270,26 @@ public class NavigationService : INavigationService
         if (user?.Identity?.IsAuthenticated != true)
             return [];
 
+        var userIdClaim = user.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!int.TryParse(userIdClaim, out var userId))
+            return [];
+
+        var stamp = user.FindFirstValue(AppConstants.SecurityStampClaimType) ?? "none";
+        var version = _cache.Get<long?>(AppConstants.SidebarMenuVersionKey) ?? 0;
+        var cacheKey = $"{AppConstants.SidebarMenuCacheKeyPrefix}{userId}:{stamp}:v{version}";
+
+        return await _cache.GetOrCreateAsync(cacheKey, async entry =>
+        {
+            entry.SlidingExpiration = TimeSpan.FromMinutes(5);
+            entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(15);
+            return await BuildSidebarMenuAsync(user, cancellationToken);
+        }) ?? [];
+    }
+
+    private async Task<IReadOnlyList<MenuTreeNodeDto>> BuildSidebarMenuAsync(
+        ClaimsPrincipal user,
+        CancellationToken cancellationToken)
+    {
         var flat = await _unitOfWork.Menus.GetActiveTreeAsync(cancellationToken);
         if (flat.Count == 0)
             return await BuildFallbackSidebarAsync(user, cancellationToken);

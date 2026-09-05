@@ -1,4 +1,5 @@
 @{
+    ViewData["ScriptBundles"] = new[] { "DataTables" };
     ViewData["Title"] = "Form Health Check";
     var report = ViewBag.HealthReport as MetaForge.Application.DTOs.FormHealthReportDto;
     var items = report?.Items?.ToList() ?? new List<MetaForge.Application.DTOs.FormHealthItemDto>();

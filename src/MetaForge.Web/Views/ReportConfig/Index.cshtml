@@ -1,4 +1,5 @@
 @{
+    ViewData["ScriptBundles"] = new[] { "DataTables" };
     ViewData["Title"] = "Report Builder";
     var reports = ViewBag.Reports as IReadOnlyList<MetaForge.Application.DTOs.ReportConfigListItemDto>;
     var reportList = reports?.ToList() ?? new List<MetaForge.Application.DTOs.ReportConfigListItemDto>();

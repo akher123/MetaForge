@@ -1,4 +1,5 @@
 @{
+    ViewData["ScriptBundles"] = new[] { "DataTables", "Forms" };
     ViewData["Title"] = ViewBag.IsEdit == true ? "Edit Form" : "New Form";
     var isEdit = ViewBag.IsEdit as bool? ?? false;
     var screen = ViewBag.Screen as MetaForge.Application.DTOs.FormBuilderScreenDto;

@@ -32,8 +32,15 @@ public static class MenuUrlResolver
 public class MenuManagementService : IMenuManagementService
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly INavigationCacheInvalidator _navigationCacheInvalidator;
 
-    public MenuManagementService(IUnitOfWork unitOfWork) => _unitOfWork = unitOfWork;
+    public MenuManagementService(
+        IUnitOfWork unitOfWork,
+        INavigationCacheInvalidator navigationCacheInvalidator)
+    {
+        _unitOfWork = unitOfWork;
+        _navigationCacheInvalidator = navigationCacheInvalidator;
+    }
 
     public async Task<IReadOnlyList<MenuListItemDto>> GetAllAsync(CancellationToken cancellationToken = default)
     {
@@ -107,6 +114,7 @@ public class MenuManagementService : IMenuManagementService
         menu.IsActive = entry.IsActive;
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+        _navigationCacheInvalidator.InvalidateSidebarMenus();
         return menu.Id;
     }
 
@@ -120,6 +128,7 @@ public class MenuManagementService : IMenuManagementService
 
         _unitOfWork.Menus.Remove(menu);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+        _navigationCacheInvalidator.InvalidateSidebarMenus();
     }
 
     private static void Validate(MenuEntryDto entry)
@@ -211,8 +220,15 @@ public class MenuManagementService : IMenuManagementService
 public class MenuSyncService : IMenuSyncService
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly INavigationCacheInvalidator _navigationCacheInvalidator;
 
-    public MenuSyncService(IUnitOfWork unitOfWork) => _unitOfWork = unitOfWork;
+    public MenuSyncService(
+        IUnitOfWork unitOfWork,
+        INavigationCacheInvalidator navigationCacheInvalidator)
+    {
+        _unitOfWork = unitOfWork;
+        _navigationCacheInvalidator = navigationCacheInvalidator;
+    }
 
     public async Task SyncFormMenuAsync(ForgeForm module, CancellationToken cancellationToken = default)
     {
@@ -256,6 +272,7 @@ public class MenuSyncService : IMenuSyncService
         }
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+        _navigationCacheInvalidator.InvalidateSidebarMenus();
     }
 
     public async Task DeactivateFormMenuAsync(int moduleId, CancellationToken cancellationToken = default)
@@ -265,6 +282,7 @@ public class MenuSyncService : IMenuSyncService
 
         menu.IsActive = false;
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+        _navigationCacheInvalidator.InvalidateSidebarMenus();
     }
 
     public async Task EnsureDefaultMenusAsync(CancellationToken cancellationToken = default)

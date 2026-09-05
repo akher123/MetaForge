@@ -1,4 +1,5 @@
 @{
+    ViewData["ScriptBundles"] = new[] { "DataTables", "Forms", "Grids", "MasterDetail" };
     ViewData["Title"] = ViewBag.Form?.FormName ?? "Admin";
     var form = ViewBag.Form as MetaForge.Application.DTOs.FormDefinition;
     var grid = ViewBag.Grid as MetaForge.Application.DTOs.GridDefinition;

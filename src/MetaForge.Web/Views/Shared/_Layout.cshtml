@@ -1,4 +1,5 @@
 @using System.Security.Claims
+@using MetaForge.Application.DTOs
 @using MetaForge.Shared.Constants
 @using MetaForge.Shared.Culture
 @using MetaForge.Web.Localization
@@ -9,13 +10,9 @@
 @{
     var sidebarMenu = await NavigationService.GetSidebarMenuAsync();
     var isAuthenticated = User.Identity?.IsAuthenticated == true;
-    string userThemeKey = AppThemes.Default;
-    var themeIsDark = false;
-    if (isAuthenticated && int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var themeUserId))
-    {
-        userThemeKey = await UserPreferenceService.GetThemeAsync(themeUserId);
-        themeIsDark = AppThemes.IsDark(userThemeKey);
-    }
+    var effectivePreferences = Context.Items[CultureMiddleware.EffectivePreferencesItemKey] as EffectivePreferencesDto;
+    string userThemeKey = effectivePreferences?.ThemeKey ?? AppThemes.Default;
+    var themeIsDark = AppThemes.IsDark(userThemeKey);
     var availableThemes = UserPreferenceService.GetAvailableThemes();
     var themePickerModel = new ThemePickerViewModel
     {
@@ -43,14 +40,11 @@
     <meta name="color-scheme" content="light dark" />
     <title>@ViewData["Title"] - MetaForge</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css" />
-    <link rel="stylesheet" href="~/css/datatables-bootstrap.css" asp-append-version="true" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" />
+    @await Html.PartialAsync("_StyleBundles")
     <link rel="stylesheet" href="~/css/accessibility.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/themes.css" asp-append-version="true" />
@@ -247,24 +241,9 @@
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
-    <script src="~/js/metaforge/datatables-defaults.js" asp-append-version="true"></script>
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="~/js/metaforge/icons.js" asp-append-version="true"></script>
     <script src="~/js/metaforge/form-permissions.js" asp-append-version="true"></script>
-    <script src="~/js/metaforge/lookup-cascade.js" asp-append-version="true"></script>
-    <script src="~/js/metaforge/field-conditional-engine.js" asp-append-version="true"></script>
-    <script src="~/js/metaforge/control-types.js" asp-append-version="true"></script>
-    <script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
-    <script src="~/js/metaforge/rich-text-editor.js" asp-append-version="true"></script>
-    <script src="~/js/metaforge/dynamic-form.js" asp-append-version="true"></script>
-    <script src="~/js/metaforge/grid-display-format.js" asp-append-version="true"></script>
-    <script src="~/js/metaforge/date-input.js" asp-append-version="true"></script>
-    <script src="~/js/metaforge/dynamic-grid.js" asp-append-version="true"></script>
-    <script src="~/js/metaforge/detail-grid-rows.js" asp-append-version="true"></script>
-    <script src="~/js/metaforge/master-detail.js" asp-append-version="true"></script>
-    <script src="~/js/metaforge/master-detail-tabular.js" asp-append-version="true"></script>
+    @await Html.PartialAsync("_ScriptBundles")
     <script src="~/js/metaforge/theme.js" asp-append-version="true"></script>
     <script src="~/js/metaforge/locale.js" asp-append-version="true"></script>
     <script src="~/js/metaforge/sidebar-menu.js" asp-append-version="true"></script>
