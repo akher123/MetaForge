@@ -1,6 +1,6 @@
 # MetaForge Admin Platform
 
-Metadata-driven ASP.NET Core MVC admin platform for .NET 10. MetaForge discovers EF Core entities, generates form and grid configuration, and renders dynamic CRUD, master-detail, and security screens at runtime — without hand-coding every back-office screen.
+Metadata-driven ASP.NET Core MVC admin platform for .NET 10. MetaForge discovers EF Core entities (platform and module DbContexts), generates form and grid configuration, and renders dynamic CRUD, master-detail, tree, report, and security screens at runtime — without hand-coding every back-office screen.
 
 ---
 
@@ -18,7 +18,7 @@ Metadata-driven ASP.NET Core MVC admin platform for .NET 10. MetaForge discovers
 
 ## Architecture
 
-MetaForge follows **Clean Architecture** with a metadata-first admin shell. Business entities live in Domain; the Web layer renders screens from cached `ForgeForm` definitions stored in SQL Server.
+MetaForge follows **Clean Architecture** with a metadata-first admin shell. Platform metadata and services live under `Core/`; business entities live in **modules** under `Modules/`. The Web host renders screens from cached `ForgeForm` definitions stored in SQL Server.
 
 ### Solution structure
 
@@ -29,19 +29,25 @@ MetaForge.slnx
 │   │   ├── MetaForge.Shared/              Constants, exceptions, culture helpers (no dependencies)
 │   │   └── MetaForge.Modules.Abstractions/  IMetaForgeModule, IModuleDbContextResolver
 │   ├── Core/
-│   │   ├── MetaForge.Core.Domain/         Platform entities (metadata, security, audit)
+│   │   ├── MetaForge.Core.Domain/         Platform entities (metadata, security, audit, email)
 │   │   ├── MetaForge.Core.Application/    Service interfaces, DTOs, contracts
 │   │   └── MetaForge.Core.Infrastructure/ MetaForgeDbContext, generic CRUD, discovery, auth
 │   ├── Modules/
-│   │   ├── Hrm/                           Domain, Application, Infrastructure
-│   │   └── Production/
+│   │   └── Hrm/                           Domain, Application, Infrastructure (sample module)
 │   └── Hosts/
-│       └── MetaForge.Web/                 Composition root (MVC, API, module wiring)
+│       └── MetaForge.Web/                 Composition root (MVC, API, module wiring, Areas/)
+├── tools/
+│   ├── MetaForge.Scaffold/                CLI scaffold (module + entity)
+│   ├── MetaForge.Scaffold.Core/           Shared scaffold logic
+│   └── MetaForge.Scaffold.WinForms/       Windows Forms scaffold UI
 └── tests/
-    └── MetaForge.UnitTests/
+    ├── MetaForge.UnitTests/
+    └── MetaForge.Scaffold.Tests/
 ```
 
-**Framework vs features:** The platform (metadata-driven CRUD, security, menus) is the **framework** under `Core/`. Business capabilities (Hrm, Production, …) are **modules** under `Modules/`. Full boundaries and folder rules: [docs/architecture/framework-vs-features.md](docs/architecture/framework-vs-features.md).
+**Framework vs features:** The platform (metadata-driven CRUD, security, menus, reports, email) is the **framework** under `Core/`. Business capabilities (Hrm, Inventory, …) are **modules** under `Modules/`. Full boundaries and folder rules: [docs/architecture/framework-vs-features.md](docs/architecture/framework-vs-features.md).
+
+Enabled modules are listed in [`metaforge.json`](metaforge.json) at the solution root (currently **Hrm**).
 
 ### Layer dependencies
 
@@ -64,11 +70,11 @@ MetaForge.Web                       ← MVC, API, middleware, AddMetaForgeModule
 |---|---|---|
 | **Shared** | Permission constants, discovery rules, shared exceptions, culture helpers | Service interfaces, EF, module logic |
 | **Modules.Abstractions** | `IMetaForgeModule`, `IModuleDbContextResolver` contracts | DbContext implementations, controllers |
-| **Core.Domain** | Metadata (`ForgeForm`, …), RBAC, audit, `BaseEntity` | EF Core, ASP.NET, service logic |
+| **Core.Domain** | Metadata (`ForgeForm`, `ForgeReport`, …), RBAC, audit, email, `BaseEntity` | EF Core, ASP.NET, service logic |
 | **Core.Application** | Service interfaces, DTOs, repository contracts | EF Core, infrastructure implementations |
-| **Core.Infrastructure** | `MetaForgeDbContext`, generic CRUD, grid/export, discovery, auth, caching | UI or controller code |
+| **Core.Infrastructure** | `MetaForgeDbContext`, generic CRUD, grid/export, discovery, auth, caching, reports | UI or controller code |
 | **Module.*** | Business entities, module DbContext, `IMetaForgeModule` implementation | Direct references from Core to module types |
-| **Web** | `ModuleController`, Form Builder, Security UI, REST API, `Areas/{Module}/` overrides | Direct database access, business rules |
+| **Web** | `ModuleController`, Form Builder, Report Builder, Security UI, REST API, `Areas/{Module}/` overrides | Direct database access, business rules |
 
 ### Metadata model
 
@@ -77,44 +83,52 @@ All dynamic screens are driven by database-backed metadata:
 | Entity | Purpose |
 |---|---|
 | `ForgeForm` | Maps a screen to an EF entity — code, name, group, form type, display order |
-| `ForgeField` | Form field definition — property, label, control type, lookup, cascade, validation |
+| `ForgeField` | Form field definition — property, label, control type, lookup, cascade, validation, conditional rules |
 | `ForgeGridColumn` | List grid column — property, label, sortable, searchable, visible |
 | `ForgeRelation` | Parent/child relationship — OneToOne, OneToMany, ManyToOne, tab labels |
+| `ForgeTreeLevel` | Multi-level tree grid — entity, parent key, display field per level |
 | `ForgeMenu` | Hierarchical sidebar — folders, form links, external URLs |
 | `LookupConfiguration` | Display/value field mapping for dropdown lookups |
+| `ForgeReport` | Report definition — entity, columns, filters, grouping, aggregates |
 
 ### Form types
 
 | Type | Use case |
 |---|---|
-| **Master** | Standard list + form CRUD (e.g. Customer, Product) |
-| **Tabbed** | Single-entity form with fields grouped in tabs via `SectionName` (seeded example: **Customer** → General, Contacts, Location, Accounting) |
+| **Master** | Standard list + form CRUD (e.g. Department, Product) |
+| **Tabbed** | Single-entity form with fields grouped in tabs via `SectionName` |
 | **MasterDetail** | Header with a single inline detail grid (e.g. order + line items) |
 | **MasterDetailTabular** | Header with multiple child grids in tabs (e.g. Sales Order → Line Items + Charges) |
+| **TreeViewMultiTable** | Hierarchical tree grid across related entities (e.g. Country → Region → City) |
 | **Detail** | Child entity form used by master-detail screens (not shown as a standalone module) |
 
 ### Core services
 
 | Service | Role |
 |---|---|
-| `EntityMetadataDiscoveryService` | Scans feature entity namespaces (`MetaForge.Domain.Features.*` and legacy `MetaForge.Domain.Business`) and auto-generates draft form config |
-| `FormConfigurationService` | Form Builder CRUD — fields, columns, relations, screen preview |
+| `EntityMetadataDiscoveryService` | Scans module entity namespaces (`MetaForge.{Module}.Domain.Entities`), legacy `MetaForge.Domain.Features.*`, and `MetaForge.Domain.Business`; auto-generates draft form config |
+| `FormConfigurationService` | Form Builder CRUD — fields, columns, relations, tree levels, screen preview |
+| `FormHealthCheckService` | Validates form metadata against live EF schema (missing properties, stale relations) |
 | `FormMetadataService` | Loads cached form definitions for runtime rendering |
 | `GenericCrudService` | Dynamic create/read/update/delete against any configured entity |
 | `GridService` | Paging, sorting, search, Excel/CSV export |
 | `MasterDetailService` | Loads and saves master + detail (and tabular multi-detail) transactions |
-| `LookupService` | Dropdown data with optional cascade filtering |
+| `TreeGridService` | Multi-level tree navigation and lazy-loaded child nodes |
+| `LookupService` | Dropdown data with optional cascade filtering and search |
+| `ReportConfigurationService` / `ReportService` | Report Builder metadata and runtime execution (tabular, grouped, summary) with Excel/PDF export |
 | `FormAuthorizationService` | Form-level and system-level permission checks |
 | `MenuManagementService` / `MenuSyncService` | Sidebar tree administration and form-to-menu linking |
 | `SecurityManagementService` | Users, roles, permissions administration |
+| `AuditService` | Queued audit log writes and query API |
+| `EmailTemplateService` / `EmailDispatchService` | Template-based outbound email with channels, retry policies, and delivery log |
 
 ### Runtime flow
 
 ```text
-1. Discovery   EntityMetadataDiscoveryService scans EF Core entities
-2. Configure   Form Builder persists ForgeForm, ForgeField, ForgeGridColumn, ForgeRelation
+1. Discovery   EntityMetadataDiscoveryService scans EF Core entities (core + module DbContexts)
+2. Configure   Form Builder / Report Builder persist metadata to SQL Server
 3. Authorize   Role + form-level permissions gate every module and API action
-4. Render      Web layer loads cached metadata → dynamic grid, form, or master-detail UI
+4. Render      Web layer loads cached metadata → dynamic grid, form, master-detail, tree, or report UI
 5. Persist     GenericCrudService / MasterDetailService write through EF Core
 ```
 
@@ -122,10 +136,12 @@ All dynamic screens are driven by database-backed metadata:
 
 - **Runtime:** .NET 10, ASP.NET Core MVC
 - **ORM:** Entity Framework Core (SQL Server) with code-first migrations
-- **Auth:** Cookie authentication + RBAC
-- **Validation:** FluentValidation (dynamic rules from metadata)
-- **UI:** Bootstrap 5, jQuery, Font Awesome
-- **Export:** Excel and CSV from grid metadata
+- **Auth:** Cookie authentication + RBAC + security-stamp validation
+- **Validation:** FluentValidation (dynamic rules from metadata) + conditional field rules
+- **UI:** Bootstrap 5, jQuery, Font Awesome, DataTables
+- **Export:** Excel and CSV from grid metadata; Excel and PDF from report metadata
+- **Email:** MailKit / SendGrid providers with template rendering
+- **Logging:** Serilog (console + rolling file)
 
 ---
 
@@ -163,7 +179,7 @@ Open the app in your browser (typically `https://localhost:5001` or the URL show
 
 MetaForge uses **SQL Server** (LocalDB or a full instance). Point `ConnectionStrings:DefaultConnection` in `src/MetaForge.Web/appsettings.json` at your server. The database is created automatically when migrations run (on startup or via the commands below).
 
-On startup, MetaForge applies pending **EF Core migrations** automatically, then runs idempotent **platform** seeding (admin user, security permissions, email defaults, system settings, menus).
+On startup, MetaForge applies pending **EF Core migrations** for the core and enabled modules, then runs idempotent **platform** seeding (admin user, security permissions, email defaults, system settings, menus).
 
 ```bash
 # Apply migrations and seed (no web server)
@@ -174,18 +190,19 @@ dotnet run --project src/MetaForge.Web -- --reset-db
 ```
 
 ```bash
-# Apply migrations manually
-dotnet ef database update --project src/MetaForge.Infrastructure --startup-project src/MetaForge.Web
+# Apply core migrations manually
+dotnet ef database update --project src/Core/MetaForge.Core.Infrastructure --startup-project src/MetaForge.Web --context MetaForgeDbContext
 
-# Add a migration after changing entities or EF configurations
-dotnet ef migrations add <MigrationName> --project src/MetaForge.Infrastructure --startup-project src/MetaForge.Web --output-dir Persistence/Migrations --context MetaForgeDbContext
+# Add a core migration after changing platform entities
+dotnet ef migrations add <MigrationName> --project src/Core/MetaForge.Core.Infrastructure --startup-project src/MetaForge.Web --output-dir Persistence/Migrations --context MetaForgeDbContext
+
+# Apply module migrations (example: Hrm)
+dotnet ef database update --project src/Modules/Hrm/MetaForge.Hrm.Infrastructure --startup-project src/MetaForge.Web --context HrmDbContext
 ```
 
-**Upgrading from an older database:** run `--reset-db` in development, or create a fresh database and run `dotnet ef database update`.
+Core migrations live in `src/Core/MetaForge.Core.Infrastructure/Persistence/Migrations/`.
 
-Migrations live in `src/MetaForge.Infrastructure/Persistence/Migrations/`.
-
-On first run, MetaForge creates the database and seeds the **admin** account plus platform defaults. Add feature entities with the scaffold tool (see below), then configure forms in Form Builder.
+On first run, MetaForge creates the database and seeds the **admin** account plus platform defaults. Add module entities with the scaffold tool (see below), then configure forms in Form Builder.
 
 ---
 
@@ -196,6 +213,8 @@ On first run, MetaForge creates the database and seeds the **admin** account plu
 1. Open the landing page and click **Open Dashboard** (or go to `/Account/Login`).
 2. Sign in with `admin` / `admin`.
 3. You are redirected to the dashboard with the sidebar navigation.
+
+Forgot-password and reset flows are available at `/Account/ForgotPassword` and `/Account/ResetPassword`.
 
 ### 2. Navigation
 
@@ -238,7 +257,10 @@ Dropdowns load from `/api/metaforge/lookups/{entityName}`. Cascade lookups (e.g.
 - Click **Create** or **Edit** on a grid row to open the master-detail panel.
 - Add, edit, or remove detail lines inline.
 - **Save** persists the header and all detail rows atomically.
-- **Tabular** screens (e.g. Sales Order) show each child relation in its own tab.
+
+#### Tree screens
+
+**TreeViewMultiTable** screens show a multi-level hierarchy (e.g. Country → Region → City). Each level is a related entity configured in Form Builder. Expand nodes to lazy-load children.
 
 ### 4. Form Builder
 
@@ -248,27 +270,41 @@ Access at **Form Builder** (`/FormBuilder` or `/ModuleConfig`). Requires `config
 
 1. Click **New Form**.
 2. **Screen Setup**
-   - Select a **Database Entity** from discovered EF types
-   - Choose **Screen Type** (Master, Master + Detail, or Master + Tabular Details)
+   - Select a **Database Entity** from discovered EF types (core or module DbContexts)
+   - Choose **Screen Type** (Master, Tabbed, Master + Detail, Master + Tabular Details, or Tree)
    - Set **Group**, **Code**, and **Display Name**
    - Click **Auto-Build** to draft fields, grid columns, and relations from EF metadata
 3. Configure tabs:
-   - **Master Form** — field labels, control types, lookups, cascade, validation rules, read-only flags
+   - **Master Form** — field labels, control types, lookups, cascade, validation rules, conditional rules, read-only flags
    - **Detail Form** — (MasterDetail / Tabular only) child line field layout
    - **List Grid** — visible columns, sortable/searchable flags
    - **Relations** — parent/child mappings for master-detail
+   - **Tree Levels** — (Tree only) entity and parent-key mapping per level
 4. **Validation rules** (Master Form / Detail Form tabs):
    - Scroll right in the field table to the **Validation** column
-   - Click the blue **Rules** button on any field row
+   - Click the **Rules** button on any field row
    - Add rules (max/min length, numeric range, email, phone, URL, regex, compare to another field)
    - Click **Apply Rules**, then **Save Form**
 5. **Save** — the module is stored and can be linked to the sidebar menu.
 
+#### Form health check
+
+At **Form Builder → Health** (`/FormBuilder/Health`), review metadata drift — missing EF properties, stale relations, or entities no longer registered in any DbContext.
+
 #### Edit an existing module
 
-Open **Form Builder** → select a form → **Edit**. Entity name is locked after creation; fields, grid, and relations can be updated.
+Open **Form Builder** → select a form → **Edit**. Entity name is locked after creation; fields, grid, relations, and tree levels can be updated.
 
-### 5. Menu administration
+### 5. Report Builder
+
+Access at **Report Builder** (`/ReportBuilder`). Requires `reportconfig.View` / `reportconfig.Manage` permissions.
+
+1. Create a report linked to a discovered entity.
+2. Configure columns, filters, grouping, and summary aggregates.
+3. Run the report at `/Reports/{reportCode}`.
+4. Export to Excel or PDF from the report screen or API.
+
+### 6. Menu administration
 
 At **Menu** (`/Menu`):
 
@@ -280,7 +316,7 @@ At **Menu** (`/Menu`):
 
 Use **Sync** (Security → Permissions) after adding forms to generate form-level permission records.
 
-### 6. Security administration
+### 7. Security administration
 
 At **Security** (`/Security`):
 
@@ -289,6 +325,7 @@ At **Security** (`/Security`):
 | **Users** | `/Security/Users` | Create/edit users, assign roles, set passwords |
 | **Roles** | `/Security/Roles` | Create roles, assign permission groups |
 | **Permissions** | `/Security/Permissions` | View all permissions; sync new form permissions |
+| **Audit log** | `/Security/Audit` | Search audit entries by entity, action, user, date |
 
 #### Permission model
 
@@ -299,16 +336,34 @@ At **Security** (`/Security`):
 **System permissions:**
 
 - `config.View` / `config.Manage` — Form Builder access
+- `reportconfig.View` / `reportconfig.Manage` — Report Builder access
+- `emailconfig.View` / `emailconfig.Manage` — Email administration
+- `systemsettings.View` / `systemsettings.Manage` — System settings
 - `security.ViewUsers`, `security.ManageUsers`, etc. — Security administration
 
 Permissions are enforced on both MVC pages and REST API endpoints. Users without access see a forbidden response or hidden UI actions.
 
-### 7. Typical workflows
+### 8. Email administration
 
-#### Add a master-data screen
+At **Email Admin** (`/EmailAdmin`):
 
-1. Add an EF entity under `MetaForge.Domain/Features/{Area}/` with namespace `MetaForge.Domain.Features.{Area}` and register it in `MetaForgeDbContext`.
-2. Run the app (or `--reset-db` in development).
+- **Channels** — SMTP / SendGrid delivery channels
+- **Retry policies** — backoff rules for failed sends
+- **Templates** — HTML/text templates with token bindings
+- **Log** — outbound message history
+
+### 9. System settings & user preferences
+
+- **System settings** (`/SystemSettings`) — localization defaults, appearance, and platform-wide options (requires `systemsettings.View` / `systemsettings.Manage`).
+- **User preferences** (`/Account/Preferences`) — culture and date/time format overrides per user.
+- **Appearance** (`/Account/Appearance`) — theme selection (stored per user).
+
+### 10. Typical workflows
+
+#### Add a master-data screen (module entity)
+
+1. Scaffold an entity into a module (e.g. Hrm) or add it manually under `MetaForge.{Module}.Domain.Entities`.
+2. Run the app (applies module migrations) or apply migrations manually.
 3. Open Form Builder → New Form → select entity → Auto-Build → Save.
 4. Add a menu item under **Menu**.
 5. Sync permissions in Security → assign to roles.
@@ -330,7 +385,7 @@ Permissions are enforced on both MVC pages and REST API endpoints. Users without
 
 ## API Reference
 
-All endpoints require authentication (cookie session). Form-scoped endpoints also require the matching form permission.
+All endpoints require authentication (cookie session) unless noted. Form-scoped endpoints also require the matching form permission.
 
 ### Form catalog & discovery
 
@@ -341,7 +396,19 @@ All endpoints require authentication (cookie session). Form-scoped endpoints als
 | `GET` | `/api/metaforge/form-catalog/discover` | List all discoverable business entities |
 | `POST` | `/api/metaforge/form-catalog/discover/{entityName}` | Auto-generate draft form config for an entity |
 
-### Form & grid definitions
+### Form configuration
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/metaforge/formconfig` | All form definitions |
+| `GET` | `/api/metaforge/formconfig/{id}` | Form by ID |
+| `GET` | `/api/metaforge/formconfig/screen/{id}` | Full screen definition (fields, grid, relations, tree levels) |
+| `GET` | `/api/metaforge/formconfig/discovered` | Discoverable entities |
+| `GET` | `/api/metaforge/formconfig/draft/{entityName}` | Draft config for an entity |
+| `GET` | `/api/metaforge/formconfig/health` | Platform-wide form health report |
+| `POST` | `/api/metaforge/formconfig` | Save form configuration |
+
+### Form & grid definitions (runtime)
 
 | Method | Endpoint | Description |
 |---|---|---|
@@ -368,11 +435,49 @@ All endpoints require authentication (cookie session). Form-scoped endpoints als
 | `POST` | `/api/metaforge/masterdetail/{formCode}` | Save master + details (supports `DetailSections` for tabular) |
 | `DELETE` | `/api/metaforge/masterdetail/{formCode}/detail/{detailId}` | Delete a detail row |
 
+### Tree grids
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/metaforge/tree/{formCode}/screen` | Tree screen definition |
+| `POST` | `/api/metaforge/tree/{formCode}/level` | Lazy-load nodes for a tree level |
+
 ### Lookups
 
 | Method | Endpoint | Description |
 |---|---|---|
 | `GET` | `/api/metaforge/lookups/{entityName}` | Dropdown items; optional `filterField` + `filterValue` for cascade |
+| `GET` | `/api/metaforge/lookups/{entityName}/search` | Typeahead search |
+| `GET` | `/api/metaforge/lookups/{entityName}/item/{value}` | Single item by value |
+
+### Reports
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/metaforge/reports/{reportCode}` | Run report (query params for filters) |
+| `GET` | `/api/metaforge/reports/{reportCode}/export/excel` | Excel export |
+| `GET` | `/api/metaforge/reports/{reportCode}/export/pdf` | PDF export |
+| `GET` | `/api/metaforge/reportconfig` | Report Builder catalog |
+| `GET` | `/api/metaforge/reportconfig/draft/{entityName}` | Draft report for an entity |
+
+### Security & audit
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/metaforge/security/overview` | Security dashboard counts |
+| `GET` | `/api/metaforge/security/users` | User list |
+| `GET` | `/api/metaforge/security/roles` | Role list |
+| `GET` | `/api/metaforge/security/permissions` | Permission catalog |
+| `GET` | `/api/metaforge/audit` | Search audit log entries |
+
+### Email, settings & preferences
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/metaforge/emailconfig/channels` | Email delivery channels |
+| `GET` | `/api/metaforge/emailconfig/templates` | Email templates |
+| `GET` | `/api/metaforge/systemsettings/localization` | System localization settings |
+| `GET` | `/api/metaforge/userpreferences/theme` | Current user's theme |
 
 ---
 
@@ -382,15 +487,21 @@ All endpoints require authentication (cookie session). Form-scoped endpoints als
 |---|---|
 | `/` | Landing page |
 | `/Account/Login` | Sign in |
+| `/Account/ForgotPassword`, `/Account/ResetPassword` | Password reset flow |
+| `/Account/Preferences`, `/Account/Appearance` | User culture and theme |
 | `/Modules/{formCode}` | Dynamic list/grid screen (master-detail panel when applicable) |
 | `/Modules/{formCode}/Form/{id?}` | Standalone create/edit form |
 | `/Modules/{formCode}/MasterDetail/{id?}` | Redirects to grid with master-detail panel open |
 | `/FormBuilder`, `/ModuleConfig` | Form Builder list |
 | `/FormBuilder/Create`, `/ModuleConfig/Create` | New form wizard |
-| `/FormBuilder/Edit/{id}` | Edit form metadata |
+| `/FormBuilder/Edit/{id}`, `/FormBuilder/Health` | Edit form metadata; health check |
+| `/ReportBuilder` | Report Builder list and editor |
+| `/Reports/{reportCode}` | Run a configured report |
 | `/Menu` | Navigation menu administration |
 | `/Security` | Security overview |
-| `/Security/Users`, `/Security/Roles`, `/Security/Permissions` | RBAC management |
+| `/Security/Users`, `/Security/Roles`, `/Security/Permissions`, `/Security/Audit` | RBAC and audit management |
+| `/EmailAdmin` | Email channels, templates, and delivery log |
+| `/SystemSettings` | Platform-wide settings |
 
 ---
 
@@ -408,7 +519,7 @@ dotnet run --project tools/MetaForge.Scaffold -- scaffold module --name Inventor
 dotnet run --project tools/MetaForge.Scaffold -- scaffold module --name Inventory --migration
 ```
 
-New modules are created at **`src/Modules/{Name}/`** and registered in the solution under **`/src/Modules/{Name}/`**. Existing modules (Hrm, Production) remain at `src/Hrm/` and `src/Production/` per [`metaforge.json`](metaforge.json).
+New modules are created at **`src/Modules/{Name}/`** and registered in the solution, [`metaforge.json`](metaforge.json), and `MetaForge.Web/Modules/MetaForgeModuleRegistration.cs`.
 
 | Output | Location |
 |---|---|
@@ -446,8 +557,8 @@ Generated output (example Hrm module):
 
 | File | Location |
 |---|---|
-| Entity | `src/Hrm/MetaForge.Hrm.Domain/Entities/{Entity}.cs` |
-| EF config | `src/Hrm/MetaForge.Hrm.Infrastructure/Persistence/Configurations/Generated/{Entity}Configuration.cs` |
+| Entity | `src/Modules/Hrm/MetaForge.Hrm.Domain/Entities/{Entity}.cs` |
+| EF config | `src/Modules/Hrm/MetaForge.Hrm.Infrastructure/Persistence/Configurations/Generated/{Entity}Configuration.cs` |
 
 Namespaces: `MetaForge.Hrm.Domain.Entities` and `MetaForge.Hrm.Infrastructure.Persistence.Configurations.Generated`. Tables use schema **`hrm`**. DbSet patch is **skipped by default** (EF discovers entities via configuration).
 
@@ -481,15 +592,21 @@ dotnet metaforge scaffold entity --help
 
 **Requirements:** Primary key must be named `Id` and use a supported type (`int`, `long`, `Guid`, or `string`). Prefer `int` unless you need another key. System tables (`Forge*`, `Users`, etc.) cannot be scaffolded.
 
-#### Option B — Manual
+#### Option B — Manual (legacy core features folder)
 
-1. Create a class in `src/MetaForge.Domain/Features/{Area}/` with namespace `MetaForge.Domain.Features.{Area}`, inheriting from `BaseEntity` (int) or `BaseEntity<TKey>` (e.g. `BaseEntity<Guid>`).
-2. Add a `DbSet<T>` and configure relationships in `MetaForgeDbContext` (or `Persistence/Configurations/Generated/`).
+1. Create a class in `src/Core/MetaForge.Core.Domain/Features/{Area}/` with namespace `MetaForge.Domain.Features.{Area}`, inheriting from `BaseEntity` (int) or `BaseEntity<TKey>` (e.g. `BaseEntity<Guid>`).
+2. Add a `DbSet<T>` and configure relationships in `MetaForgeDbContext`.
 3. Restart the app — the entity appears in Form Builder's entity list.
 4. Use **Auto-Build** or POST `/api/metaforge/form-catalog/discover/{entityName}` to generate metadata.
 5. Link the form to a menu item and sync permissions.
 
-Only entities in `MetaForge.Domain.Features` (or legacy `MetaForge.Domain.Business`) are discovered automatically.
+**Preferred for new work:** place entities in a module (`MetaForge.{Module}.Domain.Entities`) so each domain has its own DbContext and schema.
+
+Discovery accepts:
+
+- `MetaForge.{Module}.Domain.Entities` (module entities)
+- `MetaForge.Domain.Features.*` (legacy core features folder)
+- `MetaForge.Domain.Business` (legacy namespace)
 
 ### Metadata cache
 
