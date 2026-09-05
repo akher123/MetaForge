@@ -1,3 +1,5 @@
+using MetaForge.UnitTests.Support;
+
 namespace MetaForge.UnitTests;
 
 public class FormMetadataServiceTests
@@ -136,7 +138,8 @@ public class DynamicValidationServiceTests
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options;
         await using var context = new MetaForgeDbContext(options);
-        var service = new DynamicValidationService(cache.Object, context, new EntityTypeResolver(context));
+        var contextResolver = new TestModuleDbContextResolver(context);
+        var service = new DynamicValidationService(cache.Object, contextResolver, TestEntityTypeResolverFactory.Create(context));
 
         await Assert.ThrowsAsync<FluentValidation.ValidationException>(() =>
             service.ValidateAsync("Customer", new Dictionary<string, object?>()));

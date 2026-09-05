@@ -362,4 +362,20 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
-/src/MetaForge.Web/wwwroot/uploads/2026/06
+
+# Local build/debug artifacts
+build-log.txt
+_build_out/
+
+# Local dev database (keep folder via .gitkeep)
+src/MetaForge.Web/data/*.db
+src/MetaForge.Web/data/*.db-shm
+src/MetaForge.Web/data/*.db-wal
+!src/MetaForge.Web/data/.gitkeep
+
+# User uploads
+src/MetaForge.Web/wwwroot/uploads/**
+
+# Debug captures
+cookies.txt
+*_resp.html

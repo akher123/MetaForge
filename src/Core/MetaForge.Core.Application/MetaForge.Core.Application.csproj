@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\MetaForge.Core.Domain\MetaForge.Core.Domain.csproj" />
+    <ProjectReference Include="..\..\MetaForge.Shared\MetaForge.Shared.csproj" />
+    <ProjectReference Include="..\..\MetaForge.Modules.Abstractions\MetaForge.Modules.Abstractions.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FluentValidation" Version="12.1.1" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>MetaForge.Application</RootNamespace>
+  </PropertyGroup>
+
+</Project>

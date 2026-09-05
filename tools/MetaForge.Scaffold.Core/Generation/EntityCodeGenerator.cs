@@ -1,18 +1,19 @@
 using System.Text;
 using Humanizer;
+using MetaForge.Scaffold.Config;
 using MetaForge.Scaffold.Models;
 
 namespace MetaForge.Scaffold.Generation;
 
 public static class EntityCodeGenerator
 {
-    public static string Generate(TableModel table, bool includeNavigations)
+    public static string Generate(TableModel table, ModuleScaffoldProfile profile, bool includeNavigations)
     {
         var sb = new StringBuilder();
-        sb.AppendLine("namespace MetaForge.Domain.Features;");
+        sb.AppendLine($"namespace {profile.EntityNamespace};");
         sb.AppendLine();
         sb.AppendLine("/// <summary>");
-        sb.AppendLine($"/// {table.EntityName} business entity (scaffolded from {table.TableName}).");
+        sb.AppendLine($"/// {table.EntityName} entity for module {profile.Name} (schema: {profile.SchemaName}).");
         sb.AppendLine("/// </summary>");
         sb.AppendLine($"public class {table.EntityName} : {ResolveBaseEntityType(table)}");
         sb.AppendLine("{");
@@ -58,14 +59,25 @@ public static class EntityCodeGenerator
     {
         var clr = column.ClrTypeName.TrimEnd('?');
         if (column.IsNullable)
-            return clr == "string" ? "string?" : clr + "?";
+            return clr + "?";
         return clr;
     }
 
-    private static string GetDefaultInitializer(string clrType, bool isNullable)
+    private static string GetDefaultInitializer(string clr, bool isNullable)
     {
-        if (clrType == "string" && !isNullable)
-            return " = string.Empty;";
-        return "";
+        if (isNullable || clr.EndsWith('?'))
+            return string.Empty;
+
+        return clr switch
+        {
+            "string" => " = string.Empty;",
+            "bool" => " = false;",
+            _ when clr.StartsWith("int", StringComparison.Ordinal) => " = 0;",
+            _ when clr.StartsWith("long", StringComparison.Ordinal) => " = 0L;",
+            _ when clr.StartsWith("decimal", StringComparison.Ordinal) => " = 0m;",
+            _ when clr.StartsWith("double", StringComparison.Ordinal) => " = 0d;",
+            _ when clr.StartsWith("float", StringComparison.Ordinal) => " = 0f;",
+            _ => string.Empty
+        };
     }
 }

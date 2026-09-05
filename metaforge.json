@@ -1,0 +1,26 @@
+{
+  "connectionStringName": "DefaultConnection",
+  "databaseName": "MetaForgeDb",
+  "enabledModules": [
+    "Hrm"
+  ],
+  "modules": {
+    "Hrm": {
+      "folder": "src/Modules/Hrm",
+      "areaName": "Hrm",
+      "schemaName": "hrm",
+      "domainProject": "MetaForge.Hrm.Domain",
+      "applicationProject": "MetaForge.Hrm.Application",
+      "infrastructureProject": "MetaForge.Hrm.Infrastructure",
+      "dbContextName": "HrmDbContext",
+      "entityNamespace": "MetaForge.Hrm.Domain.Entities",
+      "configNamespace": null,
+      "domainOutputDir": null,
+      "configOutputDir": null,
+      "infrastructureProjectPath": null,
+      "dbContextPath": null,
+      "webProjectPath": "src/MetaForge.Web/MetaForge.Web.csproj",
+      "webAreaPath": "src/MetaForge.Web/Areas/Hrm"
+    }
+  }
+}

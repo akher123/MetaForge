@@ -1,9 +1,20 @@
 <Solution>
-  <Folder Name="/src/">
-    <Project Path="src/MetaForge.Application/MetaForge.Application.csproj" />
-    <Project Path="src/MetaForge.Domain/MetaForge.Domain.csproj" />
-    <Project Path="src/MetaForge.Infrastructure/MetaForge.Infrastructure.csproj" />
+  <Folder Name="/src/" />
+  <Folder Name="/src/BuildingBlocks/">
     <Project Path="src/MetaForge.Shared/MetaForge.Shared.csproj" />
+    <Project Path="src/MetaForge.Modules.Abstractions/MetaForge.Modules.Abstractions.csproj" />
+  </Folder>
+  <Folder Name="/src/Core/">
+    <Project Path="src/Core/MetaForge.Core.Domain/MetaForge.Core.Domain.csproj" />
+    <Project Path="src/Core/MetaForge.Core.Application/MetaForge.Core.Application.csproj" />
+    <Project Path="src/Core/MetaForge.Core.Infrastructure/MetaForge.Core.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Hrm/">
+    <Project Path="src/Modules/Hrm/MetaForge.Hrm.Domain/MetaForge.Hrm.Domain.csproj" />
+    <Project Path="src/Modules/Hrm/MetaForge.Hrm.Application/MetaForge.Hrm.Application.csproj" />
+    <Project Path="src/Modules/Hrm/MetaForge.Hrm.Infrastructure/MetaForge.Hrm.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Hosts/">
     <Project Path="src/MetaForge.Web/MetaForge.Web.csproj" />
   </Folder>
   <Folder Name="/tools/">
@@ -11,6 +22,7 @@
     <Project Path="tools/MetaForge.Scaffold/MetaForge.Scaffold.csproj" />
     <Project Path="tools/MetaForge.Scaffold.WinForms/MetaForge.Scaffold.WinForms.csproj" />
   </Folder>
+  <Folder Name="/src/Modules/" />
   <Folder Name="/tests/">
     <Project Path="tests/MetaForge.UnitTests/MetaForge.UnitTests.csproj" />
     <Project Path="tests/MetaForge.Scaffold.Tests/MetaForge.Scaffold.Tests.csproj" />

@@ -1,13 +1,24 @@
 using MetaForge.Scaffold;
+using MetaForge.Scaffold.Module;
 using Microsoft.Extensions.Configuration;
 
 namespace MetaForge.Scaffold.WinForms;
 
 public sealed class MainForm : Form
 {
+    private readonly TabControl _workflowTabs = new();
+    private readonly TabPage _tabEntityWorkflow = new("Entity scaffold");
+    private readonly TabPage _tabModuleWorkflow = new("New module");
+    private readonly TextBox _txtNewModuleName = new();
+    private readonly CheckBox _chkModuleWebArea = new() { Text = "Create MVC area", Checked = true };
+    private readonly CheckBox _chkModuleMigration = new() { Text = "Create initial EF migration" };
+    private readonly CheckBox _chkModuleForce = new() { Text = "Overwrite if module folder exists" };
+    private readonly Panel _entityWorkflowPanel = new();
+    private readonly Panel _moduleWorkflowPanel = new();
     private readonly ToolTip _tooltips = new();
 
     private readonly TextBox _txtSolutionRoot = new();
+    private readonly ComboBox _cboModule = new() { DropDownStyle = ComboBoxStyle.DropDownList };
     private readonly TextBox _txtConnection = new() { Multiline = true, ScrollBars = ScrollBars.Vertical };
     private readonly TextBox _txtEntityName = new();
     private readonly TextBox _txtTableName = new();
@@ -35,7 +46,7 @@ public sealed class MainForm : Form
         // Every layout constant below is authored at 96 DPI, so the scale has to be known first.
         UiScale.SyncWith(this);
 
-        Text = "MetaForge Entity Scaffold";
+        Text = "MetaForge Scaffold";
         Font = UiTheme.UiFont;
         AutoScaleMode = AutoScaleMode.Font;
         BackColor = UiTheme.Background;
@@ -95,7 +106,7 @@ public sealed class MainForm : Form
         _txtEntityName.PlaceholderText = "Warehouse";
         _txtTableName.PlaceholderText = "Warehouses (optional)";
         _txtColumns.PlaceholderText = "Code:string:50!, Name:string:200!, IsActive:bool!";
-        _txtReverseTable.PlaceholderText = "Warehouses";
+        _txtReverseTable.PlaceholderText = "Departments";
         _txtEntityOverride.PlaceholderText = "Warehouse (optional)";
 
         _txtColumns.Font = UiTheme.CodeFont;
@@ -117,6 +128,7 @@ public sealed class MainForm : Form
         StyleCheckBox(_chkForce);
         StyleCheckBox(_chkMigration);
         StyleCheckBox(_chkNoDbSet);
+        _chkNoDbSet.Checked = false;
     }
 
     private static void StyleCheckBox(CheckBox checkBox)
@@ -178,6 +190,45 @@ public sealed class MainForm : Form
 
     private Control BuildLeftColumn()
     {
+        _entityWorkflowPanel.Dock = DockStyle.Fill;
+        _entityWorkflowPanel.Controls.Add(BuildEntityWorkflowContent());
+
+        _moduleWorkflowPanel.Dock = DockStyle.Fill;
+        _moduleWorkflowPanel.Controls.Add(BuildModuleWorkflowContent());
+
+        _tabEntityWorkflow.Controls.Add(_entityWorkflowPanel);
+        _tabModuleWorkflow.Controls.Add(_moduleWorkflowPanel);
+        _workflowTabs.TabPages.Add(_tabEntityWorkflow);
+        _workflowTabs.TabPages.Add(_tabModuleWorkflow);
+        _workflowTabs.Dock = DockStyle.Fill;
+        _workflowTabs.Font = UiTheme.UiFont;
+        _workflowTabs.Padding = new Point(UiScale.Px(12), UiScale.Px(4));
+        _workflowTabs.SelectedIndexChanged += (_, _) => UpdateWorkflowUi();
+
+        var actions = BuildActionsBar();
+        actions.Dock = DockStyle.Fill;
+        actions.Margin = UiScale.Px(0, 12, 0, 0);
+
+        var column = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 2,
+            BackColor = UiTheme.Background,
+            Margin = UiScale.Px(0, 0, 10, 0)
+        };
+        column.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f));
+        column.RowStyles.Add(new RowStyle(SizeType.Percent, 100f));
+        column.RowStyles.Add(new RowStyle(SizeType.Absolute, ActionsBarHeight + actions.Margin.Vertical));
+        column.Controls.Add(_workflowTabs, 0, 0);
+        column.Controls.Add(actions, 0, 1);
+
+        UpdateWorkflowUi();
+        return column;
+    }
+
+    private Control BuildEntityWorkflowContent()
+    {
         var steps = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
@@ -191,8 +242,6 @@ public sealed class MainForm : Form
         steps.RowStyles.Add(new RowStyle(SizeType.Percent, 100f));
         steps.RowStyles.Add(new RowStyle(SizeType.Absolute, 0));
 
-        // Both step cards fill an explicitly sized row rather than auto-sizing: a card's preferred
-        // size is measured unwrapped, which is too short once its content wraps onto more lines.
         var (project, projectFields) = BuildProjectCard();
         project.Dock = DockStyle.Fill;
         project.Margin = UiScale.Px(0, 0, 0, 12);
@@ -209,9 +258,6 @@ public sealed class MainForm : Form
         steps.Controls.Add(mode, 0, 1);
         steps.Controls.Add(options, 0, 2);
 
-        // Where the display is too short for all three cards, scroll them instead of clipping
-        // whatever runs off the bottom. AutoScrollMinSize (not MinimumSize) is what grows the
-        // host's display rectangle, which is the area a docked child is laid out in.
         var scrollHost = new Panel
         {
             Dock = DockStyle.Fill,
@@ -241,26 +287,98 @@ public sealed class MainForm : Form
         optionFlow.Resize += (_, _) => _syncStepScrollHeight();
         scrollHost.Resize += (_, _) => _syncStepScrollHeight();
 
-        // Preview/Scaffold stays pinned below the scroll area so the primary actions are always reachable.
-        var actions = BuildActionsBar();
-        actions.Dock = DockStyle.Fill;
-        actions.Margin = UiScale.Px(0, 12, 0, 0);
-
         var column = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
             ColumnCount = 1,
-            RowCount = 2,
+            RowCount = 1,
             BackColor = UiTheme.Background,
-            Margin = UiScale.Px(0, 0, 10, 0)
+            Margin = Padding.Empty
         };
         column.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f));
         column.RowStyles.Add(new RowStyle(SizeType.Percent, 100f));
-        column.RowStyles.Add(new RowStyle(SizeType.Absolute, ActionsBarHeight + actions.Margin.Vertical));
         column.Controls.Add(scrollHost, 0, 0);
-        column.Controls.Add(actions, 0, 1);
         return column;
     }
+
+    private Control BuildModuleWorkflowContent()
+    {
+        var body = LayoutKit.CreateBodyPanel(fill: true);
+        var grid = new TableLayoutPanel
+        {
+            Dock = DockStyle.Top,
+            ColumnCount = 1,
+            RowCount = 6,
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink
+        };
+        grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f));
+
+        UiTheme.StyleTextBox(_txtNewModuleName);
+        _txtNewModuleName.PlaceholderText = "Production";
+
+        var lblSolution = UiTheme.CreateCaption("Solution folder");
+        lblSolution.Margin = UiScale.Px(0, 6, 0, 6);
+        grid.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        grid.Controls.Add(lblSolution, 0, 0);
+
+        var browse = new Button { Text = "Browse…" };
+        UiTheme.StyleSecondaryButton(browse);
+        browse.Click += (_, _) => BrowseSolutionRoot();
+        var solutionRow = LayoutKit.CreateInputButtonRow(_txtSolutionRoot, browse);
+        AddFixedRow(grid, solutionRow, 1);
+
+        var lblModule = UiTheme.CreateCaption("Module name (PascalCase)");
+        lblModule.Margin = UiScale.Px(0, 10, 0, 6);
+        grid.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        grid.Controls.Add(lblModule, 0, 2);
+        _txtNewModuleName.Dock = DockStyle.Fill;
+        AddFixedRow(grid, _txtNewModuleName, 3);
+
+        var options = new FlowLayoutPanel
+        {
+            Dock = DockStyle.Top,
+            FlowDirection = FlowDirection.TopDown,
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            BackColor = UiTheme.Surface,
+            Margin = UiScale.Px(0, 10, 0, 0)
+        };
+        foreach (var chk in new[] { _chkModuleWebArea, _chkModuleMigration, _chkModuleForce })
+        {
+            StyleCheckBox(chk);
+            options.Controls.Add(chk);
+        }
+        grid.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        grid.Controls.Add(options, 0, 4);
+
+        grid.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        grid.Controls.Add(LayoutKit.CreateInfoBox(
+            "Creates Domain, Application, Infrastructure projects, DbContext, and wires metaforge.json, solution, and web host."), 0, 5);
+
+        body.Controls.Add(grid);
+
+        var card = LayoutKit.CreateCard("New business module", body, fillVertical: true);
+        card.Dock = DockStyle.Fill;
+
+        var scrollHost = new Panel
+        {
+            Dock = DockStyle.Fill,
+            AutoScroll = true,
+            BackColor = UiTheme.Background
+        };
+        scrollHost.Controls.Add(card);
+        return scrollHost;
+    }
+
+    private void UpdateWorkflowUi()
+    {
+        var isModule = _workflowTabs.SelectedTab == _tabModuleWorkflow;
+        _btnRun.Text = isModule ? "Create module" : "Scaffold";
+        UpdateModeHint();
+    }
+
+    private bool IsModuleWorkflow => _workflowTabs.SelectedTab == _tabModuleWorkflow;
 
     /// <summary>
     /// Height an auto-sizing card needs. Measured from its content, whose docked layout keeps its
@@ -332,7 +450,7 @@ public sealed class MainForm : Form
         titles.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         titles.Controls.Add(new Label
         {
-            Text = "MetaForge Entity Scaffold",
+            Text = "MetaForge Scaffold",
             Font = UiTheme.TitleFont,
             ForeColor = UiTheme.HeaderFg,
             AutoSize = true,
@@ -341,7 +459,7 @@ public sealed class MainForm : Form
         }, 0, 0);
         titles.Controls.Add(new Label
         {
-            Text = "Generate entities · EF configuration · Form Builder screens",
+            Text = "Create modules · Generate entities · EF configuration · Form Builder screens",
             Font = UiTheme.SubtitleFont,
             ForeColor = Color.FromArgb(195, 210, 230),
             AutoSize = true,
@@ -352,7 +470,7 @@ public sealed class MainForm : Form
         layout.Controls.Add(titles, 0, 0);
         layout.Controls.Add(new Label
         {
-            Text = "1 Project  →  2 Entity  →  3 Options  →  Preview / Scaffold",
+            Text = "Entity: Project → Entity → Options  |  Module: name → Create",
             Font = UiTheme.HelpFont,
             ForeColor = Color.FromArgb(170, 190, 215),
             AutoSize = true,
@@ -374,7 +492,7 @@ public sealed class MainForm : Form
         {
             Dock = DockStyle.Top,
             ColumnCount = 1,
-            RowCount = 4,
+            RowCount = 6,
             AutoSize = true,
             AutoSizeMode = AutoSizeMode.GrowAndShrink,
             Width = UiScale.Px(100)
@@ -394,15 +512,23 @@ public sealed class MainForm : Form
         browse.Click += (_, _) => BrowseSolutionRoot();
         AddFixedRow(grid, LayoutKit.CreateInputButtonRow(_txtSolutionRoot, browse), 1);
 
+        var lblModule = UiTheme.CreateCaption("Target module");
+        lblModule.Margin = UiScale.Px(0, 10, 0, 6);
+        grid.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        grid.Controls.Add(lblModule, 0, 2);
+        _cboModule.Dock = DockStyle.Fill;
+        _cboModule.Margin = UiScale.Px(0, 0, 0, 4);
+        AddFixedRow(grid, _cboModule, 3);
+
         var lblConnection = UiTheme.CreateCaption("SQL Server connection");
         lblConnection.Margin = UiScale.Px(0, 10, 0, 6);
         grid.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        grid.Controls.Add(lblConnection, 0, 2);
+        grid.Controls.Add(lblConnection, 0, 4);
 
         var loadConn = new Button { Text = "Load" };
         UiTheme.StyleSecondaryButton(loadConn);
         loadConn.Click += (_, _) => LoadConnectionFromAppSettings();
-        AddFixedRow(grid, LayoutKit.CreateInputButtonRow(_txtConnection, loadConn, 64), 3);
+        AddFixedRow(grid, LayoutKit.CreateInputButtonRow(_txtConnection, loadConn, 64), 5);
 
         body.Controls.Add(grid);
         return (LayoutKit.CreateCard("Step 1 — Project & database", body, fillVertical: true), grid);
@@ -665,25 +791,47 @@ public sealed class MainForm : Form
 
     private void WireEvents()
     {
-        _btnPreview.Click += async (_, _) => await RunScaffoldAsync(dryRun: true);
-        _btnRun.Click += async (_, _) => await RunScaffoldAsync(dryRun: false);
+        _btnPreview.Click += async (_, _) =>
+        {
+            if (IsModuleWorkflow)
+                await RunModuleScaffoldAsync(dryRun: true);
+            else
+                await RunScaffoldAsync(dryRun: true);
+        };
+        _btnRun.Click += async (_, _) =>
+        {
+            if (IsModuleWorkflow)
+                await RunModuleScaffoldAsync(dryRun: false);
+            else
+                await RunScaffoldAsync(dryRun: false);
+        };
     }
 
     private void RegisterTooltips()
     {
-        _tooltips.SetToolTip(_txtSolutionRoot, "Folder containing MetaForge.slnx");
+        _tooltips.SetToolTip(_txtSolutionRoot, "Folder containing MetaForge.slnx and metaforge.json");
+        _tooltips.SetToolTip(_cboModule, "Business module from metaforge.json (namespace, schema, output paths)");
         _tooltips.SetToolTip(_txtConnection, "Required for reverse scaffold from database");
         _tooltips.SetToolTip(_txtEntityName, "C# class name, e.g. Warehouse");
         _tooltips.SetToolTip(_txtTableName, "Leave empty to auto-pluralize (Warehouse → Warehouses)");
         _tooltips.SetToolTip(_txtColumns, "Comma-separated: Name:type[:size][!]");
-        _tooltips.SetToolTip(_txtReverseTable, "Table name in SQL Server");
+        _tooltips.SetToolTip(_txtReverseTable, "Table name (uses selected module schema) or schema.table e.g. hrm.Departments");
+        _tooltips.SetToolTip(_txtNewModuleName, "PascalCase module name, e.g. Production, Accounting");
+        _tooltips.SetToolTip(_chkModuleWebArea, "Creates MetaForge.Web/Areas/{Module} landing page");
+        _tooltips.SetToolTip(_chkModuleMigration, "Runs dotnet ef migrations add Initial{Module}");
         _tooltips.SetToolTip(_btnPreview, "Preview generated code without writing files");
-        _tooltips.SetToolTip(_btnRun, "Write entity files and update DbContext");
+        _tooltips.SetToolTip(_btnRun, "Write module or entity files");
         _tooltips.SetToolTip(_chkMigration, "Runs dotnet ef migrations add");
     }
 
     private void UpdateModeHint()
     {
+        if (IsModuleWorkflow)
+        {
+            _lblOutputHint.Text = "Module mode: enter module name, then Preview or Create module.";
+            return;
+        }
+
         _lblOutputHint.Text = _modeTabs.SelectedTab == _tabReverse
             ? "Reverse mode: load connection string, enter table name, then Preview or Scaffold."
             : "Greenfield mode: define entity and columns, then Preview or Scaffold.";
@@ -696,12 +844,37 @@ public sealed class MainForm : Form
         try
         {
             _txtSolutionRoot.Text = SolutionRootResolver.Resolve(".");
+            ReloadModules();
             _lblStatus.Text = "Solution folder detected.";
         }
         catch
         {
             _txtSolutionRoot.Text = Directory.GetCurrentDirectory();
+            ReloadModules();
             _lblStatus.Text = "Set solution folder.";
+        }
+    }
+
+    private void ReloadModules()
+    {
+        _cboModule.Items.Clear();
+        try
+        {
+            var root = _txtSolutionRoot.Text.Trim();
+            if (string.IsNullOrWhiteSpace(root))
+                return;
+
+            var config = MetaForge.Scaffold.Config.MetaForgeConfigLoader.Load(root);
+            foreach (var name in MetaForge.Scaffold.Config.MetaForgeConfigLoader.GetEnabledModuleNames(config))
+                _cboModule.Items.Add(name);
+
+            if (_cboModule.Items.Count > 0)
+                _cboModule.SelectedIndex = 0;
+        }
+        catch
+        {
+            _cboModule.Items.Add("Hrm");
+            _cboModule.SelectedIndex = 0;
         }
     }
 
@@ -717,6 +890,7 @@ public sealed class MainForm : Form
         if (dialog.ShowDialog() == DialogResult.OK)
         {
             _txtSolutionRoot.Text = dialog.SelectedPath;
+            ReloadModules();
             _lblStatus.Text = "Solution folder updated.";
         }
     }
@@ -759,14 +933,22 @@ public sealed class MainForm : Form
             return null;
         }
 
+        if (_cboModule.SelectedItem == null)
+        {
+            MessageBox.Show("Select a target module.", Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return null;
+        }
+
         var options = new ScaffoldOptions
         {
             SolutionRoot = _txtSolutionRoot.Text.Trim(),
+            ModuleName = _cboModule.SelectedItem.ToString(),
             ConnectionString = string.IsNullOrWhiteSpace(_txtConnection.Text) ? null : _txtConnection.Text.Trim(),
             IncludeNavigations = _chkIncludeNav.Checked,
             Force = _chkForce.Checked,
             AddMigration = _chkMigration.Checked,
             NoDbSetPatch = _chkNoDbSet.Checked,
+            NoDbSetPatchExplicit = true,
             DryRun = dryRun
         };
 
@@ -820,6 +1002,72 @@ public sealed class MainForm : Form
     private static string NormalizeColumns(string text) =>
         string.Join(",", text.Split([',', '\r', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
 
+    private ModuleScaffoldOptions? BuildModuleOptions(bool dryRun)
+    {
+        if (string.IsNullOrWhiteSpace(_txtSolutionRoot.Text))
+        {
+            MessageBox.Show("Please set the solution folder.", Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return null;
+        }
+
+        if (string.IsNullOrWhiteSpace(_txtNewModuleName.Text))
+        {
+            MessageBox.Show("Enter a module name (e.g. Production).", Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            _txtNewModuleName.Focus();
+            return null;
+        }
+
+        return new ModuleScaffoldOptions
+        {
+            SolutionRoot = _txtSolutionRoot.Text.Trim(),
+            ModuleName = _txtNewModuleName.Text.Trim(),
+            CreateWebArea = _chkModuleWebArea.Checked,
+            CreateInitialMigration = _chkModuleMigration.Checked,
+            Force = _chkModuleForce.Checked,
+            DryRun = dryRun
+        };
+    }
+
+    private async Task RunModuleScaffoldAsync(bool dryRun)
+    {
+        var options = BuildModuleOptions(dryRun);
+        if (options == null)
+            return;
+
+        SetBusy(true);
+        _txtOutput.Clear();
+        _lblStatus.Text = dryRun ? "Generating module preview…" : "Creating module…";
+
+        try
+        {
+            var result = await new ModuleScaffoldOrchestrator().RunAsync(options);
+            _txtOutput.Text = ModuleScaffoldResultFormatter.Format(result);
+            _lblStatus.ForeColor = UiTheme.Success;
+            _lblStatus.Text = dryRun
+                ? $"Preview: {result.ModuleName}"
+                : $"Done: {result.ModuleName} ({result.WrittenFiles.Count} files)";
+
+            if (!dryRun)
+            {
+                ReloadModules();
+                MessageBox.Show(
+                    $"Created module {result.ModuleName}.{Environment.NewLine}{Environment.NewLine}Next: dotnet build → Entity scaffold → Form Builder.",
+                    Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+        }
+        catch (Exception ex)
+        {
+            _txtOutput.Text = ex.ToString();
+            _lblStatus.ForeColor = Color.DarkRed;
+            _lblStatus.Text = "Failed — see output.";
+            MessageBox.Show(ex.Message, Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+        finally
+        {
+            SetBusy(false);
+        }
+    }
+
     private async Task RunScaffoldAsync(bool dryRun)
     {
         var options = BuildOptions(dryRun);
@@ -836,7 +1084,7 @@ public sealed class MainForm : Form
             _txtOutput.Text = ScaffoldResultFormatter.Format(result);
             _lblStatus.ForeColor = UiTheme.Success;
             _lblStatus.Text = dryRun
-                ? $"Preview: {result.EntityName} / {result.TableName}"
+                ? $"Preview: {result.EntityName} / {result.QualifiedTableName}"
                 : $"Done: {result.EntityName} ({result.WrittenFiles.Count} files)";
 
             if (!dryRun)
@@ -864,6 +1112,7 @@ public sealed class MainForm : Form
         _btnPreview.Enabled = !busy;
         _btnRun.Enabled = !busy;
         _modeTabs.Enabled = !busy;
+        _workflowTabs.Enabled = !busy;
         UseWaitCursor = busy;
         if (!busy)
             _lblStatus.ForeColor = SystemColors.ControlText;

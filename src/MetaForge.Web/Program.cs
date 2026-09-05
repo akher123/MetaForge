@@ -3,6 +3,7 @@ using MetaForge.Infrastructure.Persistence.Seed;
 using MetaForge.Web.Localization;
 using MetaForge.Web.Logging;
 using MetaForge.Web.Middleware;
+using MetaForge.Web.Modules;
 using Serilog;
 
 Log.Logger = new LoggerConfiguration()
@@ -17,6 +18,7 @@ try
     builder.ConfigureSerilog();
 
     builder.Services.AddInfrastructure(builder.Configuration);
+    builder.Services.AddMetaForgeModules(builder.Configuration);
 
     builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
     builder.Services.AddProblemDetails();
@@ -48,7 +50,10 @@ try
     if (args.Contains("--reset-db", StringComparer.OrdinalIgnoreCase))
         await DatabaseSeeder.ResetAndSeedAsync(app.Services);
     else
+    {
+        await MetaForgeModuleRegistration.MigrateAllModulesAsync(app.Services);
         await DatabaseSeeder.SeedAsync(app.Services);
+    }
 
     if (args.Contains("--seed-only", StringComparer.OrdinalIgnoreCase))
     {
@@ -73,6 +78,10 @@ try
     app.UseMiddleware<SecurityStampValidationMiddleware>();
     app.UseMiddleware<CultureMiddleware>();
     app.UseAuthorization();
+
+    app.MapControllerRoute(
+        name: "modules",
+        pattern: "{area:exists}/{controller=Home}/{action=Index}/{id?}");
 
     app.MapControllerRoute(
         name: "default",

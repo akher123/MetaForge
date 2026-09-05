@@ -1,26 +1,27 @@
 using System.Text;
 using Humanizer;
+using MetaForge.Scaffold.Config;
 using MetaForge.Scaffold.Models;
 
 namespace MetaForge.Scaffold.Generation;
 
 public static class ConfigurationCodeGenerator
 {
-    public static string Generate(TableModel table, bool includeNavigations)
+    public static string Generate(TableModel table, ModuleScaffoldProfile profile, bool includeNavigations)
     {
         var entity = table.EntityName;
         var sb = new StringBuilder();
-        sb.AppendLine("using MetaForge.Domain.Features;");
+        sb.AppendLine($"using {profile.EntityNamespace};");
         sb.AppendLine("using Microsoft.EntityFrameworkCore;");
         sb.AppendLine("using Microsoft.EntityFrameworkCore.Metadata.Builders;");
         sb.AppendLine();
-        sb.AppendLine("namespace MetaForge.Infrastructure.Persistence.Configurations.Generated;");
+        sb.AppendLine($"namespace {profile.ConfigNamespace};");
         sb.AppendLine();
         sb.AppendLine($"public class {entity}Configuration : IEntityTypeConfiguration<{entity}>");
         sb.AppendLine("{");
         sb.AppendLine($"    public void Configure(EntityTypeBuilder<{entity}> builder)");
         sb.AppendLine("    {");
-        sb.AppendLine($"        builder.ToTable(\"{table.TableName}\");");
+        sb.AppendLine($"        builder.ToTable(\"{table.TableName}\", \"{profile.SchemaName}\");");
         sb.AppendLine("        builder.HasKey(x => x.Id);");
 
         foreach (var column in table.Columns.Where(c => !c.IsPrimaryKey))
@@ -39,7 +40,6 @@ public static class ConfigurationCodeGenerator
                          c.IsForeignKey && c.ReferencedTable != null && c.Name.EndsWith("Id", StringComparison.Ordinal)))
             {
                 var navName = fk.Name[..^2];
-                var refEntity = fk.ReferencedTable!.Singularize(inputIsKnownToBePlural: true);
                 sb.AppendLine($"        builder.HasOne(x => x.{navName}).WithMany().HasForeignKey(x => x.{fk.Name}).OnDelete(DeleteBehavior.Restrict);");
             }
         }

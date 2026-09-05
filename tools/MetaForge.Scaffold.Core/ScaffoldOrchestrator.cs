@@ -1,4 +1,5 @@
 using Humanizer;
+using MetaForge.Scaffold.Config;
 using MetaForge.Scaffold.Generation;
 using MetaForge.Scaffold.Models;
 using MetaForge.Scaffold.Patching;
@@ -16,6 +17,11 @@ public sealed class ScaffoldOrchestrator
         var root = SolutionRootResolver.Resolve(options.SolutionRoot);
         options.SolutionRoot = root;
 
+        var config = MetaForgeConfigLoader.Load(root, options.MetaForgeConfigPath);
+        var moduleName = ResolveModuleName(options, config);
+        var profile = MetaForgeConfigLoader.ResolveModule(config, moduleName, root);
+        MetaForgeConfigLoader.ApplyToOptions(options, profile, root);
+
         var table = await ResolveTableModelAsync(options, cancellationToken);
 
         var domainDir = Path.Combine(root, options.DomainOutputDir);
@@ -31,8 +37,8 @@ public sealed class ScaffoldOrchestrator
             EnsureNotExists(configurationPath);
         }
 
-        var entitySource = EntityCodeGenerator.Generate(table, options.IncludeNavigations);
-        var configSource = ConfigurationCodeGenerator.Generate(table, options.IncludeNavigations);
+        var entitySource = EntityCodeGenerator.Generate(table, profile, options.IncludeNavigations);
+        var configSource = ConfigurationCodeGenerator.Generate(table, profile, options.IncludeNavigations);
 
         var written = new List<string>();
         var dbSetPatched = false;
@@ -46,8 +52,12 @@ public sealed class ScaffoldOrchestrator
 
             return new ScaffoldResult
             {
+                ModuleName = profile.Name,
+                SchemaName = profile.SchemaName,
                 EntityName = table.EntityName,
                 TableName = table.TableName,
+                TableSchemaName = table.SchemaName,
+                DbContextName = options.DbContextName,
                 PlannedFiles = planned,
                 WillPatchDbSet = willPatch,
                 DryRun = true,
@@ -75,7 +85,7 @@ public sealed class ScaffoldOrchestrator
             else
             {
                 var plural = table.EntityName.Pluralize();
-                if (!DbContextPatcher.TryPatch(dbContextPath, table.EntityName, plural, out var patchError))
+                if (!DbContextPatcher.TryPatch(dbContextPath, table.EntityName, plural, options.EntityNamespace, out var patchError))
                     throw new InvalidOperationException(patchError ?? "Failed to patch DbContext.");
 
                 written.Add(dbContextPath);
@@ -88,13 +98,25 @@ public sealed class ScaffoldOrchestrator
         if (options.AddMigration)
         {
             migrationName = $"Scaffold_{table.EntityName}";
-            migrationOutput = await RunEfMigrationAddAsync(root, options, migrationName, cancellationToken);
+            migrationOutput = await DotNetCliRunner.RunEfMigrationAddAsync(
+                root,
+                "MetaForge.slnx",
+                options.InfrastructureProject,
+                options.WebProject,
+                migrationName,
+                options.MigrationOutputDir,
+                options.DbContextName,
+                cancellationToken);
         }
 
         return new ScaffoldResult
         {
+            ModuleName = profile.Name,
+            SchemaName = profile.SchemaName,
             EntityName = table.EntityName,
             TableName = table.TableName,
+            TableSchemaName = table.SchemaName,
+            DbContextName = options.DbContextName,
             WrittenFiles = written,
             DbSetPatched = dbSetPatched,
             MigrationName = migrationName,
@@ -103,14 +125,26 @@ public sealed class ScaffoldOrchestrator
         };
     }
 
+    private static string ResolveModuleName(ScaffoldOptions options, MetaForgeConfig config)
+    {
+        if (!string.IsNullOrWhiteSpace(options.ModuleName))
+            return options.ModuleName.Trim();
+
+        var enabled = MetaForgeConfigLoader.GetEnabledModuleNames(config);
+        return enabled.FirstOrDefault()
+            ?? throw new InvalidOperationException("No modules enabled in metaforge.json. Set enabledModules or pass --module.");
+    }
+
     private async Task<TableModel> ResolveTableModelAsync(ScaffoldOptions options, CancellationToken cancellationToken)
     {
         if (options.IsReverseFromTable)
         {
             var connection = ConnectionStringResolver.Resolve(options);
+            var tableId = TableIdentifier.Parse(options.TableName!, options.SchemaName);
             return await _schemaReader.ReadTableAsync(
                 connection,
-                options.TableName!,
+                tableId.Schema,
+                tableId.TableName,
                 options.EntityName,
                 cancellationToken);
         }
@@ -137,47 +171,5 @@ public sealed class ScaffoldOrchestrator
     {
         if (File.Exists(path))
             throw new InvalidOperationException($"File already exists: {path}. Use --force to overwrite.");
-    }
-
-    private static async Task<string> RunEfMigrationAddAsync(
-        string root,
-        ScaffoldOptions options,
-        string migrationName,
-        CancellationToken cancellationToken)
-    {
-        var infra = Path.Combine(root, options.InfrastructureProject);
-        var context = options.DbContextName;
-        var outputDir = options.MigrationOutputDir;
-
-        // Use Infrastructure as startup project: it hosts IDesignTimeDbContextFactory and
-        // EF Design packages. Web's pre-build port-cleanup target can fail under dotnet ef.
-        var psi = new System.Diagnostics.ProcessStartInfo
-        {
-            FileName = "dotnet",
-            Arguments =
-                $"ef migrations add {migrationName} --project \"{infra}\" --startup-project \"{infra}\" " +
-                $"--output-dir \"{outputDir}\" --context {context}",
-            WorkingDirectory = root,
-            UseShellExecute = false,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true
-        };
-
-        using var process = System.Diagnostics.Process.Start(psi)
-            ?? throw new InvalidOperationException("Failed to start dotnet ef.");
-
-        var stdoutTask = process.StandardOutput.ReadToEndAsync(cancellationToken);
-        var stderrTask = process.StandardError.ReadToEndAsync(cancellationToken);
-        await process.WaitForExitAsync(cancellationToken);
-
-        var output = string.Join(
-            Environment.NewLine,
-            new[] { await stdoutTask, await stderrTask }.Where(s => !string.IsNullOrWhiteSpace(s)));
-
-        if (process.ExitCode != 0)
-            throw new InvalidOperationException(
-                $"dotnet ef migrations add failed with exit code {process.ExitCode}.{Environment.NewLine}{output}");
-
-        return output;
     }
 }

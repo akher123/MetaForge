@@ -6,49 +6,66 @@ namespace MetaForge.Scaffold.Schema;
 
 public sealed class SqlServerSchemaReader
 {
-    public async Task<TableModel> ReadTableAsync(string connectionString, string tableName, string? entityNameOverride, CancellationToken cancellationToken = default)
+    public async Task<TableModel> ReadTableAsync(
+        string connectionString,
+        string schema,
+        string tableName,
+        string? entityNameOverride,
+        CancellationToken cancellationToken = default)
     {
         if (ScaffoldConstants.BlockedTables.Contains(tableName))
             throw new InvalidOperationException($"Table '{tableName}' is blocked from scaffolding (system/metadata table).");
 
+        var qualifiedName = $"{schema}.{tableName}";
+
         await using var connection = new SqlConnection(connectionString);
         await connection.OpenAsync(cancellationToken);
 
-        if (!await TableExistsAsync(connection, tableName, cancellationToken))
-            throw new InvalidOperationException($"Table '{tableName}' was not found in the database.");
+        if (!await TableExistsAsync(connection, schema, tableName, cancellationToken))
+            throw new InvalidOperationException($"Table '{qualifiedName}' was not found in the database.");
 
-        var columns = await ReadColumnsAsync(connection, tableName, cancellationToken);
+        var columns = await ReadColumnsAsync(connection, schema, tableName, cancellationToken);
         if (columns.Count == 0)
-            throw new InvalidOperationException($"Table '{tableName}' has no columns.");
+            throw new InvalidOperationException($"Table '{qualifiedName}' has no columns.");
 
-        ValidatePrimaryKey(columns, tableName);
+        ValidatePrimaryKey(columns, qualifiedName);
 
         var entityName = entityNameOverride
             ?? tableName.Singularize(inputIsKnownToBePlural: true);
 
         return new TableModel
         {
+            SchemaName = schema,
             TableName = tableName,
             EntityName = entityName,
             Columns = columns
         };
     }
 
-    private static async Task<bool> TableExistsAsync(SqlConnection connection, string tableName, CancellationToken cancellationToken)
+    private static async Task<bool> TableExistsAsync(
+        SqlConnection connection,
+        string schema,
+        string tableName,
+        CancellationToken cancellationToken)
     {
         const string sql = """
             SELECT 1
             FROM INFORMATION_SCHEMA.TABLES
-            WHERE TABLE_SCHEMA = 'dbo' AND TABLE_NAME = @tableName
+            WHERE TABLE_SCHEMA = @schema AND TABLE_NAME = @tableName
             """;
 
         await using var cmd = new SqlCommand(sql, connection);
+        cmd.Parameters.AddWithValue("@schema", schema);
         cmd.Parameters.AddWithValue("@tableName", tableName);
         var result = await cmd.ExecuteScalarAsync(cancellationToken);
         return result != null;
     }
 
-    private static async Task<List<ColumnModel>> ReadColumnsAsync(SqlConnection connection, string tableName, CancellationToken cancellationToken)
+    private static async Task<List<ColumnModel>> ReadColumnsAsync(
+        SqlConnection connection,
+        string schema,
+        string tableName,
+        CancellationToken cancellationToken)
     {
         const string columnSql = """
             SELECT
@@ -61,20 +78,23 @@ public sealed class SqlServerSchemaReader
                 CASE WHEN pk.COLUMN_NAME IS NOT NULL THEN 1 ELSE 0 END AS IsPrimaryKey
             FROM INFORMATION_SCHEMA.COLUMNS c
             LEFT JOIN (
-                SELECT ku.TABLE_NAME, ku.COLUMN_NAME
+                SELECT ku.TABLE_SCHEMA, ku.TABLE_NAME, ku.COLUMN_NAME
                 FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS tc
                 INNER JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE ku
                     ON tc.CONSTRAINT_NAME = ku.CONSTRAINT_NAME
                     AND tc.TABLE_SCHEMA = ku.TABLE_SCHEMA
-                WHERE tc.CONSTRAINT_TYPE = 'PRIMARY KEY' AND tc.TABLE_SCHEMA = 'dbo'
-            ) pk ON pk.TABLE_NAME = c.TABLE_NAME AND pk.COLUMN_NAME = c.COLUMN_NAME
-            WHERE c.TABLE_SCHEMA = 'dbo' AND c.TABLE_NAME = @tableName
+                WHERE tc.CONSTRAINT_TYPE = 'PRIMARY KEY' AND tc.TABLE_SCHEMA = @schema
+            ) pk ON pk.TABLE_SCHEMA = c.TABLE_SCHEMA
+                AND pk.TABLE_NAME = c.TABLE_NAME
+                AND pk.COLUMN_NAME = c.COLUMN_NAME
+            WHERE c.TABLE_SCHEMA = @schema AND c.TABLE_NAME = @tableName
             ORDER BY c.ORDINAL_POSITION
             """;
 
         var columns = new List<ColumnModel>();
         await using (var cmd = new SqlCommand(columnSql, connection))
         {
+            cmd.Parameters.AddWithValue("@schema", schema);
             cmd.Parameters.AddWithValue("@tableName", tableName);
             await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
             while (await reader.ReadAsync(cancellationToken))
@@ -101,11 +121,16 @@ public sealed class SqlServerSchemaReader
             }
         }
 
-        await ApplyForeignKeysAsync(connection, tableName, columns, cancellationToken);
+        await ApplyForeignKeysAsync(connection, schema, tableName, columns, cancellationToken);
         return columns;
     }
 
-    private static async Task ApplyForeignKeysAsync(SqlConnection connection, string tableName, List<ColumnModel> columns, CancellationToken cancellationToken)
+    private static async Task ApplyForeignKeysAsync(
+        SqlConnection connection,
+        string schema,
+        string tableName,
+        List<ColumnModel> columns,
+        CancellationToken cancellationToken)
     {
         const string fkSql = """
             SELECT
@@ -113,12 +138,13 @@ public sealed class SqlServerSchemaReader
                 OBJECT_NAME(fkc.referenced_object_id) AS ReferencedTable
             FROM sys.foreign_key_columns fkc
             INNER JOIN sys.tables t ON fkc.parent_object_id = t.object_id
-            WHERE t.name = @tableName AND SCHEMA_NAME(t.schema_id) = 'dbo'
+            WHERE t.name = @tableName AND SCHEMA_NAME(t.schema_id) = @schema
             """;
 
         var fkLookup = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         await using (var cmd = new SqlCommand(fkSql, connection))
         {
+            cmd.Parameters.AddWithValue("@schema", schema);
             cmd.Parameters.AddWithValue("@tableName", tableName);
             await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
             while (await reader.ReadAsync(cancellationToken))
@@ -147,19 +173,21 @@ public sealed class SqlServerSchemaReader
         }
     }
 
-    private static void ValidatePrimaryKey(IReadOnlyList<ColumnModel> columns, string tableName)
+    private static void ValidatePrimaryKey(IReadOnlyList<ColumnModel> columns, string qualifiedTableName)
     {
         var pk = columns.FirstOrDefault(c => c.IsPrimaryKey);
         if (pk == null)
-            throw new InvalidOperationException($"Table '{tableName}' has no primary key.");
+            throw new InvalidOperationException($"Table '{qualifiedTableName}' has no primary key.");
 
         if (!string.Equals(pk.Name, "Id", StringComparison.OrdinalIgnoreCase))
-            throw new InvalidOperationException($"Table '{tableName}' primary key must be named 'Id' (found '{pk.Name}').");
+            throw new InvalidOperationException($"Table '{qualifiedTableName}' primary key must be named 'Id' (found '{pk.Name}').");
 
         var keyClr = pk.ClrTypeName.TrimEnd('?');
         if (!AllowedPrimaryKeyClrTypes.Contains(keyClr))
+        {
             throw new InvalidOperationException(
-                $"Table '{tableName}' primary key type '{pk.ClrTypeName}' is not supported. Allowed: {string.Join(", ", AllowedPrimaryKeyClrTypes)}.");
+                $"Table '{qualifiedTableName}' primary key type '{pk.ClrTypeName}' is not supported. Allowed: {string.Join(", ", AllowedPrimaryKeyClrTypes)}.");
+        }
     }
 
     private static readonly HashSet<string> AllowedPrimaryKeyClrTypes = new(StringComparer.OrdinalIgnoreCase)

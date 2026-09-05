@@ -3,6 +3,8 @@ using MetaForge.Domain.Enums;
 using MetaForge.Domain.Security;
 using MetaForge.Shared.Constants;
 
+using MetaForge.UnitTests.Support;
+
 namespace MetaForge.UnitTests;
 
 public class UserAuthorizationSnapshotTests
@@ -28,7 +30,7 @@ public class UserAuthorizationSnapshotTests
         await using var context = CreateContext();
         var cache = new MemoryCache(new MemoryCacheOptions());
         var provider = new UserAuthorizationSnapshotProvider(context, cache);
-        var authService = new FormAuthorizationService(context, new EntityTypeResolver(context), provider);
+        var authService = new FormAuthorizationService(context, TestEntityTypeResolverFactory.Create(context), provider);
         var stampService = new SecurityStampService(context);
 
         var userEntity = context.Users.Single();

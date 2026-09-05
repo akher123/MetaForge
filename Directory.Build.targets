@@ -1,6 +1,6 @@
 <Project>
   <!-- Stop MetaForge.Web before any project builds (Infrastructure copies into Web output while app is running). -->
-  <Target Name="StopRunningMetaForgeWeb" BeforeTargets="Build" Condition="'$(OS)' == 'Windows_NT'">
+  <Target Name="StopRunningMetaForgeWeb" BeforeTargets="Build" Condition="'$(OS)' == 'Windows_NT' and '$(SkipStopRunningMetaForgeWeb)' != 'true'">
     <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(MSBuildThisFileDirectory)scripts\stop-metaforge-web.ps1&quot;" IgnoreExitCode="true" />
   </Target>
 </Project>

@@ -25,35 +25,50 @@ MetaForge follows **Clean Architecture** with a metadata-first admin shell. Busi
 ```text
 MetaForge.slnx
 ├── src/
-│   ├── MetaForge.Domain/           Framework (Metadata, Security) + Features (business entities)
-│   ├── MetaForge.Application/      Framework interfaces, DTOs, contracts
-│   ├── MetaForge.Infrastructure/   Framework services + feature EF configurations
-│   ├── MetaForge.Shared/           Constants, shared exceptions
-│   └── MetaForge.Web/              Framework shell (Form Builder, dynamic Module, Security)
+│   ├── BuildingBlocks/
+│   │   ├── MetaForge.Shared/              Constants, exceptions, culture helpers (no dependencies)
+│   │   └── MetaForge.Modules.Abstractions/  IMetaForgeModule, IModuleDbContextResolver
+│   ├── Core/
+│   │   ├── MetaForge.Core.Domain/         Platform entities (metadata, security, audit)
+│   │   ├── MetaForge.Core.Application/    Service interfaces, DTOs, contracts
+│   │   └── MetaForge.Core.Infrastructure/ MetaForgeDbContext, generic CRUD, discovery, auth
+│   ├── Modules/
+│   │   ├── Hrm/                           Domain, Application, Infrastructure
+│   │   └── Production/
+│   └── Hosts/
+│       └── MetaForge.Web/                 Composition root (MVC, API, module wiring)
 └── tests/
     └── MetaForge.UnitTests/
 ```
 
-**Framework vs features:** The platform (metadata-driven CRUD, security, menus) is the **framework**. Your EF entities and screens are **features**. Full boundaries and folder rules: [docs/architecture/framework-vs-features.md](docs/architecture/framework-vs-features.md).
+**Framework vs features:** The platform (metadata-driven CRUD, security, menus) is the **framework** under `Core/`. Business capabilities (Hrm, Production, …) are **modules** under `Modules/`. Full boundaries and folder rules: [docs/architecture/framework-vs-features.md](docs/architecture/framework-vs-features.md).
 
 ### Layer dependencies
 
 ```text
-MetaForge.Domain          ← no framework dependencies
+MetaForge.Shared                    ← references nothing
+MetaForge.Modules.Abstractions      ← module plugin contracts only
         ↑
-MetaForge.Application     ← interfaces, DTOs, contracts
+MetaForge.Core.Domain               ← platform domain (no EF / ASP.NET)
         ↑
-MetaForge.Infrastructure  ← EF Core, services, repositories
+MetaForge.Core.Application          ← interfaces, DTOs, contracts
         ↑
-MetaForge.Web             ← MVC controllers, API, Razor views
+MetaForge.Core.Infrastructure       ← EF Core, services, ModuleDbContextResolver
+        ↑
+MetaForge.{Module}.Infrastructure   ← module DbContext + IMetaForgeModule
+        ↑
+MetaForge.Web                       ← MVC, API, middleware, AddMetaForgeModules()
 ```
 
 | Layer | Responsibility | Must not contain |
 |---|---|---|
-| **Domain** | **Framework:** metadata (`ForgeForm`, …), RBAC, audit. **Features:** business entities under `MetaForge.Domain.Features.*` (legacy: `MetaForge.Domain.Business`) | EF Core, ASP.NET, service logic |
-| **Application** | Service interfaces, DTOs, repository contracts, validation contracts | EF Core, infrastructure implementations |
-| **Infrastructure** | `MetaForgeDbContext`, EF configurations, generic CRUD, grid/export, discovery, auth, caching | UI or controller code |
-| **Web** | `ModuleController` for dynamic screens, Form Builder, Security UI, REST API, cookie authentication | Direct database access |
+| **Shared** | Permission constants, discovery rules, shared exceptions, culture helpers | Service interfaces, EF, module logic |
+| **Modules.Abstractions** | `IMetaForgeModule`, `IModuleDbContextResolver` contracts | DbContext implementations, controllers |
+| **Core.Domain** | Metadata (`ForgeForm`, …), RBAC, audit, `BaseEntity` | EF Core, ASP.NET, service logic |
+| **Core.Application** | Service interfaces, DTOs, repository contracts | EF Core, infrastructure implementations |
+| **Core.Infrastructure** | `MetaForgeDbContext`, generic CRUD, grid/export, discovery, auth, caching | UI or controller code |
+| **Module.*** | Business entities, module DbContext, `IMetaForgeModule` implementation | Direct references from Core to module types |
+| **Web** | `ModuleController`, Form Builder, Security UI, REST API, `Areas/{Module}/` overrides | Direct database access, business rules |
 
 ### Metadata model
 
@@ -381,30 +396,65 @@ All endpoints require authentication (cookie session). Form-scoped endpoints als
 
 ## Extending MetaForge
 
+### Add a new business module
+
+Scaffold a full module slice (Domain, Application, Infrastructure, DbContext, Web wiring):
+
+```bash
+# Preview
+dotnet run --project tools/MetaForge.Scaffold -- scaffold module --name Inventory --dry-run
+
+# Create module under src/Modules/Inventory/, patch MetaForge.slnx, metaforge.json, and MetaForge.Web
+dotnet run --project tools/MetaForge.Scaffold -- scaffold module --name Inventory --migration
+```
+
+New modules are created at **`src/Modules/{Name}/`** and registered in the solution under **`/src/Modules/{Name}/`**. Existing modules (Hrm, Production) remain at `src/Hrm/` and `src/Production/` per [`metaforge.json`](metaforge.json).
+
+| Output | Location |
+|---|---|
+| Domain / Application / Infrastructure projects | `src/Modules/{Name}/MetaForge.{Name}.*` |
+| DbContext + `IMetaForgeModule` | `src/Modules/{Name}/MetaForge.{Name}.Infrastructure/` |
+| Web area (optional) | `src/MetaForge.Web/Areas/{Name}/` |
+| Solution + host wiring | `MetaForge.slnx`, `metaforge.json`, `MetaForge.Web.csproj`, `Modules/MetaForgeModuleRegistration.cs` |
+
 ### Add a new business entity
 
 #### Option A — Scaffold (recommended)
 
+Module paths and namespaces come from [`metaforge.json`](metaforge.json) at the solution root. Use **`--module Hrm`** (CLI) or the **Target module** dropdown (WinForms).
+
 From the solution root, with SQL Server reachable via `appsettings.json` or `METAFORGE_CONNECTION`:
 
 ```bash
-# Reverse scaffold from an existing table
-dotnet run --project tools/MetaForge.Scaffold -- scaffold entity --table Warehouses
+# Greenfield into Hrm module (entity + EF config with schema hrm)
+dotnet run --project tools/MetaForge.Scaffold -- scaffold entity --module Hrm \
+  --name LeaveRequest --columns "RequestNo:string:20!,FullName:string:200"
 
-# Greenfield (generates entity + EF config; migration creates the table)
-dotnet run --project tools/MetaForge.Scaffold -- scaffold entity --name Warehouse --columns "Code:string:50!,Name:string:200"
+# Reverse scaffold from an existing table
+dotnet run --project tools/MetaForge.Scaffold -- scaffold entity --module Hrm --table LeaveRequests
 
 # Preview without writing files
-dotnet run --project tools/MetaForge.Scaffold -- scaffold entity --name Warehouse --columns "Code:string:50!,Name:string:200" --dry-run
+dotnet run --project tools/MetaForge.Scaffold -- scaffold entity --module Hrm \
+  --name LeaveRequest --columns "RequestNo:string:20!,FullName:string:200" --dry-run
 
-# Add EF migration in the same step
-dotnet run --project tools/MetaForge.Scaffold -- scaffold entity --name Warehouse --columns "Code:string:50!,Name:string:200" --migration
+# Add EF migration for HrmDbContext in the same step
+dotnet run --project tools/MetaForge.Scaffold -- scaffold entity --module Hrm \
+  --name LeaveRequest --columns "RequestNo:string:20!,FullName:string:200" --migration
 ```
+
+Generated output (example Hrm module):
+
+| File | Location |
+|---|---|
+| Entity | `src/Hrm/MetaForge.Hrm.Domain/Entities/{Entity}.cs` |
+| EF config | `src/Hrm/MetaForge.Hrm.Infrastructure/Persistence/Configurations/Generated/{Entity}Configuration.cs` |
+
+Namespaces: `MetaForge.Hrm.Domain.Entities` and `MetaForge.Hrm.Infrastructure.Persistence.Configurations.Generated`. Tables use schema **`hrm`**. DbSet patch is **skipped by default** (EF discovers entities via configuration).
 
 Then:
 
 1. `dotnet build`
-2. Apply migrations (run the app, or `dotnet ef database update`)
+2. Run the app (applies module migrations) or `dotnet ef database update --context HrmDbContext ...`
 3. Form Builder → select entity → **Auto-Build** → Save
 4. Menu item + role permissions
 
@@ -414,7 +464,12 @@ Then:
 dotnet run --project tools/MetaForge.Scaffold.WinForms
 ```
 
-Use the GUI to set solution root, greenfield or reverse mode, preview code, and run scaffold (optional EF migration). **Load conn...** reads `DefaultConnection` from `src/MetaForge.Web/appsettings.json`.
+1. Set **Solution folder** (contains `MetaForge.slnx` and `metaforge.json`)
+2. Select **Target module** (e.g. Hrm)
+3. Greenfield or reverse mode → **Preview** → **Scaffold**
+4. Leave **Do not add DbSet** checked for modules; use **Create EF migration** to update `HrmDbContext`
+
+**Load conn...** reads `DefaultConnection` from `src/MetaForge.Web/appsettings.json`.
 
 Install as a local CLI tool (optional, after pack):
 
