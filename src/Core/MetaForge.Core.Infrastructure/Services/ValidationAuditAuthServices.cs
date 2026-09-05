@@ -12,6 +12,7 @@ using MetaForge.Shared.Constants;
 using FluentValidation;
 using FluentValidation.Results;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace MetaForge.Infrastructure.Services;
 
@@ -375,15 +376,18 @@ public class FormAuthorizationService : IFormAuthorizationService
     private readonly MetaForgeDbContext _dbContext;
     private readonly IEntityTypeResolver _typeResolver;
     private readonly IUserAuthorizationSnapshotProvider _snapshotProvider;
+    private readonly IMemoryCache _cache;
 
     public FormAuthorizationService(
         MetaForgeDbContext dbContext,
         IEntityTypeResolver typeResolver,
-        IUserAuthorizationSnapshotProvider snapshotProvider)
+        IUserAuthorizationSnapshotProvider snapshotProvider,
+        IMemoryCache cache)
     {
         _dbContext = dbContext;
         _typeResolver = typeResolver;
         _snapshotProvider = snapshotProvider;
+        _cache = cache;
     }
 
     public async Task<bool> HasPermissionAsync(int userId, string formCode, string action, CancellationToken cancellationToken = default)
@@ -487,6 +491,21 @@ public class FormAuthorizationService : IFormAuthorizationService
     }
 
     private async Task<IReadOnlyList<string>> GetLookupReferencingFormCodesAsync(
+        string lookupEntityName,
+        CancellationToken cancellationToken)
+    {
+        var version = _cache.Get<long?>(AppConstants.LookupReferenceCacheVersionKey) ?? 0;
+        var cacheKey = $"{AppConstants.LookupReferenceCacheKeyPrefix}{lookupEntityName.ToLowerInvariant()}:v{version}";
+
+        return await _cache.GetOrCreateAsync(cacheKey, async entry =>
+        {
+            entry.SlidingExpiration = TimeSpan.FromMinutes(10);
+            entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(30);
+            return await LoadLookupReferencingFormCodesAsync(lookupEntityName, cancellationToken);
+        }) ?? [];
+    }
+
+    private async Task<IReadOnlyList<string>> LoadLookupReferencingFormCodesAsync(
         string lookupEntityName,
         CancellationToken cancellationToken)
     {

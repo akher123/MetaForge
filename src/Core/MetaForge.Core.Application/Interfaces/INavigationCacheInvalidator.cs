@@ -6,4 +6,6 @@ namespace MetaForge.Application.Interfaces;
 public interface INavigationCacheInvalidator
 {
     void InvalidateSidebarMenus();
+
+    void InvalidateLookupReferences();
 }

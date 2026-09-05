@@ -300,30 +300,41 @@ const MetaForgeDetailRows = (function () {
             return $.when();
         }
 
-        const itemLoads = [];
+        const entityLoads = [];
         lookupFields.forEach(field => {
             const entity = getLookupEntity(field);
             const name = field.PropertyName ?? field.propertyName;
             const values = [...new Set(rows.map(row => row[name]).filter(v => v != null && v !== ''))];
-            values.forEach(value => {
-                itemLoads.push(
-                    $.ajax({
-                        url: `/api/metaforge/lookups/${encodeURIComponent(entity)}/item/${encodeURIComponent(value)}`,
-                        dataType: 'json',
-                        cache: false
-                    }).then(item => ({ entity, value: String(value), text: item?.Text ?? item?.text ?? String(value) }))
-                        .catch(() => ({ entity, value: String(value), text: String(value) }))
-                );
-            });
+            if (values.length === 0) {
+                return;
+            }
+
+            entityLoads.push(
+                $.ajax({
+                    url: `/api/metaforge/lookups/${encodeURIComponent(entity)}/items`,
+                    data: { values: values.join(',') },
+                    dataType: 'json'
+                }).then(response => {
+                    const items = response?.items ?? response?.Items ?? [];
+                    const map = {};
+                    items.forEach(item => {
+                        const value = item?.Value ?? item?.value;
+                        const text = item?.Text ?? item?.text ?? value;
+                        if (value != null && value !== '') {
+                            map[String(value)] = text;
+                        }
+                    });
+                    return { entity, map };
+                }).catch(() => ({ entity, map: {} }))
+            );
         });
 
-        return $.when.apply($, itemLoads.length ? itemLoads : [$.when()]).then(function () {
+        return $.when.apply($, entityLoads.length ? entityLoads : [$.when()]).then(function () {
             const maps = {};
             const results = arguments.length === 1 ? [arguments[0]] : Array.from(arguments);
             results.forEach(result => {
-                if (!result?.entity || result.value == null) return;
-                maps[result.entity] = maps[result.entity] || {};
-                maps[result.entity][result.value] = result.text;
+                if (!result?.entity) return;
+                maps[result.entity] = result.map || {};
             });
 
             rows.forEach(row => {

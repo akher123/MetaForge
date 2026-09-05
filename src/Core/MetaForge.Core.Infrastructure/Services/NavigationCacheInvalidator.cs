@@ -12,4 +12,7 @@ public sealed class NavigationCacheInvalidator : INavigationCacheInvalidator
 
     public void InvalidateSidebarMenus() =>
         _cache.Set(AppConstants.SidebarMenuVersionKey, DateTime.UtcNow.Ticks);
+
+    public void InvalidateLookupReferences() =>
+        _cache.Set(AppConstants.LookupReferenceCacheVersionKey, DateTime.UtcNow.Ticks);
 }

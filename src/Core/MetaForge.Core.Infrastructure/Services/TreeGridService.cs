@@ -1,8 +1,10 @@
+using System.Linq.Expressions;
 using System.Reflection;
 using MetaForge.Application.Common;
 using MetaForge.Application.DTOs;
 using MetaForge.Infrastructure.Dynamic;
 using MetaForge.Shared.Exceptions;
+using Microsoft.EntityFrameworkCore;
 
 namespace MetaForge.Infrastructure.Services;
 
@@ -155,6 +157,14 @@ public class TreeGridService : ITreeGridService
         await GridDisplayEnricher.EnrichAsync(rows, gridColumns, _lookupService, formatTemporalColumns: false, cancellationToken);
 
         var nextLevel = levels.FirstOrDefault(l => l.LevelIndex == level.LevelIndex + 1);
+        var parentIds = rows
+            .Select(row => Convert.ToInt32(row[keyProperty] ?? row["Id"] ?? 0))
+            .ToList();
+
+        var parentsWithChildren = nextLevel != null && parentIds.Count > 0
+            ? await GetParentIdsWithChildrenAsync(nextLevel, parentIds, cancellationToken)
+            : [];
+
         var nodes = new List<TreeNodeDto>();
 
         foreach (var row in rows)
@@ -162,8 +172,7 @@ public class TreeGridService : ITreeGridService
             var id = Convert.ToInt32(row[keyProperty] ?? row["Id"] ?? 0);
             var label = TreeDisplayColumnParser.BuildLabel(row, displayColumns, id);
 
-            var hasChildren = nextLevel != null
-                && await HasChildrenAsync(nextLevel, id, cancellationToken);
+            var hasChildren = nextLevel != null && parentsWithChildren.Contains(id);
 
             nodes.Add(new TreeNodeDto
             {
@@ -184,6 +193,61 @@ public class TreeGridService : ITreeGridService
             Page = request.Page,
             PageSize = request.PageSize
         };
+    }
+
+    private async Task<HashSet<int>> GetParentIdsWithChildrenAsync(
+        ForgeTreeLevel childLevel,
+        IReadOnlyList<int> parentIds,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(childLevel.ForeignKey) || parentIds.Count == 0)
+            return [];
+
+        var entityType = _typeResolver.Resolve(childLevel.EntityName);
+        var method = typeof(TreeGridService)
+            .GetMethod(nameof(GetParentIdsWithChildrenTypedAsync), BindingFlags.NonPublic | BindingFlags.Instance)!
+            .MakeGenericMethod(entityType);
+
+        return await (Task<HashSet<int>>)method.Invoke(this, [childLevel.ForeignKey, parentIds, cancellationToken])!;
+    }
+
+    private async Task<HashSet<int>> GetParentIdsWithChildrenTypedAsync<T>(
+        string foreignKey,
+        IReadOnlyList<int> parentIds,
+        CancellationToken cancellationToken) where T : class
+    {
+        var fkProperty = typeof(T).GetProperty(foreignKey, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+        if (fkProperty == null)
+            return [];
+
+        var fkType = Nullable.GetUnderlyingType(fkProperty.PropertyType) ?? fkProperty.PropertyType;
+        var typedIds = parentIds
+            .Select(id => Convert.ChangeType(id, fkType))
+            .Distinct()
+            .ToList();
+
+        if (typedIds.Count == 0)
+            return [];
+
+        var parameter = Expression.Parameter(typeof(T), "e");
+        var propertyAccess = Expression.Property(parameter, fkProperty);
+        var containsMethod = typeof(Enumerable).GetMethods()
+            .First(m => m.Name == nameof(Enumerable.Contains) && m.GetParameters().Length == 2)
+            .MakeGenericMethod(fkType);
+        var idsConstant = Expression.Constant(typedIds);
+        var containsCall = Expression.Call(containsMethod, idsConstant, propertyAccess);
+        var lambda = Expression.Lambda<Func<T, bool>>(containsCall, parameter);
+
+        var matchingValues = await _dbContext.Set<T>()
+            .AsNoTracking()
+            .Where(lambda)
+            .Select(e => EF.Property<object>(e, fkProperty.Name))
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
+        return matchingValues
+            .Select(value => Convert.ToInt32(value))
+            .ToHashSet();
     }
 
     private async Task<bool> HasChildrenAsync(ForgeTreeLevel childLevel, int parentId, CancellationToken cancellationToken)

@@ -28,6 +28,11 @@ public static class AppConstants
     /// <summary>Bumped when menu structure changes to invalidate cached sidebar trees.</summary>
     public const string SidebarMenuVersionKey = "nav:sidebar:version";
 
+    /// <summary>Bumped when form metadata changes to invalidate lookup authorization caches.</summary>
+    public const string LookupReferenceCacheVersionKey = "auth:lookup:ref:version";
+
+    public const string LookupReferenceCacheKeyPrefix = "auth:lookup:ref:";
+
     /// <summary>Root folder (relative to wwwroot) where uploaded files are stored.</summary>
     public const string UploadsFolderName = "uploads";
 

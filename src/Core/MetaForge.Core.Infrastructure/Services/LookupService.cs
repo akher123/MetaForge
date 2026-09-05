@@ -95,6 +95,7 @@ public class LookupService : ILookupService
         IEnumerable<string> values,
         CancellationToken cancellationToken = default)
     {
+        EnsureBusinessLookupEntity(entityName);
         var canonicalEntity = GetCanonicalEntityName(entityName);
         var distinctValues = values
             .Where(v => !string.IsNullOrWhiteSpace(v))
@@ -105,14 +106,36 @@ public class LookupService : ILookupService
         if (distinctValues.Count == 0)
             return Array.Empty<LookupItemDto>();
 
-        var items = new List<LookupItemDto>(distinctValues.Count);
+        var resolved = new Dictionary<string, LookupItemDto>(StringComparer.OrdinalIgnoreCase);
+        var missing = new List<string>();
+
         foreach (var value in distinctValues)
         {
-            var item = await GetLookupItemByValueAsync(canonicalEntity, value, cancellationToken);
-            items.Add(item ?? new LookupItemDto { Value = value, Text = value });
+            var cacheKey = $"{AppConstants.LookupCacheKeyPrefix}{canonicalEntity}:item:{value}";
+            if (_cache.TryGetValue(cacheKey, out LookupItemDto? cached) && cached != null)
+                resolved[value] = cached;
+            else
+                missing.Add(value);
         }
 
-        return items;
+        if (missing.Count > 0)
+        {
+            var loaded = await LoadLookupItemsByValuesAsync(canonicalEntity, missing, cancellationToken);
+            foreach (var item in loaded)
+            {
+                resolved[item.Value] = item;
+                _cache.Set(
+                    $"{AppConstants.LookupCacheKeyPrefix}{canonicalEntity}:item:{item.Value}",
+                    item,
+                    TimeSpan.FromMinutes(15));
+            }
+        }
+
+        return distinctValues
+            .Select(value => resolved.TryGetValue(value, out var item)
+                ? item
+                : new LookupItemDto { Value = value, Text = value })
+            .ToList();
     }
 
     public async Task<IReadOnlyDictionary<string, string>> ResolveLookupTextsAsync(
@@ -120,25 +143,10 @@ public class LookupService : ILookupService
         IEnumerable<string> values,
         CancellationToken cancellationToken = default)
     {
-        var canonicalEntity = GetCanonicalEntityName(entityName);
-        var distinctValues = values
-            .Where(v => !string.IsNullOrWhiteSpace(v))
-            .Select(v => v.Trim())
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToList();
-
-        if (distinctValues.Count == 0)
-            return new Dictionary<string, string>();
-
-        var results = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var value in distinctValues)
-        {
-            var item = await GetLookupItemByValueAsync(canonicalEntity, value, cancellationToken);
-            if (item != null && !string.IsNullOrWhiteSpace(item.Value))
-                results[item.Value] = item.Text;
-        }
-
-        return results;
+        var items = await GetLookupItemsByValuesAsync(entityName, values, cancellationToken);
+        return items
+            .Where(item => !string.IsNullOrWhiteSpace(item.Value))
+            .ToDictionary(item => item.Value, item => item.Text, StringComparer.OrdinalIgnoreCase);
     }
 
     public Task InvalidateCacheAsync(string entityName, CancellationToken cancellationToken = default)
@@ -282,6 +290,64 @@ public class LookupService : ILookupService
         var items = await ToListAsync(query, entityType, cancellationToken);
         var entity = items.Cast<object>().FirstOrDefault();
         return entity == null ? null : MapLookupItem(entity, entityType, valueField, display);
+    }
+
+    private async Task<IReadOnlyList<LookupItemDto>> LoadLookupItemsByValuesAsync(
+        string entityName,
+        IReadOnlyList<string> values,
+        CancellationToken cancellationToken)
+    {
+        if (values.Count == 0)
+            return Array.Empty<LookupItemDto>();
+
+        var config = await _dbContext.LookupConfigurations
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.EntityName == entityName && c.IsActive, cancellationToken);
+
+        var entityType = _typeResolver.Resolve(entityName);
+        var valueField = LookupFieldResolver.ResolveValueField(entityType, config?.ValueField);
+        var display = LookupDisplayExpression.Create(entityType, config?.TextField);
+        var query = BuildBaseQuery(entityName, entityType, display);
+        query = ApplyValuesInFilter(query, entityType, valueField, values);
+
+        var items = await ToListAsync(query, entityType, cancellationToken);
+        return DeduplicateByValue(items.Cast<object>().Select(i => MapLookupItem(i, entityType, valueField, display)).ToList());
+    }
+
+    private static object ApplyValuesInFilter(
+        object query,
+        Type entityType,
+        string valueField,
+        IReadOnlyList<string> values)
+    {
+        var property = entityType.GetProperty(valueField);
+        if (property == null || values.Count == 0)
+            return query;
+
+        var parameter = Expression.Parameter(entityType, "e");
+        var propertyAccess = Expression.Property(parameter, property);
+        Expression? predicate = null;
+
+        foreach (var rawValue in values)
+        {
+            var converted = ConvertFilterValue(rawValue, property.PropertyType);
+            if (converted == null)
+                continue;
+
+            var constant = Expression.Constant(converted, property.PropertyType);
+            var equals = Expression.Equal(propertyAccess, constant);
+            predicate = predicate == null ? equals : Expression.OrElse(predicate, equals);
+        }
+
+        if (predicate == null)
+            return query;
+
+        var lambda = Expression.Lambda(predicate, parameter);
+        var whereMethod = typeof(Queryable).GetMethods()
+            .First(m => m.Name == nameof(Queryable.Where) && m.GetParameters().Length == 2)
+            .MakeGenericMethod(entityType);
+
+        return whereMethod.Invoke(null, [query, lambda])!;
     }
 
     private object BuildBaseQuery(string entityName, Type entityType, LookupDisplayExpression display)

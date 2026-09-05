@@ -30,7 +30,7 @@ public class UserAuthorizationSnapshotTests
         await using var context = CreateContext();
         var cache = new MemoryCache(new MemoryCacheOptions());
         var provider = new UserAuthorizationSnapshotProvider(context, cache);
-        var authService = new FormAuthorizationService(context, TestEntityTypeResolverFactory.Create(context), provider);
+        var authService = new FormAuthorizationService(context, TestEntityTypeResolverFactory.Create(context), provider, cache);
         var stampService = new SecurityStampService(context);
 
         var userEntity = context.Users.Single();

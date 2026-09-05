@@ -18,6 +18,7 @@ public class FormConfigurationService : IFormConfigurationService
     private readonly ISecurityManagementService _securityManagementService;
     private readonly IMenuSyncService _menuSyncService;
     private readonly ILookupService _lookupService;
+    private readonly INavigationCacheInvalidator _navigationCacheInvalidator;
 
     public FormConfigurationService(
         IUnitOfWork unitOfWork,
@@ -26,7 +27,8 @@ public class FormConfigurationService : IFormConfigurationService
         IFormMetadataService formMetadataService,
         ISecurityManagementService securityManagementService,
         IMenuSyncService menuSyncService,
-        ILookupService lookupService)
+        ILookupService lookupService,
+        INavigationCacheInvalidator navigationCacheInvalidator)
     {
         _unitOfWork = unitOfWork;
         _dbContext = dbContext;
@@ -35,6 +37,7 @@ public class FormConfigurationService : IFormConfigurationService
         _securityManagementService = securityManagementService;
         _menuSyncService = menuSyncService;
         _lookupService = lookupService;
+        _navigationCacheInvalidator = navigationCacheInvalidator;
     }
 
     public async Task<IReadOnlyList<FormConfigListItemDto>> GetAllFormsAsync(CancellationToken cancellationToken = default)
@@ -666,6 +669,7 @@ public class FormConfigurationService : IFormConfigurationService
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         await SyncLookupConfigurationsAsync(config.Fields, cancellationToken);
         await _formMetadataService.InvalidateCacheAsync(module.Code, module.EntityName, cancellationToken);
+        _navigationCacheInvalidator.InvalidateLookupReferences();
         if (!string.IsNullOrEmpty(previousEntityName)
             && !previousEntityName.Equals(module.EntityName, StringComparison.OrdinalIgnoreCase))
         {
@@ -881,6 +885,7 @@ public class FormConfigurationService : IFormConfigurationService
         _unitOfWork.Forms.Remove(module);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         await _formMetadataService.InvalidateCacheAsync(module.Code, module.EntityName, cancellationToken);
+        _navigationCacheInvalidator.InvalidateLookupReferences();
         await _menuSyncService.DeactivateFormMenuAsync(module.Id, cancellationToken);
     }
 
@@ -1196,6 +1201,7 @@ public class FormConfigurationService : IFormConfigurationService
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         await _formMetadataService.InvalidateCacheAsync(module.Code, module.EntityName, cancellationToken);
+        _navigationCacheInvalidator.InvalidateLookupReferences();
     }
 
     private async Task SaveTreeLevelFormsAsync(FormBuilderSaveDto screen, CancellationToken cancellationToken)

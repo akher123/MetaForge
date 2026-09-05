@@ -36,6 +36,8 @@ public class FormConfigurationValidationRuleTests
         lookup.Setup(l => l.InvalidateCacheAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
+        var navigationCache = new Mock<INavigationCacheInvalidator>();
+
         var service = new FormConfigurationService(
             unitOfWork,
             context,
@@ -43,7 +45,8 @@ public class FormConfigurationValidationRuleTests
             metadata.Object,
             security.Object,
             menuSync.Object,
-            lookup.Object);
+            lookup.Object,
+            navigationCache.Object);
 
         var formId = await service.SaveFormAsync(new FormConfigDto
         {

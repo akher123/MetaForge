@@ -238,6 +238,8 @@ public class FormSchemaSyncCascadeTests
         lookup.Setup(l => l.InvalidateCacheAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
+        var navigationCache = new Mock<INavigationCacheInvalidator>();
+
         return new FormConfigurationService(
             unitOfWork,
             context,
@@ -245,7 +247,8 @@ public class FormSchemaSyncCascadeTests
             metadata.Object,
             security.Object,
             menuSync.Object,
-            lookup.Object);
+            lookup.Object,
+            navigationCache.Object);
     }
 
     private static MetaForgeDbContext CreateContext()
