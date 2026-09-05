@@ -2,13 +2,16 @@ namespace MetaForge.Scaffold.WinForms;
 
 internal static class LayoutKit
 {
+    /// <summary>Height of a card's title bar, never smaller than the title text needs.</summary>
+    public static int CardTitleHeight => Math.Max(UiScale.Px(44), UiTheme.UiFontBold.Height + UiScale.Px(18));
+
     public static Panel CreateCard(string title, Control body, bool fillVertical = false)
     {
         var card = new Panel
         {
             Dock = fillVertical ? DockStyle.Fill : DockStyle.Top,
             BackColor = UiTheme.Surface,
-            Margin = fillVertical ? Padding.Empty : new Padding(0, 0, 0, 12),
+            Margin = fillVertical ? Padding.Empty : UiScale.Px(0, 0, 0, 12),
             Padding = Padding.Empty
         };
 
@@ -24,9 +27,9 @@ internal static class LayoutKit
         var titleBar = new Panel
         {
             Dock = DockStyle.Top,
-            Height = 44,
+            Height = CardTitleHeight,
             BackColor = UiTheme.CardTitleBg,
-            Padding = new Padding(16, 0, 16, 0)
+            Padding = UiScale.Px(16, 0, 16, 0)
         };
         titleBar.Controls.Add(new Label
         {
@@ -34,7 +37,8 @@ internal static class LayoutKit
             Font = UiTheme.UiFontBold,
             ForeColor = UiTheme.TextPrimary,
             Dock = DockStyle.Fill,
-            TextAlign = ContentAlignment.MiddleLeft
+            TextAlign = ContentAlignment.MiddleLeft,
+            UseMnemonic = false
         });
 
         body.Dock = fillVertical ? DockStyle.Fill : DockStyle.Top;
@@ -68,7 +72,7 @@ internal static class LayoutKit
             Dock = DockStyle.Top,
             AutoSize = true,
             AutoSizeMode = AutoSizeMode.GrowAndShrink,
-            Width = 100,
+            Width = UiScale.Px(100),
             Margin = Padding.Empty
         };
         grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f));
@@ -84,51 +88,66 @@ internal static class LayoutKit
         row++;
     }
 
-    public static void AddInputRow(TableLayoutPanel grid, ref int row, Control input, int height = 34)
+    public static void AddInputRow(TableLayoutPanel grid, ref int row, Control input, int logicalHeight = 34)
     {
-        input.Height = height;
-        input.Dock = DockStyle.Fill;
-        input.Margin = new Padding(0, 0, 0, 8);
+        var height = UiScale.Px(logicalHeight);
+        StretchInput(input, height);
+        input.Margin = UiScale.Px(0, 0, 0, 8);
         grid.Controls.Add(input, 0, row);
-        grid.RowStyles[row] = new RowStyle(SizeType.Absolute, height);
+        grid.RowStyles[row] = new RowStyle(SizeType.Absolute, height + input.Margin.Vertical);
         row++;
     }
 
-    public static Panel CreateInputButtonRow(Control input, Button button, int height = 34)
+    /// <summary>
+    /// Input with a trailing button, laid out by a table so it stays aligned at any DPI or font size.
+    /// </summary>
+    public static Control CreateInputButtonRow(Control input, Button button, int logicalHeight = 34)
     {
-        const int buttonWidth = 112;
-        const int gap = 10;
+        var height = UiScale.Px(logicalHeight);
+        var isTall = input is TextBox { Multiline: true };
 
-        var row = new Panel
+        var row = new TableLayoutPanel
         {
-            Height = height,
+            ColumnCount = 2,
+            RowCount = 1,
             Dock = DockStyle.Fill,
-            Margin = new Padding(0, 0, 0, 8),
-            MinimumSize = new Size(buttonWidth + gap + 120, height)
+            Height = height,
+            Margin = UiScale.Px(0, 0, 0, 8),
+            Padding = Padding.Empty,
+            BackColor = UiTheme.Surface
         };
+        row.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f));
+        row.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        row.RowStyles.Add(new RowStyle(SizeType.Percent, 100f));
 
-        input.Margin = Padding.Empty;
-        input.Height = height;
-        input.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+        StretchInput(input, height);
+        input.Margin = UiScale.Px(0, 0, 10, 0);
 
-        button.Width = buttonWidth;
-        button.Height = height;
-        button.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+        button.AutoSize = false;
+        // A tall multiline input keeps a normal-sized button pinned to its top-right corner.
+        button.Size = new Size(UiScale.Px(112), isTall ? UiTheme.ControlHeight : height);
+        button.Margin = Padding.Empty;
+        button.Anchor = isTall ? AnchorStyles.Top | AnchorStyles.Right : AnchorStyles.Right;
 
-        void LayoutRow()
+        row.Controls.Add(input, 0, 0);
+        row.Controls.Add(button, 1, 0);
+        return row;
+    }
+
+    /// <summary>
+    /// Stretches an input across its cell. Single-line text boxes force their own height from the
+    /// font, so they are centred vertically instead of being stretched into a taller row.
+    /// </summary>
+    private static void StretchInput(Control input, int height)
+    {
+        if (input is TextBox { Multiline: false })
         {
-            var availableWidth = Math.Max(buttonWidth + gap, row.ClientSize.Width);
-            button.Location = new Point(availableWidth - buttonWidth, 0);
-            input.Location = new Point(0, 0);
-            input.Width = Math.Max(0, availableWidth - buttonWidth - gap);
+            input.Anchor = AnchorStyles.Left | AnchorStyles.Right;
+            return;
         }
 
-        row.Controls.Add(input);
-        row.Controls.Add(button);
-        row.Resize += (_, _) => LayoutRow();
-        row.HandleCreated += (_, _) => LayoutRow();
-        LayoutRow();
-        return row;
+        input.Height = height;
+        input.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom;
     }
 
     public static Panel CreateInfoBox(string text)
@@ -141,7 +160,7 @@ internal static class LayoutKit
             AutoSize = true,
             Dock = DockStyle.Top,
             UseMnemonic = false,
-            Padding = new Padding(4, 2, 4, 2)
+            Padding = UiScale.Px(4, 2, 4, 2)
         };
 
         var box = new Panel
@@ -149,8 +168,8 @@ internal static class LayoutKit
             AutoSize = true,
             AutoSizeMode = AutoSizeMode.GrowAndShrink,
             BackColor = UiTheme.HelpBg,
-            Padding = new Padding(14, 12, 14, 12),
-            Margin = new Padding(0, 10, 0, 0),
+            Padding = UiScale.Px(14, 12, 14, 12),
+            Margin = UiScale.Px(0, 10, 0, 0),
             Dock = DockStyle.Top
         };
         box.Paint += (_, e) =>
@@ -162,6 +181,8 @@ internal static class LayoutKit
             e.Graphics.DrawRectangle(pen, r);
         };
         box.Controls.Add(label);
+        // Wrap rather than cut the help text off when the card is narrow.
+        BindFullWidthLabel(label, box);
         return box;
     }
 
@@ -170,7 +191,7 @@ internal static class LayoutKit
     {
         void UpdateWidth(object? _, EventArgs __)
         {
-            var w = Math.Max(200, parent.ClientSize.Width - parent.Padding.Horizontal - 8);
+            var w = Math.Max(UiScale.Px(200), parent.ClientSize.Width - parent.Padding.Horizontal - UiScale.Px(8));
             label.MaximumSize = new Size(w, 0);
         }
 

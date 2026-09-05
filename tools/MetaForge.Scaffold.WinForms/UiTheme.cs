@@ -25,8 +25,13 @@ internal static class UiTheme
     public static readonly Font CodeFont = new("Consolas", 10.5F);
     public static readonly Font HelpFont = new("Segoe UI", 9.5F);
 
-    public static readonly Padding PagePadding = new(20, 16, 20, 16);
-    public static readonly Padding CardBodyPadding = new(16, 14, 16, 16);
+    public static Padding PagePadding => UiScale.Px(20, 16, 20, 16);
+    public static Padding CardBodyPadding => UiScale.Px(16, 14, 16, 16);
+
+    /// <summary>Height of a single-line input or secondary button.</summary>
+    public static int ControlHeight => UiScale.Px(34);
+
+    public static int PrimaryButtonHeight => UiScale.Px(42);
 
     public static void StylePrimaryButton(Button button)
     {
@@ -36,8 +41,8 @@ internal static class UiTheme
         button.ForeColor = Color.White;
         button.Font = new Font(UiFont, FontStyle.Bold);
         button.Cursor = Cursors.Hand;
-        button.Height = 42;
-        button.MinimumSize = new Size(120, 42);
+        button.Height = PrimaryButtonHeight;
+        button.MinimumSize = new Size(UiScale.Px(120), PrimaryButtonHeight);
         button.MouseEnter += (_, _) => button.BackColor = AccentHover;
         button.MouseLeave += (_, _) => button.BackColor = Accent;
     }
@@ -51,8 +56,8 @@ internal static class UiTheme
         button.ForeColor = TextPrimary;
         button.Font = UiFont;
         button.Cursor = Cursors.Hand;
-        button.Height = 34;
-        button.MinimumSize = new Size(90, 34);
+        button.Height = ControlHeight;
+        button.MinimumSize = new Size(UiScale.Px(90), ControlHeight);
     }
 
     public static void StyleTextBox(TextBox textBox)
@@ -70,7 +75,7 @@ internal static class UiTheme
             AutoSize = true,
             Font = UiFont,
             ForeColor = TextSecondary,
-            Margin = new Padding(0, 6, 0, 4),
+            Margin = UiScale.Px(0, 6, 0, 4),
             UseMnemonic = false,
             Padding = new Padding(0)
         };

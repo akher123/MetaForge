@@ -27,14 +27,19 @@ public sealed class MainForm : Form
     private readonly Button _btnClearOutput = new() { Text = "Clear output" };
     private readonly ToolStripStatusLabel _lblStatus = new() { Text = "Ready" };
     private readonly Label _lblOutputHint = new();
+    private Action _syncStepScrollHeight = () => { };
+    private Action _resetStepScroll = () => { };
 
     public MainForm()
     {
+        // Every layout constant below is authored at 96 DPI, so the scale has to be known first.
+        UiScale.SyncWith(this);
+
         Text = "MetaForge Entity Scaffold";
         Font = UiTheme.UiFont;
         AutoScaleMode = AutoScaleMode.Font;
         BackColor = UiTheme.Background;
-        MinimumSize = new Size(1100, 700);
+        MinimumSize = MinimumWindowSize();
         StartPosition = FormStartPosition.CenterScreen;
         WindowState = FormWindowState.Maximized;
 
@@ -44,6 +49,40 @@ public sealed class MainForm : Form
         RegisterTooltips();
         TryDetectSolutionRoot();
         UpdateModeHint();
+    }
+
+    /// <summary>
+    /// Never demand more room than the display actually offers, otherwise parts of the window
+    /// end up off-screen on smaller or heavily scaled monitors.
+    /// </summary>
+    private static Size MinimumWindowSize()
+    {
+        var desired = UiScale.Px(980, 620);
+        var workingArea = Screen.PrimaryScreen?.WorkingArea.Size ?? desired;
+        return new Size(Math.Min(desired.Width, workingArea.Width), Math.Min(desired.Height, workingArea.Height));
+    }
+
+    protected override void OnShown(EventArgs e)
+    {
+        base.OnShown(e);
+        // Card heights are only final once the form has been laid out at its real size.
+        _syncStepScrollHeight();
+
+        // Activation focuses a field inside the tab control, which scrolls Step 2 into view. Undo
+        // that once the queued activation work has run so the form always opens showing Step 1.
+        BeginInvoke(() =>
+        {
+            ActiveControl = _txtSolutionRoot;
+            _resetStepScroll();
+        });
+    }
+
+    protected override void OnDpiChanged(DpiChangedEventArgs e)
+    {
+        base.OnDpiChanged(e);
+        UiScale.SyncWith(this);
+        MinimumSize = MinimumWindowSize();
+        _syncStepScrollHeight();
     }
 
     private void ApplyControlStyles()
@@ -69,9 +108,9 @@ public sealed class MainForm : Form
         UiTheme.StyleSecondaryButton(_btnClearOutput);
 
         _modeTabs.Font = UiTheme.UiFont;
-        _modeTabs.Padding = new Point(14, 6);
-        _modeTabs.SizeMode = TabSizeMode.Fixed;
-        _modeTabs.ItemSize = new Size(200, 36);
+        // Tabs sized from their own text, so a narrow card does not push them behind scroll arrows.
+        _modeTabs.SizeMode = TabSizeMode.Normal;
+        _modeTabs.Padding = new Point(UiScale.Px(18), UiScale.Px(6));
         _modeTabs.BackColor = UiTheme.Surface;
 
         StyleCheckBox(_chkIncludeNav);
@@ -85,7 +124,7 @@ public sealed class MainForm : Form
         checkBox.Font = UiTheme.UiFont;
         checkBox.ForeColor = UiTheme.TextPrimary;
         checkBox.AutoSize = true;
-        checkBox.Margin = new Padding(0, 8, 0, 0);
+        checkBox.Margin = UiScale.Px(0, 8, 0, 0);
     }
 
     private void BuildLayout()
@@ -100,9 +139,9 @@ public sealed class MainForm : Form
             BackColor = UiTheme.Background,
             Padding = Padding.Empty
         };
-        shell.RowStyles.Add(new RowStyle(SizeType.Absolute, 72));
+        shell.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         shell.RowStyles.Add(new RowStyle(SizeType.Percent, 100f));
-        shell.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));
+        shell.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
         var header = BuildHeader();
         header.Dock = DockStyle.Fill;
@@ -139,82 +178,175 @@ public sealed class MainForm : Form
 
     private Control BuildLeftColumn()
     {
+        var steps = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 3,
+            BackColor = UiTheme.Background,
+            Margin = Padding.Empty
+        };
+        steps.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f));
+        steps.RowStyles.Add(new RowStyle(SizeType.Absolute, 0));
+        steps.RowStyles.Add(new RowStyle(SizeType.Percent, 100f));
+        steps.RowStyles.Add(new RowStyle(SizeType.Absolute, 0));
+
+        // Both step cards fill an explicitly sized row rather than auto-sizing: a card's preferred
+        // size is measured unwrapped, which is too short once its content wraps onto more lines.
+        var (project, projectFields) = BuildProjectCard();
+        project.Dock = DockStyle.Fill;
+        project.Margin = UiScale.Px(0, 0, 0, 12);
+
+        var mode = BuildModeCard();
+        mode.Dock = DockStyle.Fill;
+        mode.Margin = UiScale.Px(0, 0, 0, 12);
+
+        var (options, optionFlow) = BuildOptionsCard();
+        options.Dock = DockStyle.Fill;
+        options.Margin = Padding.Empty;
+
+        steps.Controls.Add(project, 0, 0);
+        steps.Controls.Add(mode, 0, 1);
+        steps.Controls.Add(options, 0, 2);
+
+        // Where the display is too short for all three cards, scroll them instead of clipping
+        // whatever runs off the bottom. AutoScrollMinSize (not MinimumSize) is what grows the
+        // host's display rectangle, which is the area a docked child is laid out in.
+        var scrollHost = new Panel
+        {
+            Dock = DockStyle.Fill,
+            AutoScroll = true,
+            BackColor = UiTheme.Background,
+            Margin = Padding.Empty
+        };
+        scrollHost.Controls.Add(steps);
+        _resetStepScroll = () => scrollHost.AutoScrollPosition = Point.Empty;
+
+        _syncStepScrollHeight = () =>
+        {
+            var projectRow = RequiredCardHeight(projectFields) + project.Margin.Vertical;
+            var optionsRow = RequiredCardHeight(optionFlow) + options.Margin.Vertical;
+
+            if (Math.Abs(steps.RowStyles[0].Height - projectRow) > 0.5f)
+                steps.RowStyles[0] = new RowStyle(SizeType.Absolute, projectRow);
+            if (Math.Abs(steps.RowStyles[2].Height - optionsRow) > 0.5f)
+                steps.RowStyles[2] = new RowStyle(SizeType.Absolute, optionsRow);
+
+            var required = projectRow + mode.Margin.Vertical + MinimumModeCardHeight + optionsRow;
+            if (scrollHost.AutoScrollMinSize.Height != required)
+                scrollHost.AutoScrollMinSize = new Size(0, required);
+        };
+
+        projectFields.Resize += (_, _) => _syncStepScrollHeight();
+        optionFlow.Resize += (_, _) => _syncStepScrollHeight();
+        scrollHost.Resize += (_, _) => _syncStepScrollHeight();
+
+        // Preview/Scaffold stays pinned below the scroll area so the primary actions are always reachable.
+        var actions = BuildActionsBar();
+        actions.Dock = DockStyle.Fill;
+        actions.Margin = UiScale.Px(0, 12, 0, 0);
+
         var column = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
             ColumnCount = 1,
-            RowCount = 4,
+            RowCount = 2,
             BackColor = UiTheme.Background,
-            Margin = new Padding(0, 0, 10, 0)
+            Margin = UiScale.Px(0, 0, 10, 0)
         };
         column.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f));
-        column.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         column.RowStyles.Add(new RowStyle(SizeType.Percent, 100f));
-        column.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        column.RowStyles.Add(new RowStyle(SizeType.Absolute, 58));
-
-        var project = BuildProjectCard();
-        project.Dock = DockStyle.Top;
-        project.AutoSize = true;
-        project.AutoSizeMode = AutoSizeMode.GrowAndShrink;
-        project.Margin = new Padding(0, 0, 0, 12);
-
-        var mode = BuildModeCard();
-        mode.Dock = DockStyle.Fill;
-        mode.Margin = new Padding(0, 0, 0, 12);
-
-        var options = BuildOptionsCard();
-        options.Dock = DockStyle.Top;
-        options.AutoSize = true;
-        options.AutoSizeMode = AutoSizeMode.GrowAndShrink;
-        options.Margin = new Padding(0, 0, 0, 12);
-
-        var actions = BuildActionsBar();
-        actions.Dock = DockStyle.Fill;
-
-        column.Controls.Add(project, 0, 0);
-        column.Controls.Add(mode, 0, 1);
-        column.Controls.Add(options, 0, 2);
-        column.Controls.Add(actions, 0, 3);
+        column.RowStyles.Add(new RowStyle(SizeType.Absolute, ActionsBarHeight + actions.Margin.Vertical));
+        column.Controls.Add(scrollHost, 0, 0);
+        column.Controls.Add(actions, 0, 1);
         return column;
     }
 
+    /// <summary>
+    /// Height an auto-sizing card needs. Measured from its content, whose docked layout keeps its
+    /// full height, rather than from the card itself, which the surrounding table may have squeezed.
+    /// </summary>
+    private static int RequiredCardHeight(Control content) =>
+        LayoutKit.CardTitleHeight
+        + (content.Parent?.Padding.Vertical ?? 0)
+        + content.Height
+        + content.Margin.Vertical;
+
+    /// <summary>Room for the Step 2 card title, tab strip and the tallest tab page content.</summary>
+    private int MinimumModeCardHeight
+    {
+        get
+        {
+            var content = 0;
+            foreach (TabPage tab in _modeTabs.TabPages)
+                foreach (Control child in tab.Controls)
+                    content = Math.Max(content, child.PreferredSize.Height);
+
+            // ItemSize reports 0 until the tab control has a handle, so keep a font-derived floor.
+            var tabStrip = Math.Max(_modeTabs.ItemSize.Height, UiTheme.UiFont.Height + UiScale.Px(16));
+
+            return LayoutKit.CardTitleHeight
+                   + UiTheme.CardBodyPadding.Vertical
+                   + tabStrip
+                   + content
+                   + UiScale.Px(18);
+        }
+    }
+
+    private static int ActionsBarHeight => UiTheme.PrimaryButtonHeight + UiScale.Px(22);
+
     private Control BuildHeader()
     {
+        // Sized by its own text so the subtitle cannot be cropped by a fixed header height.
         var panel = new Panel
         {
             Dock = DockStyle.Fill,
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
             BackColor = UiTheme.HeaderBg,
-            Padding = new Padding(24, 0, 24, 0)
+            Padding = UiScale.Px(24, 12, 24, 12)
         };
 
         var layout = new TableLayoutPanel
         {
-            Dock = DockStyle.Fill,
+            Dock = DockStyle.Top,
             ColumnCount = 2,
-            RowCount = 1
+            RowCount = 1,
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink
         };
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f));
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
-        var titles = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2 };
-        titles.RowStyles.Add(new RowStyle(SizeType.Percent, 50f));
-        titles.RowStyles.Add(new RowStyle(SizeType.Percent, 50f));
+        var titles = new TableLayoutPanel
+        {
+            Dock = DockStyle.Top,
+            ColumnCount = 1,
+            RowCount = 2,
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            Margin = Padding.Empty
+        };
+        titles.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        titles.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         titles.Controls.Add(new Label
         {
             Text = "MetaForge Entity Scaffold",
             Font = UiTheme.TitleFont,
             ForeColor = UiTheme.HeaderFg,
-            Dock = DockStyle.Fill,
-            TextAlign = ContentAlignment.BottomLeft
+            AutoSize = true,
+            Margin = Padding.Empty,
+            UseMnemonic = false
         }, 0, 0);
         titles.Controls.Add(new Label
         {
             Text = "Generate entities · EF configuration · Form Builder screens",
             Font = UiTheme.SubtitleFont,
             ForeColor = Color.FromArgb(195, 210, 230),
-            Dock = DockStyle.Fill,
-            TextAlign = ContentAlignment.TopLeft
+            AutoSize = true,
+            Margin = UiScale.Px(0, 2, 0, 0),
+            UseMnemonic = false
         }, 0, 1);
 
         layout.Controls.Add(titles, 0, 0);
@@ -226,21 +358,17 @@ public sealed class MainForm : Form
             AutoSize = true,
             Anchor = AnchorStyles.Right,
             TextAlign = ContentAlignment.MiddleRight,
-            Padding = new Padding(0, 0, 0, 8)
+            UseMnemonic = false
         }, 1, 0);
 
         panel.Controls.Add(layout);
         return panel;
     }
 
-    private Panel BuildProjectCard()
+    private (Panel Card, Control Content) BuildProjectCard()
     {
-        const int solutionRowHeight = 72;
-        const int connectionRowHeight = 100;
-
-        var body = LayoutKit.CreateBodyPanel();
-        body.Padding = new Padding(18, 16, 18, 20);
-        body.Dock = DockStyle.Top;
+        // The body fills the card, whose row is sized from this grid's measured height.
+        var body = LayoutKit.CreateBodyPanel(fill: true);
 
         var grid = new TableLayoutPanel
         {
@@ -249,36 +377,42 @@ public sealed class MainForm : Form
             RowCount = 4,
             AutoSize = true,
             AutoSizeMode = AutoSizeMode.GrowAndShrink,
-            Width = 100
+            Width = UiScale.Px(100)
         };
         grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f));
-        body.Resize += (_, _) => grid.Width = Math.Max(200, body.ClientSize.Width - body.Padding.Horizontal);
-        grid.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        grid.RowStyles.Add(new RowStyle(SizeType.Absolute, solutionRowHeight));
-        grid.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        grid.RowStyles.Add(new RowStyle(SizeType.Absolute, connectionRowHeight));
+        body.Resize += (_, _) =>
+            grid.Width = Math.Max(UiScale.Px(200), body.ClientSize.Width - body.Padding.Horizontal);
 
         var lblSolution = UiTheme.CreateCaption("Solution folder");
-        lblSolution.Margin = new Padding(0, 6, 0, 10);
+        lblSolution.Margin = UiScale.Px(0, 6, 0, 10);
         lblSolution.Font = new Font(UiTheme.UiFont, FontStyle.Bold);
+        grid.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         grid.Controls.Add(lblSolution, 0, 0);
 
         var browse = new Button { Text = "Browse…" };
         UiTheme.StyleSecondaryButton(browse);
         browse.Click += (_, _) => BrowseSolutionRoot();
-        grid.Controls.Add(LayoutKit.CreateInputButtonRow(_txtSolutionRoot, browse, solutionRowHeight), 0, 1);
+        AddFixedRow(grid, LayoutKit.CreateInputButtonRow(_txtSolutionRoot, browse), 1);
 
         var lblConnection = UiTheme.CreateCaption("SQL Server connection");
-        lblConnection.Margin = new Padding(0, 14, 0, 6);
+        lblConnection.Margin = UiScale.Px(0, 10, 0, 6);
+        grid.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         grid.Controls.Add(lblConnection, 0, 2);
 
         var loadConn = new Button { Text = "Load" };
         UiTheme.StyleSecondaryButton(loadConn);
         loadConn.Click += (_, _) => LoadConnectionFromAppSettings();
-        grid.Controls.Add(LayoutKit.CreateInputButtonRow(_txtConnection, loadConn, connectionRowHeight), 0, 3);
+        AddFixedRow(grid, LayoutKit.CreateInputButtonRow(_txtConnection, loadConn, 64), 3);
 
         body.Controls.Add(grid);
-        return LayoutKit.CreateCard("Step 1 — Project & database", body);
+        return (LayoutKit.CreateCard("Step 1 — Project & database", body, fillVertical: true), grid);
+    }
+
+    /// <summary>Adds a row sized to exactly what the control asked for, margins included.</summary>
+    private static void AddFixedRow(TableLayoutPanel grid, Control control, int row)
+    {
+        grid.RowStyles.Add(new RowStyle(SizeType.Absolute, control.Height + control.Margin.Vertical));
+        grid.Controls.Add(control, 0, row);
     }
 
     private Panel BuildModeCard()
@@ -303,7 +437,7 @@ public sealed class MainForm : Form
             ColumnCount = 1,
             RowCount = 3,
             BackColor = UiTheme.Surface,
-            Padding = new Padding(4, 6, 4, 6)
+            Padding = UiScale.Px(4, 6, 4, 6)
         };
         page.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f));
         page.RowStyles.Add(new RowStyle(SizeType.AutoSize));
@@ -320,21 +454,29 @@ public sealed class MainForm : Form
         };
         top.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f));
         top.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        top.RowStyles.Add(new RowStyle(SizeType.Absolute, 34));
+        top.RowStyles.Add(new RowStyle(SizeType.Absolute, UiTheme.ControlHeight));
         top.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        top.RowStyles.Add(new RowStyle(SizeType.Absolute, 34));
+        top.RowStyles.Add(new RowStyle(SizeType.Absolute, UiTheme.ControlHeight));
         top.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
         top.Controls.Add(UiTheme.CreateCaption("Entity class name"), 0, 0);
-        _txtEntityName.Dock = DockStyle.Fill;
+        _txtEntityName.Anchor = AnchorStyles.Left | AnchorStyles.Right;
         top.Controls.Add(_txtEntityName, 0, 1);
         top.Controls.Add(UiTheme.CreateCaption("Table name (optional)"), 0, 2);
-        _txtTableName.Dock = DockStyle.Fill;
+        _txtTableName.Anchor = AnchorStyles.Left | AnchorStyles.Right;
         top.Controls.Add(_txtTableName, 0, 3);
 
-        var columnsHeader = new TableLayoutPanel { Dock = DockStyle.Top, ColumnCount = 2, AutoSize = true };
+        var columnsHeader = new TableLayoutPanel
+        {
+            Dock = DockStyle.Top,
+            ColumnCount = 2,
+            RowCount = 1,
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink
+        };
         columnsHeader.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f));
         columnsHeader.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        columnsHeader.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         columnsHeader.Controls.Add(UiTheme.CreateCaption("Column definitions"), 0, 0);
         var sampleBtn = new Button { Text = "Load example", AutoSize = true };
         UiTheme.StyleSecondaryButton(sampleBtn);
@@ -343,7 +485,8 @@ public sealed class MainForm : Form
         top.Controls.Add(columnsHeader, 0, 4);
 
         _txtColumns.Dock = DockStyle.Fill;
-        _txtColumns.Margin = new Padding(0, 6, 0, 0);
+        _txtColumns.MinimumSize = new Size(0, UiScale.Px(80));
+        _txtColumns.Margin = UiScale.Px(0, 6, 0, 0);
 
         page.Controls.Add(top, 0, 0);
         page.Controls.Add(_txtColumns, 0, 1);
@@ -362,7 +505,7 @@ public sealed class MainForm : Form
             ColumnCount = 1,
             RowCount = 2,
             BackColor = UiTheme.Surface,
-            Padding = new Padding(4, 6, 4, 6)
+            Padding = UiScale.Px(4, 6, 4, 6)
         };
         page.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f));
         page.RowStyles.Add(new RowStyle(SizeType.AutoSize));
@@ -378,15 +521,15 @@ public sealed class MainForm : Form
         };
         grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f));
         grid.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        grid.RowStyles.Add(new RowStyle(SizeType.Absolute, 34));
+        grid.RowStyles.Add(new RowStyle(SizeType.Absolute, UiTheme.ControlHeight));
         grid.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        grid.RowStyles.Add(new RowStyle(SizeType.Absolute, 34));
+        grid.RowStyles.Add(new RowStyle(SizeType.Absolute, UiTheme.ControlHeight));
 
         grid.Controls.Add(UiTheme.CreateCaption("Database table name"), 0, 0);
-        _txtReverseTable.Dock = DockStyle.Fill;
+        _txtReverseTable.Anchor = AnchorStyles.Left | AnchorStyles.Right;
         grid.Controls.Add(_txtReverseTable, 0, 1);
         grid.Controls.Add(UiTheme.CreateCaption("Entity class name (optional)"), 0, 2);
-        _txtEntityOverride.Dock = DockStyle.Fill;
+        _txtEntityOverride.Anchor = AnchorStyles.Left | AnchorStyles.Right;
         grid.Controls.Add(_txtEntityOverride, 0, 3);
 
         page.Controls.Add(grid, 0, 0);
@@ -397,36 +540,33 @@ public sealed class MainForm : Form
         return page;
     }
 
-    private Panel BuildOptionsCard()
+    private (Panel Card, Control Content) BuildOptionsCard()
     {
-        var body = LayoutKit.CreateBodyPanel();
-        var grid = new TableLayoutPanel
+        var body = LayoutKit.CreateBodyPanel(fill: true);
+
+        // Flows into two columns where there is room and one where there is not, so a narrow card
+        // makes the options taller instead of cutting their labels off.
+        var options = new FlowLayoutPanel
         {
             Dock = DockStyle.Top,
-            ColumnCount = 2,
-            RowCount = 2,
+            FlowDirection = FlowDirection.LeftToRight,
+            WrapContents = true,
             AutoSize = true,
-            AutoSizeMode = AutoSizeMode.GrowAndShrink
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            BackColor = UiTheme.Surface
         };
-        grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50f));
-        grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50f));
-        grid.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        grid.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
         foreach (var chk in new[] { _chkIncludeNav, _chkMigration, _chkForce, _chkNoDbSet })
         {
             chk.Font = UiTheme.UiFont;
             chk.ForeColor = UiTheme.TextPrimary;
             chk.AutoSize = true;
-            chk.Margin = new Padding(4, 6, 8, 6);
+            chk.Margin = UiScale.Px(4, 6, 20, 6);
+            options.Controls.Add(chk);
         }
 
-        grid.Controls.Add(_chkIncludeNav, 0, 0);
-        grid.Controls.Add(_chkMigration, 1, 0);
-        grid.Controls.Add(_chkForce, 0, 1);
-        grid.Controls.Add(_chkNoDbSet, 1, 1);
-        body.Controls.Add(grid);
-        return LayoutKit.CreateCard("Step 3 — Options", body);
+        body.Controls.Add(options);
+        return (LayoutKit.CreateCard("Step 3 — Options", body, fillVertical: true), options);
     }
 
     private Panel BuildActionsBar()
@@ -434,7 +574,7 @@ public sealed class MainForm : Form
         var bar = new Panel
         {
             BackColor = UiTheme.Surface,
-            Padding = new Padding(16, 10, 16, 10),
+            Padding = UiScale.Px(16, 10, 16, 10),
             Margin = Padding.Empty
         };
         bar.Paint += (_, e) =>
@@ -449,11 +589,12 @@ public sealed class MainForm : Form
         var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1 };
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50f));
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50f));
+        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100f));
 
         _btnPreview.Dock = DockStyle.Fill;
-        _btnPreview.Margin = new Padding(0, 0, 8, 0);
+        _btnPreview.Margin = UiScale.Px(0, 0, 8, 0);
         _btnRun.Dock = DockStyle.Fill;
-        _btnRun.Margin = new Padding(8, 0, 0, 0);
+        _btnRun.Margin = UiScale.Px(8, 0, 0, 0);
 
         layout.Controls.Add(_btnPreview, 0, 0);
         layout.Controls.Add(_btnRun, 1, 0);
@@ -472,7 +613,7 @@ public sealed class MainForm : Form
         };
         body.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f));
         body.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        body.RowStyles.Add(new RowStyle(SizeType.Absolute, 40));
+        body.RowStyles.Add(new RowStyle(SizeType.Absolute, UiTheme.ControlHeight + UiScale.Px(6)));
         body.RowStyles.Add(new RowStyle(SizeType.Percent, 100f));
 
         _lblOutputHint.Font = UiTheme.HelpFont;
@@ -484,8 +625,8 @@ public sealed class MainForm : Form
 
         var toolbar = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1 };
         toolbar.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f));
-        toolbar.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 120));
-        toolbar.Controls.Add(new Panel(), 0, 0);
+        toolbar.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, UiScale.Px(120)));
+        toolbar.RowStyles.Add(new RowStyle(SizeType.Percent, 100f));
         _btnClearOutput.Dock = DockStyle.Fill;
         _btnClearOutput.Click += (_, _) =>
         {
@@ -504,7 +645,7 @@ public sealed class MainForm : Form
 
         var card = LayoutKit.CreateCard("Preview & output", body, fillVertical: true);
         card.Dock = DockStyle.Fill;
-        card.Margin = new Padding(10, 0, 0, 0);
+        card.Margin = UiScale.Px(10, 0, 0, 0);
         return card;
     }
 
@@ -514,7 +655,7 @@ public sealed class MainForm : Form
         {
             BackColor = UiTheme.Surface,
             SizingGrip = true,
-            Padding = new Padding(8, 2, 8, 2)
+            Padding = UiScale.Px(8, 2, 8, 2)
         };
         _lblStatus.Font = UiTheme.UiFont;
         strip.Items.Add(new ToolStripStatusLabel { Spring = true });
