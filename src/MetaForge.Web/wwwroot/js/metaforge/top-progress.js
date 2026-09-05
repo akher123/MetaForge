@@ -19,16 +19,26 @@ const MetaForgeProgress = (function () {
         barEl = document.getElementById('topProgressBar');
         if (!barEl) return;
 
+        const waitsForGrid = !!document.getElementById('dynamicGrid');
+
         pageLoadActive = true;
         show();
 
-        if (document.readyState === 'loading') {
+        if (waitsForGrid) {
+            window.setTimeout(function () {
+                if (pageLoadActive) {
+                    finishPageLoad();
+                }
+            }, 8000);
+        } else if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', finishPageLoad);
         } else {
             finishPageLoad();
         }
 
-        window.addEventListener('load', finishPageLoad);
+        if (!waitsForGrid) {
+            window.addEventListener('load', finishPageLoad);
+        }
 
         window.addEventListener('pageshow', function (event) {
             if (event.persisted) {

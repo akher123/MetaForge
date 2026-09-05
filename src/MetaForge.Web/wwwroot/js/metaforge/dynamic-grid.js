@@ -3,6 +3,26 @@
  */
 const DynamicGrid = (function () {
     let table, gridDef, entityName, $table, permissions = {}, hasMasterDetail = false;
+    let firstDrawComplete = false;
+    const loadingSelector = '#gridLoadingState';
+
+    function setLoading(isLoading) {
+        const $body = $table.closest('.module-grid-body');
+        if ($body.length) {
+            $body.toggleClass('is-loading', isLoading);
+        }
+        if (loadingSelector) {
+            $(loadingSelector).toggleClass('d-none', !isLoading);
+        }
+    }
+
+    function notifyGridReady() {
+        if (firstDrawComplete) {
+            return;
+        }
+        firstDrawComplete = true;
+        document.dispatchEvent(new CustomEvent('metaforge-grid-ready'));
+    }
 
     function getColumns(def) {
         return def?.Columns ?? def?.columns ?? [];
@@ -70,10 +90,12 @@ const DynamicGrid = (function () {
 
         renderToolbarActions();
         bindActionHandlers();
+        setLoading(true);
 
         table = $table.DataTable({
-            processing: false,
+            processing: true,
             serverSide: true,
+            deferRender: true,
             scrollX: true,
             autoWidth: false,
             ajax: function (data, callback) {
@@ -131,8 +153,16 @@ const DynamicGrid = (function () {
             order: [[0, 'asc']],
             pageLength: 15,
             lengthMenu: [[10, 15, 25, 50], [10, 15, 25, 50]],
+            preDrawCallback: function () {
+                setLoading(true);
+            },
+            initComplete: function () {
+                setLoading(false);
+                notifyGridReady();
+            },
             drawCallback: function () {
-                $table.closest('.dataTables_wrapper').find('.dataTables_processing').hide();
+                setLoading(false);
+                notifyGridReady();
             }
         });
     }

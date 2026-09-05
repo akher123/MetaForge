@@ -90,7 +90,9 @@
         });
     }
 
-    function applyTheme(themeKey, isDarkHint, themeName) {
+    function applyTheme(themeKey, isDarkHint, themeName, options) {
+        options = options || {};
+        const refreshChrome = options.refreshChrome !== false;
         const key = themeKey || 'indigo-light';
         const root = document.documentElement;
         root.setAttribute('data-theme', key);
@@ -104,7 +106,7 @@
         }
 
         if (themeName) updateToolbarLabel(themeName);
-        refreshThemedChrome();
+        if (refreshChrome) refreshThemedChrome();
     }
 
     function getInitialTheme() {
@@ -203,7 +205,9 @@
 
     function init() {
         const initial = getInitialTheme();
-        applyTheme(initial.key, initial.isDark, initial.name);
+        const currentKey = document.documentElement.getAttribute('data-theme');
+        const themeUnchanged = !!currentKey && currentKey === initial.key;
+        applyTheme(initial.key, initial.isDark, initial.name, { refreshChrome: !themeUnchanged });
         bindPickers();
         initToolbarLabel();
     }

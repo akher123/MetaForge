@@ -14,6 +14,8 @@ public class HrmDbContext : DbContext
 
     public DbSet<Employee> Employees => Set<Employee>();
 
+    public DbSet<EmployeeType> EmployeeTypes => Set<EmployeeType>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema("hrm");

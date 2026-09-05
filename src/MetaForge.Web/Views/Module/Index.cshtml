@@ -99,26 +99,34 @@
             </div>
         </div>
         <div class="card-body p-0">
-            <table id="dynamicGrid" class="table table-sm table-striped table-hover table-bordered w-100 mb-0"
-                   data-module="@formCode"
-                   data-entity="@grid?.Entity"
-                   data-has-master-detail="@(hasMasterDetail ? "true" : "false")">
-                <thead class="table-light">
-                    <tr>
-                        @if (grid?.Columns != null)
-                        {
-                            @foreach (var col in grid.Columns)
+            <div class="module-grid-body position-relative">
+                <div id="gridLoadingState" class="module-grid-loading" aria-live="polite">
+                    <div class="spinner-border spinner-border-sm text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <span class="small text-muted ms-2">Loading records…</span>
+                </div>
+                <table id="dynamicGrid" class="table table-sm table-striped table-hover table-bordered w-100 mb-0"
+                       data-module="@formCode"
+                       data-entity="@grid?.Entity"
+                       data-has-master-detail="@(hasMasterDetail ? "true" : "false")">
+                    <thead class="table-light">
+                        <tr>
+                            @if (grid?.Columns != null)
                             {
-                                <th data-property="@col.PropertyName">@col.Label</th>
+                                @foreach (var col in grid.Columns)
+                                {
+                                    <th data-property="@col.PropertyName">@col.Label</th>
+                                }
                             }
-                        }
-                        @if (showActionsColumn)
-                        {
-                            <th>Actions</th>
-                        }
-                    </tr>
-                </thead>
-            </table>
+                            @if (showActionsColumn)
+                            {
+                                <th>Actions</th>
+                            }
+                        </tr>
+                    </thead>
+                </table>
+            </div>
         </div>
     </div>
 </div>
@@ -191,6 +199,11 @@
                 });
             };
 
+            function scheduleOpenEntry(recordId) {
+                const run = () => openEntry(recordId);
+                document.addEventListener('metaforge-grid-ready', run, { once: true });
+            }
+
             $('#btnAddMasterDetail').on('click', () => openEntry(null));
 
             $('#dynamicGrid').on('click', '.btn-master-edit', function (e) {
@@ -201,13 +214,13 @@
             @if (openMasterDetailNew)
             {
                 <text>
-            openEntry(null);
+            scheduleOpenEntry(null);
                 </text>
             }
             else if (!string.IsNullOrWhiteSpace(openMasterDetailId))
             {
                 <text>
-            openEntry(@Html.Raw(System.Text.Json.JsonSerializer.Serialize(openMasterDetailId)));
+            scheduleOpenEntry(@Html.Raw(System.Text.Json.JsonSerializer.Serialize(openMasterDetailId)));
                 </text>
             }
                 </text>
