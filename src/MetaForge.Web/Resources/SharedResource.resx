@@ -280,6 +280,9 @@
   <data name="Landing_Capabilities" xml:space="preserve">
     <value>Capabilities</value>
   </data>
+  <data name="Landing_Modules" xml:space="preserve">
+    <value>Modules</value>
+  </data>
   <data name="Landing_Platform" xml:space="preserve">
     <value>Platform</value>
   </data>
@@ -293,7 +296,7 @@
     <value>Toggle navigation</value>
   </data>
   <data name="Landing_FooterTagline" xml:space="preserve">
-    <value>Metadata-driven admin framework for .NET 10 — forms, grids, security, and localization from a single platform model.</value>
+    <value>Unified ERP platform for .NET 10 — finance, HR, inventory, and operations from a metadata-driven back office.</value>
   </data>
   <data name="Landing_ScreenTypes" xml:space="preserve">
     <value>Screen types</value>

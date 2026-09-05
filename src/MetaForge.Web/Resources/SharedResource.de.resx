@@ -78,11 +78,12 @@
   <data name="Landing_ExplorePlatform" xml:space="preserve"><value>Plattform erkunden</value></data>
   <data name="Landing_OpenDashboard" xml:space="preserve"><value>Dashboard öffnen</value></data>
   <data name="Landing_Capabilities" xml:space="preserve"><value>Funktionen</value></data>
+  <data name="Landing_Modules" xml:space="preserve"><value>Module</value></data>
   <data name="Landing_Platform" xml:space="preserve"><value>Plattform</value></data>
   <data name="Landing_Architecture" xml:space="preserve"><value>Architektur</value></data>
   <data name="Landing_GetStarted" xml:space="preserve"><value>Loslegen</value></data>
   <data name="Landing_ToggleNavigation" xml:space="preserve"><value>Navigation umschalten</value></data>
-  <data name="Landing_FooterTagline" xml:space="preserve"><value>Metadaten-gesteuertes Admin-Framework für .NET 10 — Formulare, Raster, Sicherheit und Lokalisierung aus einem Plattformmodell.</value></data>
+  <data name="Landing_FooterTagline" xml:space="preserve"><value>Einheitliche ERP-Plattform für .NET 10 — Finanzen, HR, Lager und Betrieb aus einem metadaten-gesteuerten Back Office.</value></data>
   <data name="Landing_ScreenTypes" xml:space="preserve"><value>Bildschirmtypen</value></data>
   <data name="Landing_DemoApplication" xml:space="preserve"><value>Demo-Anwendung</value></data>
   <data name="Landing_FooterBuiltWith" xml:space="preserve"><value>Erstellt mit ASP.NET Core MVC und Entity Framework Core.</value></data>

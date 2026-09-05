@@ -78,11 +78,12 @@
   <data name="Landing_ExplorePlatform" xml:space="preserve"><value>استكشاف المنصة</value></data>
   <data name="Landing_OpenDashboard" xml:space="preserve"><value>فتح لوحة التحكم</value></data>
   <data name="Landing_Capabilities" xml:space="preserve"><value>القدرات</value></data>
+  <data name="Landing_Modules" xml:space="preserve"><value>الوحدات</value></data>
   <data name="Landing_Platform" xml:space="preserve"><value>المنصة</value></data>
   <data name="Landing_Architecture" xml:space="preserve"><value>البنية</value></data>
   <data name="Landing_GetStarted" xml:space="preserve"><value>البدء</value></data>
   <data name="Landing_ToggleNavigation" xml:space="preserve"><value>تبديل التنقل</value></data>
-  <data name="Landing_FooterTagline" xml:space="preserve"><value>إطار إدارة مدفوع بالبيانات الوصفية لـ .NET 10 — نماذج وشبكات وأمان وتوطين من نموذج منصة واحد.</value></data>
+  <data name="Landing_FooterTagline" xml:space="preserve"><value>منصة ERP موحدة لـ .NET 10 — المالية والموارد البشرية والمخزون والعمليات من نظام خلفي مدفوع بالبيانات الوصفية.</value></data>
   <data name="Landing_ScreenTypes" xml:space="preserve"><value>أنواع الشاشات</value></data>
   <data name="Landing_DemoApplication" xml:space="preserve"><value>تطبيق تجريبي</value></data>
   <data name="Landing_FooterBuiltWith" xml:space="preserve"><value>مبني بـ ASP.NET Core MVC و Entity Framework Core.</value></data>

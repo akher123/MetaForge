@@ -3,76 +3,95 @@
     ViewData["Title"] = "Home";
 }
 
-<section class="hero-section landing-hero" aria-labelledby="hero-title">
-    <div class="hero-bg" aria-hidden="true">
+<section class="hero-section landing-hero landing-hero--erp" aria-labelledby="hero-title">
+    <div class="hero-bg hero-bg--erp" aria-hidden="true">
         <div class="hero-grid"></div>
-        <div class="hero-orb hero-orb-1"></div>
-        <div class="hero-orb hero-orb-2"></div>
     </div>
     <div class="container position-relative">
         <div class="landing-hero-grid">
             <div class="landing-hero-copy">
-                <p class="hero-badge">
-                    <i class="fa-brands fa-microsoft me-2" aria-hidden="true"></i>
-                    .NET 10 · ASP.NET Core MVC · Entity Framework Core
+                <p class="hero-badge hero-badge--erp">
+                    <i class="fa-solid fa-building me-2" aria-hidden="true"></i>
+                    Enterprise ERP · .NET 10 · ASP.NET Core MVC
                 </p>
                 <h1 class="hero-title" id="hero-title">
-                    Enterprise admin platform,
-                    <span class="text-gradient">forged from metadata</span>
+                    Run your back office on
+                    <span class="text-accent-line">one unified platform</span>
                 </h1>
                 <p class="hero-subtitle">
-                    MetaForge is a metadata-driven framework for back-office applications. Configure forms, grids,
-                    menus, permissions, and localization once — then ship CRUD, master-detail, and reporting modules
-                    from your EF Core entities without rewriting every screen.
+                    MetaForge delivers finance, HR, inventory, and operations modules from a single metadata-driven
+                    ERP shell. Configure screens once, enforce role-based security everywhere, and roll out new
+                    business areas without rewriting every back-office view.
                 </p>
                 <div class="hero-actions">
                     <a asp-controller="Account" asp-action="Login" class="btn btn-hero-primary btn-lg">
                         <i class="fa-solid fa-right-to-bracket me-2" aria-hidden="true"></i>@Localizer["Landing_SignInDashboard"]
                     </a>
-                    <a href="#capabilities" class="btn btn-hero-outline btn-lg">
-                        @Localizer["Landing_ExplorePlatform"]<span class="mf-sr-only"> capabilities</span>
+                    <a href="#modules" class="btn btn-hero-outline btn-lg">
+                        @Localizer["Landing_ExplorePlatform"]<span class="mf-sr-only"> modules</span>
                     </a>
                 </div>
                 <div class="hero-stats" aria-label="Platform at a glance">
                     <div class="stat-item">
+                        <strong>4+</strong>
+                        <span>ERP business modules</span>
+                    </div>
+                    <div class="stat-item">
                         <strong>5</strong>
-                        <span>Screen form types</span>
+                        <span>Transaction screen patterns</span>
                     </div>
                     <div class="stat-item">
-                        <strong>4</strong>
-                        <span>Clean Architecture layers</span>
-                    </div>
-                    <div class="stat-item">
-                        <strong>1</strong>
-                        <span>Metadata model for runtime UI</span>
+                        <strong>RBAC</strong>
+                        <span>Form-level security &amp; audit</span>
                     </div>
                 </div>
             </div>
 
-            <div class="hero-visual" aria-label="MetaForge admin shell preview">
-                <div class="product-preview">
+            <div class="hero-visual" aria-label="MetaForge ERP dashboard preview">
+                <div class="product-preview product-preview--erp">
                     <div class="product-preview-chrome">
                         <span class="chrome-dot"></span>
                         <span class="chrome-dot"></span>
                         <span class="chrome-dot"></span>
-                        <span class="chrome-title">MetaForge · Dynamic Module</span>
+                        <span class="chrome-title">MetaForge · Operations Dashboard</span>
                     </div>
                     <div class="product-preview-body">
                         <nav class="preview-nav" aria-hidden="true">
-                            <div class="preview-nav-label">Menu</div>
+                            <div class="preview-nav-label">Modules</div>
                             <div class="preview-nav-group active">
-                                <i class="fa-solid fa-folder-open"></i> Sales
+                                <i class="fa-solid fa-folder-open"></i> Finance
                             </div>
+                            <div class="preview-nav-item">General Ledger</div>
                             <div class="preview-nav-item selected">Sales Orders</div>
-                            <div class="preview-nav-item">Customers</div>
                             <div class="preview-nav-group">
-                                <i class="fa-solid fa-folder"></i> Inventory
+                                <i class="fa-solid fa-users"></i> HRM
                             </div>
-                            <div class="preview-nav-item">Products</div>
+                            <div class="preview-nav-item">Employees</div>
+                            <div class="preview-nav-group">
+                                <i class="fa-solid fa-boxes-stacked"></i> Inventory
+                            </div>
+                            <div class="preview-nav-item">Stock Items</div>
                         </nav>
                         <div class="preview-workspace">
+                            <div class="preview-kpi-row" aria-hidden="true">
+                                <div class="preview-kpi-tile">
+                                    <span class="preview-kpi-label">Open orders</span>
+                                    <strong class="preview-kpi-value">128</strong>
+                                    <span class="preview-kpi-trend up"><i class="fa-solid fa-arrow-trend-up"></i> 12%</span>
+                                </div>
+                                <div class="preview-kpi-tile">
+                                    <span class="preview-kpi-label">Revenue MTD</span>
+                                    <strong class="preview-kpi-value">$842K</strong>
+                                    <span class="preview-kpi-trend up"><i class="fa-solid fa-arrow-trend-up"></i> 8%</span>
+                                </div>
+                                <div class="preview-kpi-tile">
+                                    <span class="preview-kpi-label">Stock alerts</span>
+                                    <strong class="preview-kpi-value">14</strong>
+                                    <span class="preview-kpi-trend warn"><i class="fa-solid fa-triangle-exclamation"></i> Review</span>
+                                </div>
+                            </div>
                             <div class="preview-toolbar">
-                                <span class="preview-chip accent"><i class="fa-solid fa-plus"></i> Add</span>
+                                <span class="preview-chip accent"><i class="fa-solid fa-plus"></i> New order</span>
                                 <span class="preview-chip"><i class="fa-solid fa-pen"></i> Edit</span>
                                 <span class="preview-chip muted"><i class="fa-solid fa-file-export"></i> Export</span>
                             </div>
@@ -98,108 +117,145 @@
                         </div>
                     </div>
                 </div>
-                <div class="hero-floating-card hero-floating-card-1" aria-hidden="true">
-                    <i class="fa-solid fa-wand-magic-sparkles"></i>
-                    <div>
-                        <strong>Form Builder</strong>
-                        <small>Fields, grids, validation</small>
-                    </div>
-                </div>
-                <div class="hero-floating-card hero-floating-card-2" aria-hidden="true">
-                    <i class="fa-solid fa-shield-halved"></i>
-                    <div>
-                        <strong>Role-based access</strong>
-                        <small>Per-form permissions</small>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
 </section>
 
-<aside class="trust-strip" aria-label="Technology stack">
+<aside class="trust-strip trust-strip--erp" aria-label="Enterprise platform signals">
     <div class="container">
         <div class="trust-strip-inner">
-            <p class="trust-label" id="trust-label">Platform stack</p>
+            <p class="trust-label" id="trust-label">Enterprise ready</p>
             <ul class="trust-items" aria-labelledby="trust-label">
-                <li><i class="fa-solid fa-layer-group" aria-hidden="true"></i> Clean Architecture</li>
+                <li><i class="fa-solid fa-user-shield" aria-hidden="true"></i> Role-based access control</li>
+                <li><i class="fa-solid fa-clipboard-list" aria-hidden="true"></i> Audit trail on every action</li>
                 <li><i class="fa-solid fa-database" aria-hidden="true"></i> SQL Server &amp; EF Core</li>
-                <li><i class="fa-solid fa-lock" aria-hidden="true"></i> Cookie auth &amp; RBAC</li>
-                <li><i class="fa-solid fa-globe" aria-hidden="true"></i> Culture &amp; date formats</li>
-                <li><i class="fa-solid fa-bolt" aria-hidden="true"></i> Runtime dynamic modules</li>
+                <li><i class="fa-solid fa-globe" aria-hidden="true"></i> Multi-culture &amp; RTL support</li>
+                <li><i class="fa-solid fa-puzzle-piece" aria-hidden="true"></i> Modular Clean Architecture</li>
             </ul>
         </div>
     </div>
 </aside>
 
+<section id="modules" class="modules-section landing-section" aria-labelledby="modules-title">
+    <div class="container">
+        <header class="section-header text-center">
+            <p class="section-eyebrow">Business modules</p>
+            <h2 class="section-title" id="modules-title">ERP coverage for every department</h2>
+            <p class="section-subtitle">
+                Start with the live HRM demo module, then extend the same platform shell to accounting, inventory,
+                and production — each module owns its domain while sharing security, menus, and reporting.
+            </p>
+        </header>
+        <div class="row g-4">
+            <div class="col-md-6 col-xl-3">
+                <article class="erp-module-card erp-module-card--active">
+                    <span class="erp-module-status">Live demo</span>
+                    <div class="erp-module-icon" aria-hidden="true"><i class="fa-solid fa-users"></i></div>
+                    <h3>Human Resources</h3>
+                    <p>Employee records, organizational structure, and HR workflows rendered from module metadata.</p>
+                    <a asp-controller="Account" asp-action="Login" class="erp-module-link">
+                        Explore HRM demo <i class="fa-solid fa-arrow-right ms-1" aria-hidden="true"></i>
+                    </a>
+                </article>
+            </div>
+            <div class="col-md-6 col-xl-3">
+                <article class="erp-module-card erp-module-card--planned">
+                    <span class="erp-module-status">Extendable</span>
+                    <div class="erp-module-icon erp-module-icon--finance" aria-hidden="true"><i class="fa-solid fa-calculator"></i></div>
+                    <h3>Accounting</h3>
+                    <p>General ledger, journals, and financial documents with master-detail transaction screens.</p>
+                </article>
+            </div>
+            <div class="col-md-6 col-xl-3">
+                <article class="erp-module-card erp-module-card--planned">
+                    <span class="erp-module-status">Extendable</span>
+                    <div class="erp-module-icon erp-module-icon--inventory" aria-hidden="true"><i class="fa-solid fa-boxes-stacked"></i></div>
+                    <h3>Inventory</h3>
+                    <p>Products, stock movements, and warehouse operations with searchable grids and lookups.</p>
+                </article>
+            </div>
+            <div class="col-md-6 col-xl-3">
+                <article class="erp-module-card erp-module-card--planned">
+                    <span class="erp-module-status">Extendable</span>
+                    <div class="erp-module-icon erp-module-icon--production" aria-hidden="true"><i class="fa-solid fa-industry"></i></div>
+                    <h3>Production</h3>
+                    <p>Manufacturing orders, BOMs, and shop-floor data connected to inventory and finance.</p>
+                </article>
+            </div>
+        </div>
+    </div>
+</section>
+
 <section id="capabilities" class="features-section landing-section" aria-labelledby="capabilities-title">
     <div class="container">
         <header class="section-header text-center">
-            <p class="section-eyebrow">Platform capabilities</p>
-            <h2 class="section-title" id="capabilities-title">Everything included in the MetaForge framework</h2>
+            <p class="section-eyebrow">Enterprise capabilities</p>
+            <h2 class="section-title" id="capabilities-title">Everything your ERP back office needs</h2>
             <p class="section-subtitle">
-                The framework delivers the admin shell. Your business entities, screens, and menus are features you configure on top.
+                MetaForge provides the operational shell — forms, grids, security, reports, and localization —
+                so your teams focus on business rules instead of rebuilding admin screens.
             </p>
         </header>
         <div class="row g-4">
             <div class="col-md-6 col-xl-4">
-                <article class="feature-card">
+                <article class="feature-card feature-card--erp">
                     <div class="feature-icon" aria-hidden="true"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
                     <h3>Form Builder</h3>
-                    <p>Design fields, control types, lookups, conditional rules, and list grids. Publish screens without per-entity Razor views.</p>
+                    <p>Design fields, control types, lookups, conditional rules, and list grids. Publish ERP screens without per-entity Razor views.</p>
                 </article>
             </div>
             <div class="col-md-6 col-xl-4">
-                <article class="feature-card">
+                <article class="feature-card feature-card--erp">
                     <div class="feature-icon feature-icon-cyan" aria-hidden="true"><i class="fa-solid fa-table-cells-large"></i></div>
                     <h3>Dynamic CRUD modules</h3>
                     <p>Render searchable, sortable grids and edit forms from <code>ForgeForm</code> metadata cached at runtime.</p>
                 </article>
             </div>
             <div class="col-md-6 col-xl-4">
-                <article class="feature-card">
+                <article class="feature-card feature-card--erp">
                     <div class="feature-icon feature-icon-violet" aria-hidden="true"><i class="fa-solid fa-diagram-project"></i></div>
                     <h3>Master-detail transactions</h3>
-                    <p>Header and line-item screens with inline grids, tabbed details, atomic saves, and cascade lookups.</p>
+                    <p>Document headers with line items — orders, invoices, journals — with inline grids, tabbed details, and atomic saves.</p>
                 </article>
             </div>
             <div class="col-md-6 col-xl-4">
-                <article class="feature-card">
+                <article class="feature-card feature-card--erp">
                     <div class="feature-icon feature-icon-emerald" aria-hidden="true"><i class="fa-solid fa-user-shield"></i></div>
-                    <h3>Security &amp; audit</h3>
+                    <h3>Security &amp; compliance</h3>
                     <p>Users, roles, form-level permissions, and audit trails for view, create, edit, delete, and export actions.</p>
                 </article>
             </div>
             <div class="col-md-6 col-xl-4">
-                <article class="feature-card">
+                <article class="feature-card feature-card--erp">
                     <div class="feature-icon feature-icon-amber" aria-hidden="true"><i class="fa-solid fa-chart-column"></i></div>
                     <h3>Reports &amp; exports</h3>
                     <p>Configurable reports with PDF and Excel output. Grid export to Excel and CSV from column metadata.</p>
                 </article>
             </div>
             <div class="col-md-6 col-xl-4">
-                <article class="feature-card">
+                <article class="feature-card feature-card--erp">
                     <div class="feature-icon feature-icon-rose" aria-hidden="true"><i class="fa-solid fa-globe"></i></div>
                     <h3>Localization &amp; themes</h3>
                     <p>System and user preferences for culture, date formats, RTL layouts, and color themes across the application.</p>
                 </article>
             </div>
             <div class="col-md-6 col-xl-4">
-                <article class="feature-card">
+                <article class="feature-card feature-card--erp">
                     <div class="feature-icon" aria-hidden="true"><i class="fa-solid fa-magnifying-glass-chart"></i></div>
                     <h3>Entity discovery</h3>
                     <p>Scan EF Core models to bootstrap draft forms, relations, and grid columns in the Form Builder automatically.</p>
                 </article>
             </div>
             <div class="col-md-6 col-xl-4">
-                <article class="feature-card">
+                <article class="feature-card feature-card--erp">
                     <div class="feature-icon feature-icon-cyan" aria-hidden="true"><i class="fa-solid fa-envelope"></i></div>
                     <h3>Email &amp; notifications</h3>
                     <p>Template-based email configuration with channels, retry policies, and binding to form events.</p>
                 </article>
             </div>
             <div class="col-md-6 col-xl-4">
-                <article class="feature-card">
+                <article class="feature-card feature-card--erp">
                     <div class="feature-icon feature-icon-violet" aria-hidden="true"><i class="fa-solid fa-sitemap"></i></div>
                     <h3>Menus &amp; navigation</h3>
                     <p>Hierarchical sidebar menus linked to published forms, with permission-aware visibility and drag-and-drop admin.</p>
@@ -213,7 +269,7 @@
     <div class="container">
         <header class="section-header text-center">
             <p class="section-eyebrow">Screen types &amp; runtime</p>
-            <h2 class="section-title" id="platform-title">One metadata model, many module patterns</h2>
+            <h2 class="section-title" id="platform-title">One metadata model, many ERP transaction patterns</h2>
             <p class="section-subtitle">
                 Choose the form type that matches your business process. MetaForge.Web renders the UI; Infrastructure persists through EF Core.
             </p>
@@ -252,7 +308,7 @@
                 <span class="step-number" aria-hidden="true">1</span>
                 <div class="step-icon" aria-hidden="true"><i class="fa-solid fa-cubes"></i></div>
                 <h3>Model</h3>
-                <p>Add entities in <code>MetaForge.Domain</code> and register them with the application DbContext.</p>
+                <p>Add entities in your module Domain project and register them with the application DbContext.</p>
             </article>
             <span class="step-connector" aria-hidden="true"><i class="fa-solid fa-arrow-right"></i></span>
             <article class="step-card">
@@ -292,13 +348,13 @@
             <div class="col-lg-5">
                 <header>
                     <p class="section-eyebrow">Solution structure</p>
-                    <h2 class="section-title" id="architecture-title">Clean Architecture, ready to extend</h2>
+                    <h2 class="section-title" id="architecture-title">Clean Architecture built for ERP scale</h2>
                     <p class="section-lead">
-                        Dependencies point inward. Domain has no infrastructure references. The Web layer hosts MVC,
-                        the Form Builder, dynamic modules, REST APIs, and security administration.
+                        Dependencies point inward. Each ERP module owns its domain while the platform shell handles
+                        metadata, security, menus, and dynamic UI rendering across every business area.
                     </p>
                     <ul class="architecture-list">
-                        <li><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Framework vs features boundary documented in solution</li>
+                        <li><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Framework vs features boundary for modular rollout</li>
                         <li><i class="fa-solid fa-circle-check" aria-hidden="true"></i> FluentValidation driven by field metadata</li>
                         <li><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Generic services — no duplicated CRUD per entity</li>
                     </ul>
@@ -340,10 +396,10 @@
     <div class="container">
         <div class="cta-card">
             <div class="cta-content">
-                <h2 id="cta-title">Experience MetaForge with the sample application</h2>
+                <h2 id="cta-title">Experience the MetaForge ERP demo</h2>
                 <p>
-                    Sign in to explore dynamic modules, the Form Builder, role permissions, system localization,
-                    themes, and the included ERP demo dataset.
+                    Sign in to explore the HRM module, dynamic transaction screens, role permissions, reporting,
+                    localization, themes, and the included demo dataset.
                 </p>
                 <a asp-controller="Account" asp-action="Login" class="btn btn-cta-primary btn-lg">
                     <i class="fa-solid fa-gauge-high me-2" aria-hidden="true"></i>@Localizer["Landing_OpenDashboard"]
@@ -356,17 +412,17 @@
             <div class="cta-visual" aria-hidden="true">
                 <div class="cta-stat-stack">
                     <div class="cta-stat-card">
-                        <i class="fa-solid fa-code-branch"></i>
+                        <i class="fa-solid fa-clipboard-check"></i>
                         <div>
-                            <strong>Open source ready</strong>
-                            <span>Extend Domain &amp; Infrastructure</span>
+                            <strong>Audit-ready</strong>
+                            <span>Full action trail on every form</span>
                         </div>
                     </div>
                     <div class="cta-stat-card">
-                        <i class="fa-solid fa-rocket"></i>
+                        <i class="fa-solid fa-chart-line"></i>
                         <div>
-                            <strong>Ship faster</strong>
-                            <span>Metadata-first admin shell</span>
+                            <strong>Operational reporting</strong>
+                            <span>PDF, Excel, and grid exports</span>
                         </div>
                     </div>
                 </div>

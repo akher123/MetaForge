@@ -78,11 +78,12 @@
   <data name="Landing_ExplorePlatform" xml:space="preserve"><value>প্ল্যাটফর্ম অন্বেষণ করুন</value></data>
   <data name="Landing_OpenDashboard" xml:space="preserve"><value>ড্যাশবোর্ড খুলুন</value></data>
   <data name="Landing_Capabilities" xml:space="preserve"><value>সক্ষমতা</value></data>
+  <data name="Landing_Modules" xml:space="preserve"><value>মডিউল</value></data>
   <data name="Landing_Platform" xml:space="preserve"><value>প্ল্যাটফর্ম</value></data>
   <data name="Landing_Architecture" xml:space="preserve"><value>আর্কিটেকচার</value></data>
   <data name="Landing_GetStarted" xml:space="preserve"><value>শুরু করুন</value></data>
   <data name="Landing_ToggleNavigation" xml:space="preserve"><value>নেভিগেশন টগল করুন</value></data>
-  <data name="Landing_FooterTagline" xml:space="preserve"><value>.NET 10-এর জন্য মেটাডেটা-চালিত অ্যাডমিন ফ্রেমওয়ার্ক — একটি প্ল্যাটফর্ম মডেল থেকে ফর্ম, গ্রিড, নিরাপত্তা ও লোকালাইজেশন।</value></data>
+  <data name="Landing_FooterTagline" xml:space="preserve"><value>.NET 10-এর জন্য একীভূত ERP প্ল্যাটফর্ম — মেটাডেটা-চালিত ব্যাক অফিস থেকে ফিন্যান্স, HR, ইনভেন্টরি ও অপারেশন।</value></data>
   <data name="Landing_ScreenTypes" xml:space="preserve"><value>স্ক্রিনের ধরন</value></data>
   <data name="Landing_DemoApplication" xml:space="preserve"><value>ডেমো অ্যাপ্লিকেশন</value></data>
   <data name="Landing_FooterBuiltWith" xml:space="preserve"><value>ASP.NET Core MVC ও Entity Framework Core দিয়ে তৈরি।</value></data>

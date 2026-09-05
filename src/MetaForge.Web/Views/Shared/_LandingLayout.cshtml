@@ -9,7 +9,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="MetaForge — metadata-driven ASP.NET Core admin framework for .NET 10. Ship CRUD, master-detail, reports, and security from EF Core entities and database metadata." />
+    <meta name="description" content="MetaForge — unified ERP platform for .NET 10. Run finance, HR, inventory, and operations from a metadata-driven back office with role-based security, reporting, and localization." />
     <meta name="color-scheme" content="light" />
     <title>@ViewData["Title"] - MetaForge</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -28,7 +28,7 @@
         <nav class="navbar navbar-expand-lg landing-nav" aria-label="Primary">
             <div class="container">
                 <a class="navbar-brand landing-brand" asp-controller="Home" asp-action="Landing" aria-label="MetaForge home">
-                    <span class="landing-brand-mark" aria-hidden="true"><i class="fa-solid fa-bolt"></i></span>
+                    <span class="landing-brand-mark" aria-hidden="true"><i class="fa-solid fa-building"></i></span>
                     <span class="landing-brand-text">Meta<span class="landing-brand-accent">Forge</span></span>
                 </a>
                 <button class="navbar-toggler landing-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#landingNav" aria-controls="landingNav" aria-expanded="false" aria-label="@Localizer["Landing_ToggleNavigation"]">
@@ -37,6 +37,7 @@
                 <div class="collapse navbar-collapse" id="landingNav">
                     <ul class="navbar-nav ms-auto align-items-lg-center">
                         <li class="nav-item"><a class="nav-link" href="#capabilities">@Localizer["Landing_Capabilities"]</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#modules">@Localizer["Landing_Modules"]</a></li>
                         <li class="nav-item"><a class="nav-link" href="#platform">@Localizer["Landing_Platform"]</a></li>
                         <li class="nav-item"><a class="nav-link" href="#architecture">@Localizer["Landing_Architecture"]</a></li>
                         <li class="nav-item"><a class="nav-link" href="#get-started">@Localizer["Landing_GetStarted"]</a></li>
@@ -63,7 +64,7 @@
             <div class="landing-footer-grid">
                 <div class="landing-footer-col landing-footer-col--brand">
                     <div class="landing-footer-brand">
-                        <span class="landing-brand-mark landing-brand-mark-sm" aria-hidden="true"><i class="fa-solid fa-bolt"></i></span>
+                        <span class="landing-brand-mark landing-brand-mark-sm" aria-hidden="true"><i class="fa-solid fa-building"></i></span>
                         <span>MetaForge</span>
                     </div>
                     <p class="landing-footer-tagline">
@@ -74,6 +75,7 @@
                     <h3 class="landing-footer-heading">@Localizer["Landing_Platform"]</h3>
                     <ul class="landing-footer-links">
                         <li><a href="#capabilities">@Localizer["Landing_Capabilities"]</a></li>
+                        <li><a href="#modules">@Localizer["Landing_Modules"]</a></li>
                         <li><a href="#platform">@Localizer["Landing_ScreenTypes"]</a></li>
                         <li><a href="#architecture">@Localizer["Landing_Architecture"]</a></li>
                     </ul>
