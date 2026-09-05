@@ -1,4 +1,5 @@
 using System.Text.Json;
+using MetaForge.UnitTests.TestEntities;
 
 namespace MetaForge.UnitTests;
 

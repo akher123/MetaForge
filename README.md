@@ -148,7 +148,7 @@ Open the app in your browser (typically `https://localhost:5001` or the URL show
 
 MetaForge uses **SQL Server** (LocalDB or a full instance). Point `ConnectionStrings:DefaultConnection` in `src/MetaForge.Web/appsettings.json` at your server. The database is created automatically when migrations run (on startup or via the commands below).
 
-On startup, MetaForge applies pending **EF Core migrations** automatically, then runs idempotent **platform** data upgrades (security, permissions, email templates, menus). **Demo** sample data and showcase form upgrades run only when demo seeding is enabled.
+On startup, MetaForge applies pending **EF Core migrations** automatically, then runs idempotent **platform** seeding (admin user, security permissions, email defaults, system settings, menus).
 
 ```bash
 # Apply migrations and seed (no web server)
@@ -156,23 +156,7 @@ dotnet run --project src/MetaForge.Web -- --seed-only
 
 # Reset and reseed the database (drops all data, reapplies migrations)
 dotnet run --project src/MetaForge.Web -- --reset-db
-
-# Production-style seed: platform only (admin user, no sample ERP data)
-dotnet run --project src/MetaForge.Web -- --seed-only --no-demo-seed
-
-# Force demo sample data even when Seed:IncludeDemoData is false
-dotnet run --project src/MetaForge.Web -- --seed-only --demo-seed
 ```
-
-**Seed configuration** (`appsettings.json`):
-
-```json
-"Seed": {
-  "IncludeDemoData": false
-}
-```
-
-Development sets `IncludeDemoData` to `true` in `appsettings.Development.json`. When `false`, the app still seeds the **admin** account and runs **platform upgrades**, but skips sample customers, sales orders, demo forms, and demo-specific metadata patches.
 
 ```bash
 # Apply migrations manually
@@ -182,24 +166,11 @@ dotnet ef database update --project src/MetaForge.Infrastructure --startup-proje
 dotnet ef migrations add <MigrationName> --project src/MetaForge.Infrastructure --startup-project src/MetaForge.Web --output-dir Persistence/Migrations --context MetaForgeDbContext
 ```
 
-**Upgrading from an older `EnsureCreated` database:** run `--reset-db` in development, or create a fresh database and run `dotnet ef database update`. Schema is no longer patched with ad-hoc SQL at startup.
+**Upgrading from an older database:** run `--reset-db` in development, or create a fresh database and run `dotnet ef database update`.
 
 Migrations live in `src/MetaForge.Infrastructure/Persistence/Migrations/`.
 
-On first run, MetaForge creates the database, seeds sample ERP data, form metadata, security roles, and navigation menus.
-
-### Sample data
-
-The seed includes a small ERP dataset:
-
-| Group | Modules | Sample entities |
-|---|---|---|
-| **Master Data** | Country, Customer, Product, Supplier | Countries, regions, two sample customers (Contoso, Fabrikam) |
-| **Transaction** | Sales Order (tabular master-detail) | Sales orders with line items and charges |
-
-**Customer** demonstrates `Tabbed`: fields grouped into **General**, **Contacts**, **Location**, and **Accounting** tabs, with Region cascade-filtered by Country. Sample records: `C001` Contoso Ltd and `C002` Fabrikam Inc.
-
-**Sales Order** demonstrates `MasterDetailTabular`: one header form with **Line Items** and **Charges** tabs.
+On first run, MetaForge creates the database and seeds the **admin** account plus platform defaults. Add feature entities with the scaffold tool (see below), then configure forms in Form Builder.
 
 ---
 

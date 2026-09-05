@@ -1,5 +1,5 @@
-using MetaForge.Domain.Features;
 using MetaForge.Infrastructure.Dynamic;
+using MetaForge.UnitTests.TestEntities;
 
 namespace MetaForge.UnitTests;
 

@@ -2,7 +2,6 @@ global using MetaForge.Application.Common;
 global using MetaForge.Application.DTOs;
 global using MetaForge.Application.Interfaces;
 global using MetaForge.Application.Interfaces.Repositories;
-global using MetaForge.Domain.Business;
 global using MetaForge.Domain.Enums;
 global using MetaForge.Domain.Metadata;
 global using MetaForge.Infrastructure.Dynamic;

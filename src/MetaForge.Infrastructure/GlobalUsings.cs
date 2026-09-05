@@ -8,6 +8,5 @@ global using MetaForge.Infrastructure.Persistence;
 global using MetaForge.Shared.Constants;
 global using MetaForge.Shared.Exceptions;
 global using Microsoft.EntityFrameworkCore;
-global using MetaForge.Domain.Business;
 global using MetaForge.Domain.Notifications;
 global using Microsoft.EntityFrameworkCore.Metadata.Builders;

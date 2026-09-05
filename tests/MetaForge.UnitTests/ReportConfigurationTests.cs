@@ -1,8 +1,8 @@
 using MetaForge.Application.DTOs;
-using MetaForge.Domain.Business;
 using MetaForge.Infrastructure.Dynamic;
 using MetaForge.Infrastructure.Repositories;
 using MetaForge.Infrastructure.Services;
+using MetaForge.UnitTests.TestEntities;
 using Microsoft.EntityFrameworkCore;
 
 namespace MetaForge.UnitTests;
@@ -183,9 +183,11 @@ public class ReportConfigurationServiceTests
         security.Setup(s => s.SyncReportPermissionsAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(0);
 
-        var typeResolver = new EntityTypeResolver(context);
+        var typeResolver = new Mock<IEntityTypeResolver>();
+        typeResolver.Setup(r => r.Resolve("Customer")).Returns(typeof(TestEntities.Customer));
+        typeResolver.Setup(r => r.IsBusinessEntity("Customer")).Returns(true);
 
-        return new ReportConfigurationService(unitOfWork, discovery.Object, security.Object, typeResolver);
+        return new ReportConfigurationService(unitOfWork, discovery.Object, security.Object, typeResolver.Object);
     }
 
     private static MetaForgeDbContext CreateContext()

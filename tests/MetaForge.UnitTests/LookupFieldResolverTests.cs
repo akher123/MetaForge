@@ -1,5 +1,6 @@
 using MetaForge.Application.DTOs;
 using MetaForge.Infrastructure.Dynamic;
+using MetaForge.UnitTests.TestEntities;
 
 namespace MetaForge.UnitTests;
 
@@ -24,7 +25,7 @@ public class LookupFieldResolverTests
     [Fact]
     public void ResolveTextField_FallsBackWhenNameIsNullable()
     {
-        var entityType = typeof(Domain.Features.Vehicle);
+        var entityType = typeof(Vehicle);
 
         Assert.Equal("VehicleNumber", LookupFieldResolver.ResolveTextField(entityType, null));
     }
@@ -32,7 +33,7 @@ public class LookupFieldResolverTests
     [Fact]
     public void ResolveTextField_AcceptsNavigationPropertyPath()
     {
-        var entityType = typeof(Domain.Features.VehicleAssignment);
+        var entityType = typeof(VehicleAssignment);
 
         Assert.Equal("Vehicle.VehicleNumber", LookupFieldResolver.ResolveTextField(entityType, "Vehicle.VehicleNumber"));
     }

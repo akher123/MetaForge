@@ -1,5 +1,4 @@
 using MetaForge.Domain.Audit;
-using MetaForge.Domain.Features;
 using MetaForge.Domain.Notifications;
 using MetaForge.Domain.Platform;
 using MetaForge.Domain.Security;
@@ -36,30 +35,6 @@ public class MetaForgeDbContext : DbContext
     public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
 
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
-
-    public DbSet<Country> Countries => Set<Country>();
-    public DbSet<Region> Regions => Set<Region>();
-    public DbSet<City> Cities => Set<City>();
-    public DbSet<Customer> Customers => Set<Customer>();
-    public DbSet<CustomerRegion> CustomerRegions => Set<CustomerRegion>();
-    public DbSet<Address> Addresses => Set<Address>();
-    public DbSet<Product> Products => Set<Product>();
-    public DbSet<Supplier> Suppliers => Set<Supplier>();
-    public DbSet<Department> Departments => Set<Department>();
-    public DbSet<Student> Students => Set<Student>();
-    public DbSet<SalesOrder> SalesOrders => Set<SalesOrder>();
-    public DbSet<SalesOrderItem> SalesOrderItems => Set<SalesOrderItem>();
-    public DbSet<SalesOrderCharge> SalesOrderCharges => Set<SalesOrderCharge>();
-
-    public DbSet<Teacher> Teachers => Set<Teacher>();
-
-    public DbSet<Semester> Semesters => Set<Semester>();
-
-    public DbSet<VehicleType> VehicleTypes => Set<VehicleType>();
-
-    public DbSet<Vehicle> Vehicles => Set<Vehicle>();
-
-    public DbSet<MaintenanceRecord> MaintenanceRecords => Set<MaintenanceRecord>();
 
     public DbSet<EmailChannel> EmailChannels => Set<EmailChannel>();
     public DbSet<EmailRetryPolicy> EmailRetryPolicies => Set<EmailRetryPolicy>();

@@ -14,7 +14,7 @@ public sealed class ScaffoldOptions
 
     public string SolutionRoot { get; set; } = ".";
 
-    public string DomainOutputDir { get; set; } = "src/MetaForge.Domain/Business";
+    public string DomainOutputDir { get; set; } = "src/MetaForge.Domain/Features";
 
     public string ConfigOutputDir { get; set; } = "src/MetaForge.Infrastructure/Persistence/Configurations/Generated";
 

@@ -20,7 +20,6 @@ public static class DependencyInjection
         services.AddDbContext<MetaForgeDbContext>(options =>
             DatabaseConfiguration.ConfigureDbContext(options, configuration));
 
-        services.Configure<SeedOptions>(configuration.GetSection(SeedOptions.SectionName));
         services.Configure<MetadataCacheOptions>(configuration.GetSection(MetadataCacheOptions.SectionName));
         services.Configure<ExportOptions>(configuration.GetSection(ExportOptions.SectionName));
         services.Configure<EmailOptions>(configuration.GetSection(EmailOptions.SectionName));

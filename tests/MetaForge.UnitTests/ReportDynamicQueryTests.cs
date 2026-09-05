@@ -1,6 +1,6 @@
-using MetaForge.Domain.Business;
 using MetaForge.Domain.Metadata;
 using MetaForge.Infrastructure.Reports;
+using MetaForge.UnitTests.TestEntities;
 
 namespace MetaForge.UnitTests;
 

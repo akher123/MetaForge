@@ -1,4 +1,3 @@
-using MetaForge.Application.Configuration;
 using MetaForge.Infrastructure;
 using MetaForge.Infrastructure.Persistence.Seed;
 using MetaForge.Web.Localization;
@@ -19,15 +18,6 @@ try
 
     builder.Services.AddInfrastructure(builder.Configuration);
 
-    var includeDemoSeed = builder.Configuration.GetValue<bool>($"{SeedOptions.SectionName}:IncludeDemoData");
-    if (args.Contains("--no-demo-seed", StringComparer.OrdinalIgnoreCase))
-        includeDemoSeed = false;
-    else if (args.Contains("--demo-seed", StringComparer.OrdinalIgnoreCase))
-        includeDemoSeed = true;
-    else if (!builder.Configuration.GetSection(SeedOptions.SectionName).Exists())
-        includeDemoSeed = builder.Environment.IsDevelopment();
-
-    builder.Services.PostConfigure<SeedOptions>(options => options.IncludeDemoData = includeDemoSeed);
     builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
     builder.Services.AddProblemDetails();
 
