@@ -29,7 +29,7 @@
   <data name="Auth_SignInSubtitle" xml:space="preserve"><value>ড্যাশবোর্ডে প্রবেশ করতে আপনার তথ্য দিন</value></data>
   <data name="Auth_Username" xml:space="preserve"><value>ব্যবহারকারীর নাম</value></data>
   <data name="Auth_Password" xml:space="preserve"><value>পাসওয়ার্ড</value></data>
-  <data name="Auth_UsernamePlaceholder" xml:space="preserve"><value>যেমন: admin</value></data>
+  <data name="Auth_UsernamePlaceholder" xml:space="preserve"><value>আপনার ব্যবহারকারীর নাম লিখুন</value></data>
   <data name="Auth_PasswordPlaceholder" xml:space="preserve"><value>আপনার পাসওয়ার্ড লিখুন</value></data>
   <data name="Auth_RememberMe" xml:space="preserve"><value>আমাকে সাইন ইন রাখুন</value></data>
   <data name="Auth_ForgotPassword" xml:space="preserve"><value>পাসওয়ার্ড ভুলে গেছেন?</value></data>
@@ -44,6 +44,9 @@
   <data name="Auth_CleanArchitecture" xml:space="preserve"><value>ক্লিন আর্কিটেকচার সমাধান</value></data>
   <data name="Auth_ShowPassword" xml:space="preserve"><value>পাসওয়ার্ড দেখান</value></data>
   <data name="Auth_HidePassword" xml:space="preserve"><value>পাসওয়ার্ড লুকান</value></data>
+  <data name="Auth_SigningIn" xml:space="preserve"><value>সাইন ইন হচ্ছে…</value></data>
+  <data name="Auth_InvalidCredentials" xml:space="preserve"><value>ব্যবহারকারীর নাম বা পাসওয়ার্ড ভুল।</value></data>
+  <data name="Auth_AccountInactive" xml:space="preserve"><value>আপনার অ্যাকাউন্ট নিষ্ক্রিয় বা অনুপলব্ধ।</value></data>
   <data name="Validation_UsernameRequired" xml:space="preserve"><value>ব্যবহারকারীর নাম আবশ্যক</value></data>
   <data name="Validation_PasswordRequired" xml:space="preserve"><value>পাসওয়ার্ড আবশ্যক</value></data>
   <data name="Culture_LanguageRegion" xml:space="preserve"><value>ভাষা ও অঞ্চল</value></data>

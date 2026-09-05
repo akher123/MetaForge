@@ -7,7 +7,7 @@
 <html lang="@effectiveCulture" dir="@(isRtl ? "rtl" : "ltr")">
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="description" content="Sign in to MetaForge — metadata-driven ASP.NET Core admin platform." />
     <meta name="color-scheme" content="light" />
     <title>@ViewData["Title"] - MetaForge</title>
@@ -21,7 +21,7 @@
     <link rel="stylesheet" href="~/css/top-progress.css" asp-append-version="true" />
 </head>
 <body class="auth-body">
-    <a href="#main-content" class="mf-skip-link">@Localizer["Auth_SignIn"]</a>
+    <a href="#main-content" class="mf-skip-link">@Localizer["Common_SkipToMainContent"]</a>
 
     <div id="topProgress" class="top-progress top-progress--auth" aria-hidden="true" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="@Localizer["Nav_PageLoading"]">
         <div id="topProgressBar" class="top-progress-bar"></div>
@@ -35,5 +35,6 @@
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/metaforge/top-progress.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
+    <script src="~/js/metaforge/auth.js" asp-append-version="true"></script>
 </body>
 </html>

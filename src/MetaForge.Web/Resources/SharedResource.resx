@@ -134,7 +134,7 @@
     <value>Password</value>
   </data>
   <data name="Auth_UsernamePlaceholder" xml:space="preserve">
-    <value>e.g. admin</value>
+    <value>Enter your username</value>
   </data>
   <data name="Auth_PasswordPlaceholder" xml:space="preserve">
     <value>Enter your password</value>
@@ -177,6 +177,15 @@
   </data>
   <data name="Auth_HidePassword" xml:space="preserve">
     <value>Hide password</value>
+  </data>
+  <data name="Auth_SigningIn" xml:space="preserve">
+    <value>Signing in…</value>
+  </data>
+  <data name="Auth_InvalidCredentials" xml:space="preserve">
+    <value>Invalid username or password.</value>
+  </data>
+  <data name="Auth_AccountInactive" xml:space="preserve">
+    <value>Your account is inactive or unavailable.</value>
   </data>
   <data name="Validation_UsernameRequired" xml:space="preserve">
     <value>Username is required</value>

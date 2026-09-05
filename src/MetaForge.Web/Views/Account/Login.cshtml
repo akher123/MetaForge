@@ -66,7 +66,11 @@
                 </div>
             }
 
-            <form asp-action="Login" method="post" class="auth-form" novalidate>
+            <form asp-action="Login"
+                  method="post"
+                  class="auth-form"
+                  novalidate
+                  data-signing-in="@Localizer["Auth_SigningIn"]">
                 @Html.AntiForgeryToken()
                 <input type="hidden" asp-for="ReturnUrl" />
 
@@ -116,23 +120,11 @@
                     <a asp-action="ForgotPassword" class="auth-forgot-link">@Localizer["Auth_ForgotPassword"]</a>
                 </div>
 
-                <button type="submit" class="btn btn-auth-submit w-100">
-                    @Localizer["Auth_SignIn"]
-                    <i class="fa-solid fa-arrow-right ms-2" aria-hidden="true"></i>
+                <button type="submit" id="authSubmitBtn" class="btn btn-auth-submit w-100">
+                    <span class="auth-submit-label">@Localizer["Auth_SignIn"]</span>
+                    <i class="fa-solid fa-arrow-right auth-submit-icon ms-2" aria-hidden="true"></i>
                 </button>
             </form>
-
-            <div class="auth-demo-card" role="note">
-                <div class="auth-demo-icon" aria-hidden="true">
-                    <i class="fa-solid fa-circle-info"></i>
-                </div>
-                <div>
-                    <p class="auth-demo-title">@Localizer["Auth_DemoCredentials"]</p>
-                    <p class="auth-demo-text mb-0">
-                        @Localizer["Auth_DemoCredentialsDetail", "admin", "admin"]
-                    </p>
-                </div>
-            </div>
         </div>
 
         <p class="auth-panel-footer">
@@ -143,19 +135,4 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-    <script>
-        (function () {
-            var input = document.getElementById('passwordInput');
-            var toggle = document.getElementById('passwordToggle');
-            if (!input || !toggle) return;
-
-            toggle.addEventListener('click', function () {
-                var show = input.type === 'password';
-                input.type = show ? 'text' : 'password';
-                toggle.setAttribute('aria-pressed', show ? 'true' : 'false');
-                toggle.setAttribute('aria-label', show ? toggle.getAttribute('data-label-hide') : toggle.getAttribute('data-label-show'));
-                toggle.querySelector('i').className = show ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye';
-            });
-        })();
-    </script>
 }

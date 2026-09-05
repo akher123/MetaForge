@@ -3,9 +3,11 @@ using MetaForge.Application.DTOs;
 using MetaForge.Shared.Constants;
 using MetaForge.Shared.Culture;
 using MetaForge.Shared.Exceptions;
+using MetaForge.Web.Resources;
 using MetaForge.Web.Theme;
 using MetaForge.Web.Models;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.Extensions.Localization;
 
 namespace MetaForge.Web.Controllers;
 
@@ -17,6 +19,7 @@ public class AccountController : Controller
     private readonly IPreferenceResolver _preferenceResolver;
     private readonly ISystemSettingsService _systemSettings;
     private readonly IPasswordResetService _passwordResetService;
+    private readonly IStringLocalizer<SharedResource> _localizer;
 
     public AccountController(
         IAuthService authService,
@@ -24,7 +27,8 @@ public class AccountController : Controller
         IUserPreferenceService userPreferences,
         IPreferenceResolver preferenceResolver,
         ISystemSettingsService systemSettings,
-        IPasswordResetService passwordResetService)
+        IPasswordResetService passwordResetService,
+        IStringLocalizer<SharedResource> localizer)
     {
         _authService = authService;
         _claimsFactory = claimsFactory;
@@ -32,6 +36,7 @@ public class AccountController : Controller
         _preferenceResolver = preferenceResolver;
         _systemSettings = systemSettings;
         _passwordResetService = passwordResetService;
+        _localizer = localizer;
     }
 
     [AllowAnonymous]
@@ -59,14 +64,14 @@ public class AccountController : Controller
         var result = await _authService.AuthenticateAsync(model.UserName, model.Password, cancellationToken);
         if (result == null)
         {
-            model.ErrorMessage = "Invalid username or password.";
+            model.ErrorMessage = _localizer["Auth_InvalidCredentials"].Value;
             return View(model);
         }
 
         var principal = await _claimsFactory.CreatePrincipalAsync(result.UserId, cancellationToken);
         if (principal == null)
         {
-            model.ErrorMessage = "Your account is inactive or unavailable.";
+            model.ErrorMessage = _localizer["Auth_AccountInactive"].Value;
             return View(model);
         }
 

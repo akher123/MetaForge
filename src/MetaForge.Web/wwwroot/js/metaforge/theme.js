@@ -80,10 +80,8 @@
                 el.style.removeProperty('color');
             });
 
-            if (typeof $ !== 'undefined' && $.fn.dataTable && $.fn.dataTable.tables) {
-                try {
-                    $.fn.dataTable.tables({ visible: true, api: true }).columns.adjust();
-                } catch (_) { /* ignore */ }
+            if (window.MetaForgeDataTables && typeof MetaForgeDataTables.adjustVisibleColumns === 'function') {
+                MetaForgeDataTables.adjustVisibleColumns();
             }
 
             document.dispatchEvent(new CustomEvent('metaforge-theme-changed', {

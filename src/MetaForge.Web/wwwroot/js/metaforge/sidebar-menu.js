@@ -5,6 +5,8 @@
     const folderStorageKey = 'admin.sidebar.openFolders';
     const collapseStorageKey = 'metaforge.sidebar.collapsed';
     const mobileQuery = window.matchMedia('(max-width: 991.98px)');
+    const sidebarTransitionMs = 320;
+    let lastCollapsedState = null;
 
     function loadOpenFolders() {
         try {
@@ -24,6 +26,46 @@
 
     function isMobileSidebar() {
         return mobileQuery.matches;
+    }
+
+    function scheduleGridReflow() {
+        if (isMobileSidebar()) {
+            return;
+        }
+
+        const adjust = window.MetaForgeDataTables && MetaForgeDataTables.adjustVisibleColumns;
+        if (typeof adjust !== 'function') {
+            return;
+        }
+
+        const sidebar = document.querySelector('.app-sidebar-wrapper');
+        if (!sidebar) {
+            adjust();
+            return;
+        }
+
+        let done = false;
+
+        function finish() {
+            if (done) {
+                return;
+            }
+
+            done = true;
+            sidebar.removeEventListener('transitionend', onTransitionEnd);
+            adjust();
+        }
+
+        function onTransitionEnd(e) {
+            if (e.target !== sidebar || e.propertyName !== 'width') {
+                return;
+            }
+
+            finish();
+        }
+
+        sidebar.addEventListener('transitionend', onTransitionEnd);
+        setTimeout(finish, sidebarTransitionMs);
     }
 
     function setCollapsed(collapsed) {
@@ -51,6 +93,13 @@
             document.querySelectorAll('.sidebar-folder[open]').forEach(function (folder) {
                 folder.removeAttribute('open');
             });
+        }
+
+        const stateChanged = lastCollapsedState !== null && lastCollapsedState !== collapsed;
+        lastCollapsedState = collapsed;
+
+        if (stateChanged) {
+            scheduleGridReflow();
         }
     }
 

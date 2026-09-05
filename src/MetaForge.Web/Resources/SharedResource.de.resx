@@ -29,7 +29,7 @@
   <data name="Auth_SignInSubtitle" xml:space="preserve"><value>Geben Sie Ihre Anmeldedaten ein, um auf das Dashboard zuzugreifen</value></data>
   <data name="Auth_Username" xml:space="preserve"><value>Benutzername</value></data>
   <data name="Auth_Password" xml:space="preserve"><value>Passwort</value></data>
-  <data name="Auth_UsernamePlaceholder" xml:space="preserve"><value>z. B. admin</value></data>
+  <data name="Auth_UsernamePlaceholder" xml:space="preserve"><value>Benutzername eingeben</value></data>
   <data name="Auth_PasswordPlaceholder" xml:space="preserve"><value>Passwort eingeben</value></data>
   <data name="Auth_RememberMe" xml:space="preserve"><value>Angemeldet bleiben</value></data>
   <data name="Auth_ForgotPassword" xml:space="preserve"><value>Passwort vergessen?</value></data>
@@ -44,6 +44,9 @@
   <data name="Auth_CleanArchitecture" xml:space="preserve"><value>Clean-Architecture-Lösung</value></data>
   <data name="Auth_ShowPassword" xml:space="preserve"><value>Passwort anzeigen</value></data>
   <data name="Auth_HidePassword" xml:space="preserve"><value>Passwort ausblenden</value></data>
+  <data name="Auth_SigningIn" xml:space="preserve"><value>Anmeldung läuft…</value></data>
+  <data name="Auth_InvalidCredentials" xml:space="preserve"><value>Ungültiger Benutzername oder Passwort.</value></data>
+  <data name="Auth_AccountInactive" xml:space="preserve"><value>Ihr Konto ist inaktiv oder nicht verfügbar.</value></data>
   <data name="Validation_UsernameRequired" xml:space="preserve"><value>Benutzername ist erforderlich</value></data>
   <data name="Validation_PasswordRequired" xml:space="preserve"><value>Passwort ist erforderlich</value></data>
   <data name="Culture_LanguageRegion" xml:space="preserve"><value>Sprache und Region</value></data>

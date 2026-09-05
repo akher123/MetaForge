@@ -29,7 +29,7 @@
   <data name="Auth_SignInSubtitle" xml:space="preserve"><value>Introduzca sus credenciales para acceder al panel</value></data>
   <data name="Auth_Username" xml:space="preserve"><value>Nombre de usuario</value></data>
   <data name="Auth_Password" xml:space="preserve"><value>Contraseña</value></data>
-  <data name="Auth_UsernamePlaceholder" xml:space="preserve"><value>p. ej. admin</value></data>
+  <data name="Auth_UsernamePlaceholder" xml:space="preserve"><value>Ingrese su usuario</value></data>
   <data name="Auth_PasswordPlaceholder" xml:space="preserve"><value>Introduzca su contraseña</value></data>
   <data name="Auth_RememberMe" xml:space="preserve"><value>Mantener sesión iniciada</value></data>
   <data name="Auth_ForgotPassword" xml:space="preserve"><value>¿Olvidó su contraseña?</value></data>
@@ -44,6 +44,9 @@
   <data name="Auth_CleanArchitecture" xml:space="preserve"><value>Solución Clean Architecture</value></data>
   <data name="Auth_ShowPassword" xml:space="preserve"><value>Mostrar contraseña</value></data>
   <data name="Auth_HidePassword" xml:space="preserve"><value>Ocultar contraseña</value></data>
+  <data name="Auth_SigningIn" xml:space="preserve"><value>Iniciando sesión…</value></data>
+  <data name="Auth_InvalidCredentials" xml:space="preserve"><value>Usuario o contraseña no válidos.</value></data>
+  <data name="Auth_AccountInactive" xml:space="preserve"><value>Su cuenta está inactiva o no está disponible.</value></data>
   <data name="Validation_UsernameRequired" xml:space="preserve"><value>El nombre de usuario es obligatorio</value></data>
   <data name="Validation_PasswordRequired" xml:space="preserve"><value>La contraseña es obligatoria</value></data>
   <data name="Culture_LanguageRegion" xml:space="preserve"><value>Idioma y región</value></data>

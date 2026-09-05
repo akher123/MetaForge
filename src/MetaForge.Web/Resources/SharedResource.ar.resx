@@ -29,7 +29,7 @@
   <data name="Auth_SignInSubtitle" xml:space="preserve"><value>أدخل بيانات الاعتماد للوصول إلى لوحة التحكم</value></data>
   <data name="Auth_Username" xml:space="preserve"><value>اسم المستخدم</value></data>
   <data name="Auth_Password" xml:space="preserve"><value>كلمة المرور</value></data>
-  <data name="Auth_UsernamePlaceholder" xml:space="preserve"><value>مثال: admin</value></data>
+  <data name="Auth_UsernamePlaceholder" xml:space="preserve"><value>أدخل اسم المستخدم</value></data>
   <data name="Auth_PasswordPlaceholder" xml:space="preserve"><value>أدخل كلمة المرور</value></data>
   <data name="Auth_RememberMe" xml:space="preserve"><value>إبقائي مسجلاً</value></data>
   <data name="Auth_ForgotPassword" xml:space="preserve"><value>نسيت كلمة المرور؟</value></data>
@@ -44,6 +44,9 @@
   <data name="Auth_CleanArchitecture" xml:space="preserve"><value>حل Clean Architecture</value></data>
   <data name="Auth_ShowPassword" xml:space="preserve"><value>إظهار كلمة المرور</value></data>
   <data name="Auth_HidePassword" xml:space="preserve"><value>إخفاء كلمة المرور</value></data>
+  <data name="Auth_SigningIn" xml:space="preserve"><value>جارٍ تسجيل الدخول…</value></data>
+  <data name="Auth_InvalidCredentials" xml:space="preserve"><value>اسم المستخدم أو كلمة المرور غير صحيحة.</value></data>
+  <data name="Auth_AccountInactive" xml:space="preserve"><value>حسابك غير نشط أو غير متاح.</value></data>
   <data name="Validation_UsernameRequired" xml:space="preserve"><value>اسم المستخدم مطلوب</value></data>
   <data name="Validation_PasswordRequired" xml:space="preserve"><value>كلمة المرور مطلوبة</value></data>
   <data name="Culture_LanguageRegion" xml:space="preserve"><value>اللغة والمنطقة</value></data>

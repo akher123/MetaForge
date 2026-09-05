@@ -2,6 +2,18 @@
  * DataTables — Bootstrap 5 defaults (requires dataTables.bootstrap5.js).
  */
 (function () {
+    window.MetaForgeDataTables = window.MetaForgeDataTables || {};
+
+    MetaForgeDataTables.adjustVisibleColumns = function () {
+        if (typeof $ === 'undefined' || !$.fn.dataTable || !$.fn.dataTable.tables) {
+            return;
+        }
+
+        try {
+            $.fn.dataTable.tables({ visible: true, api: true }).columns.adjust();
+        } catch (_) { /* ignore */ }
+    };
+
     if (typeof $ === 'undefined' || !$.fn.dataTable) {
         return;
     }
