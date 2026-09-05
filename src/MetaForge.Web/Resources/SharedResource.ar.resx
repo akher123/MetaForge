@@ -21,6 +21,7 @@
   <data name="Nav_AccountMenu" xml:space="preserve"><value>قائمة الحساب لـ {0}</value></data>
   <data name="Nav_CollapseSidebar" xml:space="preserve"><value>طي القائمة الجانبية</value></data>
   <data name="Nav_OpenNavigation" xml:space="preserve"><value>فتح قائمة التنقل</value></data>
+  <data name="Nav_CloseNavigation" xml:space="preserve"><value>إغلاق قائمة التنقل</value></data>
   <data name="Nav_PageLoading" xml:space="preserve"><value>جارٍ تحميل الصفحة</value></data>
   <data name="Footer_Copyright" xml:space="preserve"><value>© 2026 MetaForge — منصة إدارة MetaForge (.NET 10)</value></data>
   <data name="Footer_CopyrightShort" xml:space="preserve"><value>© 2026 MetaForge</value></data>

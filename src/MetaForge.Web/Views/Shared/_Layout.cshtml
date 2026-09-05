@@ -85,7 +85,8 @@
     {
         <script>
             try {
-                if (localStorage.getItem('metaforge.sidebar.collapsed') === '1') {
+                if (window.matchMedia('(min-width: 992px)').matches
+                    && localStorage.getItem('metaforge.sidebar.collapsed') === '1') {
                     document.documentElement.classList.add('sidebar-collapsed');
                 }
             } catch (_) { /* ignore */ }
@@ -113,6 +114,16 @@
                                 <span class="sidebar-hamburger-line"></span>
                             </span>
                         </button>
+                        <button class="navbar-toggler app-navbar-toggler d-lg-none"
+                                type="button"
+                                id="sidebarMobileToggle"
+                                aria-controls="sidebarNav"
+                                aria-expanded="false"
+                                aria-label="@Localizer["Nav_OpenNavigation"]"
+                                data-label-open="@Localizer["Nav_OpenNavigation"]"
+                                data-label-close="@Localizer["Nav_CloseNavigation"]">
+                            <span class="navbar-toggler-icon"></span>
+                        </button>
                     }
                     <a class="navbar-brand" asp-controller="Home" asp-action="Dashboard">
                         Meta<span>Forge</span>
@@ -120,17 +131,6 @@
                 </div>
 
                 <div class="app-navbar-end">
-                    @if (isAuthenticated && sidebarMenu.Count > 0)
-                    {
-                        <button class="navbar-toggler app-navbar-toggler d-lg-none"
-                                type="button"
-                                id="sidebarMobileToggle"
-                                aria-controls="sidebarNav"
-                                aria-expanded="false"
-                                aria-label="@Localizer["Nav_OpenNavigation"]">
-                            <span class="navbar-toggler-icon"></span>
-                        </button>
-                    }
                     @if (isAuthenticated)
                     {
                         <div class="app-navbar-actions">
@@ -227,7 +227,7 @@
         @if (isAuthenticated && sidebarMenu.Count > 0)
         {
             <div class="app-sidebar-backdrop" id="sidebarBackdrop" aria-hidden="true"></div>
-            <aside class="app-sidebar-wrapper app-sidebar-drawer d-lg-block" id="sidebarNav">
+            <aside class="app-sidebar-wrapper app-sidebar-drawer" id="sidebarNav">
                 @await Html.PartialAsync("_SidebarMenu", sidebarMenu)
             </aside>
         }

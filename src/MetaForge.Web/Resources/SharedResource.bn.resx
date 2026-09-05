@@ -21,6 +21,7 @@
   <data name="Nav_AccountMenu" xml:space="preserve"><value>{0}-এর অ্যাকাউন্ট মেনু</value></data>
   <data name="Nav_CollapseSidebar" xml:space="preserve"><value>সাইডবার মেনু সংকুচিত করুন</value></data>
   <data name="Nav_OpenNavigation" xml:space="preserve"><value>নেভিগেশন মেনু খুলুন</value></data>
+  <data name="Nav_CloseNavigation" xml:space="preserve"><value>নেভিগেশন মেনু বন্ধ করুন</value></data>
   <data name="Nav_PageLoading" xml:space="preserve"><value>পৃষ্ঠা লোড হচ্ছে</value></data>
   <data name="Footer_Copyright" xml:space="preserve"><value>© ২০২৬ MetaForge — MetaForge অ্যাডমিন প্ল্যাটফর্ম (.NET 10)</value></data>
   <data name="Footer_CopyrightShort" xml:space="preserve"><value>© ২০২৬ MetaForge</value></data>

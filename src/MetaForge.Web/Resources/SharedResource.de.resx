@@ -21,6 +21,7 @@
   <data name="Nav_AccountMenu" xml:space="preserve"><value>Kontomenü für {0}</value></data>
   <data name="Nav_CollapseSidebar" xml:space="preserve"><value>Seitenmenü einklappen</value></data>
   <data name="Nav_OpenNavigation" xml:space="preserve"><value>Navigationsmenü öffnen</value></data>
+  <data name="Nav_CloseNavigation" xml:space="preserve"><value>Navigationsmenü schließen</value></data>
   <data name="Nav_PageLoading" xml:space="preserve"><value>Seite wird geladen</value></data>
   <data name="Footer_Copyright" xml:space="preserve"><value>© 2026 MetaForge — MetaForge Admin-Plattform (.NET 10)</value></data>
   <data name="Footer_CopyrightShort" xml:space="preserve"><value>© 2026 MetaForge</value></data>

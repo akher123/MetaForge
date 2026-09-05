@@ -109,6 +109,9 @@
   <data name="Nav_OpenNavigation" xml:space="preserve">
     <value>Open navigation menu</value>
   </data>
+  <data name="Nav_CloseNavigation" xml:space="preserve">
+    <value>Close navigation menu</value>
+  </data>
   <data name="Nav_PageLoading" xml:space="preserve">
     <value>Page loading</value>
   </data>
